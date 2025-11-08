@@ -1,0 +1,5 @@
+{
+  "name": "What's my Credit Worth",
+  "description": "A personal finance dashboard to track income, credit scores, assets, liabilities, and net worth. It allows users to view monthly snapshots and run comparison reports to monitor their financial growth over time.",
+  "requestFramePermissions": []
+}
