@@ -51,8 +51,18 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Metric label="Net Worth" value={formatCurrency(netWorth)} change={netWorth > 0 ? 'positive' : 'negative'} />
             <Metric label="Total Assets" value={formatCurrency(totalAssets)} />
-            <Metric label="Total Debt" value={formatCurrency(totalDebt)} change="negative" />
-            <Metric label="Monthly Income" value={formatCurrency(totalIncome)} change="positive"/>
+            <Metric 
+                label="Total Debt" 
+                value={formatCurrency(totalDebt)} 
+                change="negative" 
+                tooltipText="Monthly debt payments are any payments you make to pay back a creditor or lender for money you borrowed. Rent is also considered a monthly debt payment."
+            />
+            <Metric 
+                label="Monthly Income" 
+                value={formatCurrency(totalIncome)} 
+                change="positive"
+                tooltipText="Include any pre-tax and non-taxable income that you want considered in the results."
+            />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

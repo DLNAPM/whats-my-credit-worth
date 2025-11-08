@@ -50,6 +50,14 @@ export const InfoIcon = () => (
     </svg>
 );
 
+export const HelpIcon = () => (
+    <svg {...iconProps} className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+);
+
 export const ChevronLeftIcon = () => (
     <svg {...iconProps} className="w-6 h-6">
         <polyline points="15 18 9 12 15 6"></polyline>
