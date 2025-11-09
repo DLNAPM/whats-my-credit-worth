@@ -1,8 +1,7 @@
-
 import React from 'react';
 
 interface CardProps {
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   footerText?: string;
   className?: string;
@@ -12,7 +11,11 @@ const Card: React.FC<CardProps> = ({ title, children, footerText, className = ''
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden ${className}`}>
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-brand-primary dark:text-brand-light">{title}</h3>
+        {typeof title === 'string' ? (
+          <h3 className="text-lg font-semibold text-brand-primary dark:text-brand-light">{title}</h3>
+        ) : (
+          title
+        )}
       </div>
       <div className="p-4">
         {children}

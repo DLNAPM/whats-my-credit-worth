@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MonthlyData, FinancialData } from '../types';
 import { calculateNetWorth, calculateTotal, calculateTotalBalance, calculateTotalLimit, calculateUtilization, formatCurrency, getUtilizationColor, calculateMonthlyIncome, calculateDTI } from '../utils/helpers';
 import Card from './ui/Card';
 import Metric from './ui/Metric';
 import NetWorthChart from './charts/NetWorthChart';
+import CreditScoreChart from './charts/CreditScoreChart';
 
 interface DashboardProps {
   data?: MonthlyData;
@@ -23,6 +24,8 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
 
 
 const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
+  const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
+
   if (!data) {
     return (
       <div className="text-center py-10">
@@ -54,6 +57,31 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
   };
   const dtiStatus = getDtiStatus(dti);
   
+  const ChartSwitcher = (
+    <div className="flex items-center gap-4">
+        <button
+            onClick={() => setChartView('netWorth')}
+            className={`text-lg font-semibold pb-1 border-b-2 transition-colors focus:outline-none ${
+            chartView === 'netWorth'
+                ? 'text-brand-primary dark:text-brand-light border-brand-primary'
+                : 'text-gray-500 border-transparent hover:text-brand-primary dark:hover:text-brand-light'
+            }`}
+        >
+            Net Worth Over Time
+        </button>
+        <button
+            onClick={() => setChartView('creditScores')}
+            className={`text-lg font-semibold pb-1 border-b-2 transition-colors focus:outline-none ${
+            chartView === 'creditScores'
+                ? 'text-brand-primary dark:text-brand-light border-brand-primary'
+                : 'text-gray-500 border-transparent hover:text-brand-primary dark:hover:text-brand-light'
+            }`}
+        >
+            Credit Scores Over Time
+        </button>
+    </div>
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -81,14 +109,23 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-                <Card title="Net Worth Over Time">
+                <Card title={ChartSwitcher}>
                     <div className="h-80">
-                        <NetWorthChart data={allData} />
+                        {chartView === 'netWorth' && <NetWorthChart data={allData} />}
+                        {chartView === 'creditScores' && <CreditScoreChart data={allData} />}
                     </div>
                 </Card>
             </div>
             <div>
-                 <Card title="Credit Scores">
+                 <Card title={
+                    <button
+                        onClick={() => setChartView('creditScores')}
+                        className="text-lg font-semibold text-brand-primary dark:text-brand-light hover:underline focus:outline-none w-full text-left"
+                        aria-label="Show credit scores over time chart"
+                    >
+                        Credit Scores
+                    </button>
+                 }>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <Metric label="Experian FICO 2/8" value={`${data.creditScores.experian.score2} / ${data.creditScores.experian.score8}`} size="small" />
                         <Metric label="Equifax FICO 2/8" value={`${data.creditScores.equifax.score2} / ${data.creditScores.equifax.score8}`} size="small" />
