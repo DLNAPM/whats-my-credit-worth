@@ -75,6 +75,11 @@ export const calculateUtilization = (balance: number, limit: number): number => 
   return (balance / limit) * 100;
 };
 
+export const calculateDTI = (monthlyBills: number, monthlyIncome: number): number => {
+  if (monthlyIncome === 0) return 0;
+  return (monthlyBills / monthlyIncome) * 100;
+};
+
 export const calculateNetWorth = (data?: MonthlyData): number => {
   if (!data) return 0;
   const totalAssets = calculateTotal(data.assets);

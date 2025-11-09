@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MonthlyData, FinancialData } from '../types';
-import { calculateNetWorth, calculateTotal, calculateTotalBalance, calculateTotalLimit, calculateUtilization, formatCurrency, getUtilizationColor, calculateMonthlyIncome } from '../utils/helpers';
+import { calculateNetWorth, calculateTotal, calculateTotalBalance, calculateTotalLimit, calculateUtilization, formatCurrency, getUtilizationColor, calculateMonthlyIncome, calculateDTI } from '../utils/helpers';
 import Card from './ui/Card';
 import Metric from './ui/Metric';
 import NetWorthChart from './charts/NetWorthChart';
@@ -45,10 +45,18 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
   const totalLoanBalance = calculateTotalBalance(data.loans);
   const totalLoanLimit = calculateTotalLimit(data.loans);
   const totalLoanUtilization = calculateUtilization(totalLoanBalance, totalLoanLimit);
+
+  const dti = calculateDTI(totalBills, totalIncome);
+  const getDtiStatus = (dtiValue: number): 'positive' | 'negative' | undefined => {
+    if (dtiValue <= 36) return 'positive';
+    if (dtiValue > 43) return 'negative';
+    return undefined;
+  };
+  const dtiStatus = getDtiStatus(dti);
   
   return (
     <div className="space-y-6 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
             <Metric label="Net Worth" value={formatCurrency(netWorth)} change={netWorth > 0 ? 'positive' : 'negative'} />
             <Metric label="Total Assets" value={formatCurrency(totalAssets)} />
             <Metric 
@@ -62,6 +70,12 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
                 value={formatCurrency(totalIncome)} 
                 change="positive"
                 tooltipText="Include any pre-tax and non-taxable income that you want considered in the results."
+            />
+            <Metric 
+                label="DTI Ratio"
+                value={`${dti.toFixed(2)}%`}
+                change={dtiStatus}
+                tooltipText="Debt-to-income (DTI) ratio is your total monthly debt payments divided by your gross monthly income, shown as a percentage. Lenders prefer a DTI of 43% or less."
             />
         </div>
 
