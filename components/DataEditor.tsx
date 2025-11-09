@@ -21,14 +21,40 @@ const InputField = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<
 type ItemType = 'creditCards' | 'loans' | 'assets' | 'monthlyBills';
 
 const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) => {
-  const { getMonthData, updateMonthData } = useFinancialData();
+  const { getMonthData, updateMonthData, financialData } = useFinancialData();
   const [data, setData] = useState<MonthlyData>(getMonthData(monthYear));
+  const [copyFromMonth, setCopyFromMonth] = useState<string>('');
 
   useEffect(() => {
     setData(getMonthData(monthYear));
+    setCopyFromMonth(''); // Reset on open/month change
   }, [monthYear, getMonthData, isOpen]);
 
   if (!isOpen) return null;
+
+  const availableMonths = Object.keys(financialData)
+    .filter(m => m !== monthYear)
+    .sort((a, b) => b.localeCompare(a));
+
+  const handleCopyData = () => {
+    if (!copyFromMonth) return;
+    
+    if (window.confirm(`Are you sure you want to replace this month's data with the data from ${formatMonthYear(copyFromMonth)}? All current edits will be lost.`)) {
+        const dataToCopy = getMonthData(copyFromMonth);
+        
+        // Deep clone and regenerate IDs to ensure they are unique for the new month
+        const deepClonedData = JSON.parse(JSON.stringify(dataToCopy));
+        
+        deepClonedData.income.jobs.forEach((item: IncomeSource) => item.id = crypto.randomUUID());
+        deepClonedData.creditCards.forEach((item: CreditCard) => item.id = crypto.randomUUID());
+        deepClonedData.loans.forEach((item: Loan) => item.id = crypto.randomUUID());
+        deepClonedData.assets.forEach((item: Asset) => item.id = crypto.randomUUID());
+        deepClonedData.monthlyBills.forEach((item: NamedAmount) => item.id = crypto.randomUUID());
+
+        setData(deepClonedData);
+        setCopyFromMonth(''); // Reset select
+    }
+  };
 
   const handleSimpleChange = (e: React.ChangeEvent<HTMLInputElement>, ...path: string[]) => {
     const { name, value } = e.target;
@@ -124,6 +150,29 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 sticky top-0 bg-white dark:bg-gray-900 border-b z-10">
             <h2 className="text-2xl font-bold">Edit Data for {formatMonthYear(monthYear)}</h2>
+            {availableMonths.length > 0 && (
+              <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <label htmlFor="copy-month-select" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  Start with data from another month?
+                </label>
+                <div className="flex-grow flex items-center gap-2">
+                    <select
+                        id="copy-month-select"
+                        value={copyFromMonth}
+                        onChange={(e) => setCopyFromMonth(e.target.value)}
+                        className="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
+                    >
+                        <option value="">Select a month...</option>
+                        {availableMonths.map(m => (
+                            <option key={m} value={m}>{formatMonthYear(m)}</option>
+                        ))}
+                    </select>
+                    <Button onClick={handleCopyData} disabled={!copyFromMonth} size="small">
+                        Copy Data
+                    </Button>
+                </div>
+              </div>
+            )}
         </div>
         <div className="p-6 space-y-6">
             <div className="space-y-4">
