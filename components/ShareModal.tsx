@@ -44,11 +44,20 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
     };
     try {
       const jsonString = JSON.stringify(payload);
-      // To handle unicode characters, we must first encode them before base64 encoding.
-      // The 'unescape' function is deprecated but is part of the standard trick to handle unicode with btoa.
-      // @ts-ignore
-      const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
-      const link = `${window.location.origin}/snapshot/${encodeURIComponent(encodedData)}`;
+      
+      // A robust way to handle Unicode and create a URL-safe base64 string.
+      const strToUrlSafeBase64 = (str: string): string => {
+        const uint8Array = new TextEncoder().encode(str);
+        let binaryString = '';
+        uint8Array.forEach((byte) => {
+            binaryString += String.fromCharCode(byte);
+        });
+        const base64String = btoa(binaryString);
+        return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      };
+      
+      const encodedData = strToUrlSafeBase64(jsonString);
+      const link = `${window.location.origin}/snapshot/${encodedData}`;
       setShareableLink(link);
     } catch (error) {
         console.error("Error generating share link:", error);
@@ -100,7 +109,7 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
                   />
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={handleCopyLink}><CopyIcon /> {copiedLink ? 'Copied!' : 'Copy Link'}</Button>
-                    <a href={`mailto:?subject=Financial Snapshot for ${formatMonthYear(monthYear)}&body=Here is my financial snapshot:%0A%0A${encodeURIComponent(shareableLink)}`}>
+                    <a href={`mailto:?subject=Financial Snapshot for ${formatMonthYear(monthYear)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`}>
                         <Button variant="secondary"><EmailIcon /> Share via Email</Button>
                     </a>
                   </div>
