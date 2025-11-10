@@ -72,12 +72,9 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
       setTimeout(() => setCopiedLink(false), 2000);
   }
 
-  const handleShareByEmail = () => {
-    if (!shareableLink) return;
-    const subject = `Financial Snapshot for ${formatMonthYear(monthYear)}`;
-    const body = `${summaryText}\n\nView the full snapshot here:\n${shareableLink}`;
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
+  const mailtoLink = shareableLink
+    ? `mailto:?subject=${encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`
+    : '#';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
@@ -116,7 +113,12 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
                   />
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={handleCopyLink}><CopyIcon /> {copiedLink ? 'Copied!' : 'Copy Link'}</Button>
-                    <Button onClick={handleShareByEmail} variant="secondary"><EmailIcon /> Share via Email</Button>
+                    <a 
+                      href={mailtoLink}
+                      className="font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 focus:ring-gray-400 py-2 px-4 text-base"
+                    >
+                        <EmailIcon /> Share via Email
+                    </a>
                   </div>
                 </div>
               ) : (
