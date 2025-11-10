@@ -72,6 +72,13 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
       setTimeout(() => setCopiedLink(false), 2000);
   }
 
+  const handleShareByEmail = () => {
+    if (!shareableLink) return;
+    const subject = `Financial Snapshot for ${formatMonthYear(monthYear)}`;
+    const body = `${summaryText}\n\nView the full snapshot here:\n${shareableLink}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-lg">
@@ -109,9 +116,7 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
                   />
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={handleCopyLink}><CopyIcon /> {copiedLink ? 'Copied!' : 'Copy Link'}</Button>
-                    <a href={`mailto:?subject=Financial Snapshot for ${formatMonthYear(monthYear)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`}>
-                        <Button variant="secondary"><EmailIcon /> Share via Email</Button>
-                    </a>
+                    <Button onClick={handleShareByEmail} variant="secondary"><EmailIcon /> Share via Email</Button>
                   </div>
                 </div>
               ) : (
