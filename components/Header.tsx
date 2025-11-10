@@ -3,6 +3,7 @@ import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
 import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon } from './ui/Icons';
+import HelpTooltip from './ui/HelpTooltip';
 
 interface HeaderProps {
   currentMonthYear: string;
@@ -29,8 +30,11 @@ const Header: React.FC<HeaderProps> = ({
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
       <div className="container mx-auto flex flex-wrap justify-between items-center gap-4">
         
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-[200px] flex items-center gap-2">
           <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light">What's My Credit Worth?</h1>
+          <HelpTooltip 
+            text="Welcome to your personal finance dashboard! Use this app to track your financial health. Click 'Edit Data' to enter your monthly income, assets, and liabilities. Use the arrows to navigate your history, 'Import/Export' to save or load data, and 'Share' to create a read-only snapshot. The 'Reports' tab compares your progress over time."
+          />
         </div>
         
         <div className="flex items-center gap-4">
