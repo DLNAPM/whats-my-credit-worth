@@ -138,7 +138,11 @@ function App() {
     }
     
     try {
-      const decodedJson = atob(encodedData);
+      // Decode from URL, then from base64, then handle UTF-8 characters.
+      const urlDecodedData = decodeURIComponent(encodedData);
+      // The 'escape' function is deprecated but is part of the standard trick to handle unicode with atob.
+      // @ts-ignore
+      const decodedJson = decodeURIComponent(escape(atob(urlDecodedData)));
       const snapshotPayload: { monthYear: string; data: MonthlyData } = JSON.parse(decodedJson);
       
       if (snapshotPayload && snapshotPayload.monthYear && snapshotPayload.data) {

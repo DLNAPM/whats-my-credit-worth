@@ -44,8 +44,11 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
     };
     try {
       const jsonString = JSON.stringify(payload);
-      const encodedData = btoa(jsonString);
-      const link = `${window.location.origin}/snapshot/${encodedData}`;
+      // To handle unicode characters, we must first encode them before base64 encoding.
+      // The 'unescape' function is deprecated but is part of the standard trick to handle unicode with btoa.
+      // @ts-ignore
+      const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
+      const link = `${window.location.origin}/snapshot/${encodeURIComponent(encodedData)}`;
       setShareableLink(link);
     } catch (error) {
         console.error("Error generating share link:", error);
