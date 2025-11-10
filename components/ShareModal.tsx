@@ -1,9 +1,14 @@
+
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom/client';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { MonthlyData } from '../types';
 import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { CopyIcon, LinkIcon, EmailIcon } from './ui/Icons';
+import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon } from './ui/Icons';
 import Card from './ui/Card';
+import Snapshot from './Snapshot';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -16,6 +21,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data, monthYea
   const [copiedText, setCopiedText] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
 
   if (!isOpen || !data) return null;
 
@@ -45,7 +52,6 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
     try {
       const jsonString = JSON.stringify(payload);
       
-      // A robust way to handle Unicode and create a URL-safe base64 string.
       const strToUrlSafeBase64 = (str: string): string => {
         const uint8Array = new TextEncoder().encode(str);
         let binaryString = '';
@@ -71,6 +77,49 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
   }
+
+  const handleDownloadPdf = async () => {
+    if (!data) return;
+    setIsGeneratingPdf(true);
+
+    const snapshotContainer = document.createElement('div');
+    snapshotContainer.style.width = '1280px';
+    snapshotContainer.style.position = 'absolute';
+    snapshotContainer.style.left = '-9999px';
+    document.body.appendChild(snapshotContainer);
+
+    const root = ReactDOM.createRoot(snapshotContainer);
+    const snapshotData = { monthYear, data };
+    root.render(<Snapshot snapshotData={snapshotData} />);
+
+    // Wait for rendering and styles
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    try {
+        const canvas = await html2canvas(snapshotContainer, { 
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`financial-snapshot-${monthYear}.pdf`);
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        alert("Sorry, there was an error creating the PDF.");
+    } finally {
+        root.unmount();
+        document.body.removeChild(snapshotContainer);
+        setIsGeneratingPdf(false);
+    }
+  };
 
   const mailtoLink = shareableLink
     ? `mailto:?subject=${encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`
@@ -124,6 +173,17 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
               ) : (
                 <Button onClick={generateLink}><LinkIcon /> Create Shareable Link</Button>
               )}
+            </div>
+            
+            <div className="border-t pt-4 mt-4">
+                <h3 className="text-lg font-semibold mb-2">Download as PDF</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    Download a high-quality PDF of the snapshot for printing or offline sharing.
+                </p>
+                <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+                    <DownloadIcon />
+                    {isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}
+                </Button>
             </div>
 
         </div>
