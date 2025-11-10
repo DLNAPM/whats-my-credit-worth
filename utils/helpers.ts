@@ -14,20 +14,20 @@ export const getInitialData = (): MonthlyData => ({
     mrCooper: 0,
   },
   creditCards: [
-    { id: crypto.randomUUID(), name: 'AMEX', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'Firestone', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'USAA', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'Chase', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'CC1', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'CC2', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'CC3', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'CC4', balance: 0, limit: 0 },
   ],
   loans: [
-    { id: crypto.randomUUID(), name: 'Mr. Cooper (2844 Brookford Mortgage)', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'TFCU (2844 Brookford HELOC)', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'United Community (2529 Lake Erma Construction)', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'Loan1', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'Loan2', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'Loan3', balance: 0, limit: 0 },
   ],
   assets: [
     { id: crypto.randomUUID(), name: '401k', value: 0 },
     { id: crypto.randomUUID(), name: 'IRA', value: 0 },
-    { id: crypto.randomUUID(), name: '2529 Lake Erma Real Estate', value: 0 },
+    { id: crypto.randomUUID(), name: 'Asset3', value: 0 },
   ],
   monthlyBills: [{ id: crypto.randomUUID(), name: 'Electric', amount: 0 }],
 });

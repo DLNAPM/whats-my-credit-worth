@@ -58,13 +58,6 @@ function MainApp() {
     }
   };
 
-  // If no data exists, open the editor for the current month on first load.
-  React.useEffect(() => {
-    if (!hasData()) {
-      setIsEditorOpen(true);
-    }
-  }, [hasData]);
-
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans">
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
