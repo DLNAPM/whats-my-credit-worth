@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { MonthlyData } from '../types';
 import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
@@ -21,7 +20,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data, monthYea
   const [copiedText, setCopiedText] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
 
   if (!isOpen || !data) return null;
@@ -78,9 +77,9 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
       setTimeout(() => setCopiedLink(false), 2000);
   }
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadImage = async () => {
     if (!data) return;
-    setIsGeneratingPdf(true);
+    setIsGeneratingImage(true);
 
     const snapshotContainer = document.createElement('div');
     snapshotContainer.style.width = '1280px';
@@ -102,22 +101,20 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
             backgroundColor: '#ffffff'
         });
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: [canvas.width, canvas.height]
-        });
-
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`financial-snapshot-${monthYear}.pdf`);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const link = document.createElement('a');
+        link.href = imgData;
+        link.download = `financial-snapshot-${monthYear}.jpeg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     } catch (error) {
-        console.error("Error generating PDF:", error);
-        alert("Sorry, there was an error creating the PDF.");
+        console.error("Error generating JPEG:", error);
+        alert("Sorry, there was an error creating the image.");
     } finally {
         root.unmount();
         document.body.removeChild(snapshotContainer);
-        setIsGeneratingPdf(false);
+        setIsGeneratingImage(false);
     }
   };
 
@@ -176,13 +173,13 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
             </div>
             
             <div className="border-t pt-4 mt-4">
-                <h3 className="text-lg font-semibold mb-2">Download as PDF</h3>
+                <h3 className="text-lg font-semibold mb-2">Download as JPEG</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    Download a high-quality PDF of the snapshot for printing or offline sharing.
+                    Download a high-quality JPEG image of the snapshot for printing or offline sharing.
                 </p>
-                <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+                <Button onClick={handleDownloadImage} disabled={isGeneratingImage}>
                     <DownloadIcon />
-                    {isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}
+                    {isGeneratingImage ? 'Generating JPEG...' : 'Download JPEG'}
                 </Button>
             </div>
 
