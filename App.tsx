@@ -10,6 +10,7 @@ import UploadHelpModal from './components/UploadHelpModal';
 import ShareModal from './components/ShareModal';
 import Snapshot from './components/Snapshot';
 import type { MonthlyData } from './types';
+import ImportExportModal from './components/ImportExportModal';
 
 function MainApp() {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData } = useFinancialData();
@@ -17,6 +18,7 @@ function MainApp() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [view, setView] = useState<View>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -50,14 +52,6 @@ function MainApp() {
     fileInputRef.current?.click();
   };
 
-  const handleImportExport = () => {
-    if (hasData()) {
-      exportData();
-    } else {
-      setIsUploadHelpOpen(true);
-    }
-  };
-
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans">
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -67,7 +61,7 @@ function MainApp() {
           onNextMonth={handleNextMonth}
           onEdit={() => setIsEditorOpen(true)}
           onShare={() => setIsShareModalOpen(true)}
-          onImportExport={handleImportExport}
+          onImportExport={() => setIsImportExportModalOpen(true)}
           view={view}
           setView={setView}
         />
@@ -95,6 +89,24 @@ function MainApp() {
           onClose={() => setIsShareModalOpen(false)}
           data={currentMonthData}
           monthYear={currentMonthYear}
+        />
+
+        <ImportExportModal
+            isOpen={isImportExportModalOpen}
+            onClose={() => setIsImportExportModalOpen(false)}
+            onUpload={() => {
+                setIsImportExportModalOpen(false);
+                triggerFileUpload();
+            }}
+            onDownload={() => {
+                setIsImportExportModalOpen(false);
+                exportData();
+            }}
+            onShowHelp={() => {
+                setIsImportExportModalOpen(false);
+                setIsUploadHelpOpen(true);
+            }}
+            hasData={hasData()}
         />
 
         <input
