@@ -8,8 +8,10 @@ import type { View } from './types';
 import Reports from './components/Reports';
 import UploadHelpModal from './components/UploadHelpModal';
 import ShareModal from './components/ShareModal';
+import Snapshot from './components/Snapshot';
+import type { MonthlyData } from './types';
 
-function App() {
+function MainApp() {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData } = useFinancialData();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -113,5 +115,45 @@ function App() {
     </div>
   );
 }
+
+function App() {
+  const path = window.location.pathname;
+
+  if (path.startsWith('/snapshot/')) {
+    const encodedData = path.substring('/snapshot/'.length);
+    const ErrorDisplay = ({ message }: { message: string }) => (
+       <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md mx-4">
+            <h1 className="text-2xl font-bold text-negative mb-4">Invalid Snapshot Link</h1>
+            <p className="text-gray-600 dark:text-gray-300">{message}</p>
+             <a href="/" className="mt-6 inline-block bg-brand-primary text-white font-bold py-2 px-4 rounded hover:bg-brand-secondary transition-colors">
+              Go to Main App
+            </a>
+          </div>
+        </div>
+    );
+    
+    if (!encodedData) {
+      return <ErrorDisplay message="The link you followed is incomplete." />;
+    }
+    
+    try {
+      const decodedJson = atob(encodedData);
+      const snapshotPayload: { monthYear: string; data: MonthlyData } = JSON.parse(decodedJson);
+      
+      if (snapshotPayload && snapshotPayload.monthYear && snapshotPayload.data) {
+        return <Snapshot snapshotData={snapshotPayload} />;
+      } else {
+        throw new Error("Invalid data structure");
+      }
+    } catch (error) {
+      console.error("Failed to decode snapshot data:", error);
+      return <ErrorDisplay message="The link you followed appears to be corrupted or invalid." />;
+    }
+  }
+
+  return <MainApp />;
+}
+
 
 export default App;

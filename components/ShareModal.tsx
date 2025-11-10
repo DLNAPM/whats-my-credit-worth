@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { MonthlyData } from '../types';
 import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { CopyIcon } from './ui/Icons';
+import { CopyIcon, LinkIcon, EmailIcon } from './ui/Icons';
 import Card from './ui/Card';
 
 interface ShareModalProps {
@@ -13,7 +13,9 @@ interface ShareModalProps {
 }
 
 const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data, monthYear }) => {
-  const [copied, setCopied] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [shareableLink, setShareableLink] = useState('');
 
   if (!isOpen || !data) return null;
 
@@ -28,11 +30,35 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
 - Total Debt: ${formatCurrency(data.creditCards.reduce((s, c) => s + c.balance, 0) + data.loans.reduce((s, l) => s + l.balance, 0))}
   `.trim();
 
-  const handleCopy = () => {
+  const handleCopyText = () => {
     navigator.clipboard.writeText(summaryText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedText(true);
+    setTimeout(() => setCopiedText(false), 2000);
   };
+  
+  const generateLink = () => {
+    if (!data) return;
+    const payload = {
+      monthYear,
+      data,
+    };
+    try {
+      const jsonString = JSON.stringify(payload);
+      const encodedData = btoa(jsonString);
+      const link = `${window.location.origin}/snapshot/${encodedData}`;
+      setShareableLink(link);
+    } catch (error) {
+        console.error("Error generating share link:", error);
+        alert("Could not generate share link. The data might be too large.");
+    }
+  };
+  
+  const handleCopyLink = () => {
+      if (!shareableLink) return;
+      navigator.clipboard.writeText(shareableLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
@@ -40,18 +66,50 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
         <div className="p-6 border-b">
           <h2 className="text-2xl font-bold">Share Your Financial Snapshot</h2>
         </div>
-        <div className="p-6 space-y-4">
-          <p className="text-gray-600 dark:text-gray-300">Here's a text summary of your financial data for {formatMonthYear(monthYear)}. You can copy it to your clipboard.</p>
-          <Card title="Summary">
-            <pre className="whitespace-pre-wrap p-4 bg-gray-100 dark:bg-gray-800 rounded text-sm">{summaryText}</pre>
-          </Card>
+        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div>
+              <h3 className="text-lg font-semibold mb-2">Share as Text</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Copy a text summary of your financial data for {formatMonthYear(monthYear)} to your clipboard.</p>
+              <Card title="Summary">
+                <pre className="whitespace-pre-wrap p-4 bg-gray-100 dark:bg-gray-800 rounded text-sm">{summaryText}</pre>
+              </Card>
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleCopyText}>
+                    <CopyIcon />
+                    {copiedText ? 'Copied!' : 'Copy Text'}
+                </Button>
+              </div>
+          </div>
+
+           <div className="border-t pt-4 mt-4">
+              <h3 className="text-lg font-semibold mb-2">Share via Link</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Generate a private link to a read-only version of this snapshot. Anyone with the link will be able to view it.
+              </p>
+              {shareableLink ? (
+                <div className="space-y-3">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={shareableLink} 
+                    className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleCopyLink}><CopyIcon /> {copiedLink ? 'Copied!' : 'Copy Link'}</Button>
+                    <a href={`mailto:?subject=Financial Snapshot for ${formatMonthYear(monthYear)}&body=Here is my financial snapshot:%0A%0A${encodeURIComponent(shareableLink)}`}>
+                        <Button variant="secondary"><EmailIcon /> Share via Email</Button>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <Button onClick={generateLink}><LinkIcon /> Create Shareable Link</Button>
+              )}
+            </div>
+
         </div>
-        <div className="p-6 flex justify-end gap-4 bg-gray-50 dark:bg-gray-800/50">
+        <div className="p-6 flex justify-end gap-4 bg-gray-50 dark:bg-gray-800/50 border-t">
           <Button onClick={onClose} variant="secondary">Close</Button>
-          <Button onClick={handleCopy}>
-            <CopyIcon />
-            {copied ? 'Copied!' : 'Copy to Clipboard'}
-          </Button>
         </div>
       </div>
     </div>
