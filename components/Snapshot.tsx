@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { MonthlyData } from '../types';
 import {
@@ -77,9 +78,9 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                 
                 <Card title="Credit Scores">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <Metric label="Experian FICO 2/8" value={`${data.creditScores.experian.score2} / ${data.creditScores.experian.score8}`} size="small" />
-                        <Metric label="Equifax FICO 2/8" value={`${data.creditScores.equifax.score2} / ${data.creditScores.equifax.score8}`} size="small" />
-                        <Metric label="TransUnion FICO 2/8" value={`${data.creditScores.transunion.score2} / ${data.creditScores.transunion.score8}`} size="small" />
+                        <Metric label="Experian FICO 8" value={data.creditScores.experian.score8} size="small" />
+                        <Metric label="Equifax FICO 8" value={data.creditScores.equifax.score8} size="small" />
+                        <Metric label="TransUnion FICO 8" value={data.creditScores.transunion.score8} size="small" />
                         <Metric label="Mr. Cooper FICO 4" value={data.creditScores.mrCooper} size="small" />
                         <Metric label="Lending Tree" value={data.creditScores.lendingTree} size="small" />
                         <Metric label="Credit Karma" value={data.creditScores.creditKarma} size="small" />

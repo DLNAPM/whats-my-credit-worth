@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource, PayFrequency } from '../types';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -178,11 +179,8 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Credit Scores</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <InputField label="Experian FICO 2" name="score2" type="number" value={data.creditScores.experian.score2} onChange={e => handleSimpleChange(e, 'creditScores', 'experian')} />
                     <InputField label="Experian FICO 8" name="score8" type="number" value={data.creditScores.experian.score8} onChange={e => handleSimpleChange(e, 'creditScores', 'experian')} />
-                    <InputField label="Equifax FICO 2" name="score2" type="number" value={data.creditScores.equifax.score2} onChange={e => handleSimpleChange(e, 'creditScores', 'equifax')} />
                     <InputField label="Equifax FICO 8" name="score8" type="number" value={data.creditScores.equifax.score8} onChange={e => handleSimpleChange(e, 'creditScores', 'equifax')} />
-                    <InputField label="TransUnion FICO 2" name="score2" type="number" value={data.creditScores.transunion.score2} onChange={e => handleSimpleChange(e, 'creditScores', 'transunion')} />
                     <InputField label="TransUnion FICO 8" name="score8" type="number" value={data.creditScores.transunion.score8} onChange={e => handleSimpleChange(e, 'creditScores', 'transunion')} />
                     <InputField label="Lending Tree" name="lendingTree" type="number" value={data.creditScores.lendingTree} onChange={e => handleSimpleChange(e, 'creditScores')} />
                     <InputField label="Credit Karma" name="creditKarma" type="number" value={data.creditScores.creditKarma} onChange={e => handleSimpleChange(e, 'creditScores')} />

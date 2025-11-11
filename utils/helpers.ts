@@ -1,3 +1,4 @@
+
 import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource } from '../types';
 
 export const getInitialData = (): MonthlyData => ({
@@ -5,9 +6,9 @@ export const getInitialData = (): MonthlyData => ({
     jobs: [{ id: crypto.randomUUID(), name: 'Job 1', amount: 0, frequency: 'bi-weekly' }],
   },
   creditScores: {
-    experian: { score2: 0, score8: 0 },
-    equifax: { score2: 0, score8: 0 },
-    transunion: { score2: 0, score8: 0 },
+    experian: { score8: 0 },
+    equifax: { score8: 0 },
+    transunion: { score8: 0 },
     lendingTree: 0,
     creditKarma: 0,
     creditSesame: 0,

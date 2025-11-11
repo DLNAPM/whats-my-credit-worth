@@ -1,3 +1,4 @@
+
 export type View = 'dashboard' | 'reports';
 
 export type PayFrequency = 'weekly' | 'bi-weekly' | 'twice-a-month' | 'monthly' | 'yearly';
@@ -40,9 +41,9 @@ export interface MonthlyData {
     jobs: IncomeSource[];
   };
   creditScores: {
-    experian: { score2: number; score8: number };
-    equifax: { score2: number; score8: number };
-    transunion: { score2: number; score8: number };
+    experian: { score8: number };
+    equifax: { score8: number };
+    transunion: { score8: number };
     lendingTree: number;
     creditKarma: number;
     creditSesame: number;

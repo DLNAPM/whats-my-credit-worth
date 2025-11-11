@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Button from './ui/Button';
 import { DownloadIcon, UploadIcon, InfoIcon } from './ui/Icons';
@@ -18,7 +19,7 @@ const exampleJson = `{
       ]
     },
     "creditScores": {
-      "experian": { "score2": 750, "score8": 760 },
+      "experian": { "score8": 760 },
       ...
     },
     "creditCards": [
