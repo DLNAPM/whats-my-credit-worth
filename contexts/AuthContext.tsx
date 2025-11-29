@@ -41,10 +41,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      sessionStorage.removeItem('guestUser');
-    } catch (error) {
+      // On success, the onAuthStateChanged listener will handle setting the user
+      // and clearing guest data from session storage.
+    } catch (error: any) {
       console.error("Google sign-in error", error);
-       setLoading(false);
+      
+      let errorMessage = "An unknown error occurred during sign-in.";
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/popup-closed-by-user':
+            errorMessage = "The sign-in window was closed before completing. Please try again.";
+            break;
+          case 'auth/popup-blocked':
+            errorMessage = "The sign-in popup was blocked by your browser. Please allow popups for this site and try again.";
+            break;
+          case 'auth/cancelled-popup-request':
+            errorMessage = "Sign-in was cancelled.";
+            break;
+          case 'auth/operation-not-allowed':
+             errorMessage = "Sign-in with Google is not enabled for this app. Please check your Firebase project settings to ensure the Google provider is enabled.";
+             break;
+          default:
+            errorMessage = `Sign-in failed. Please check your connection or try again later. (Error code: ${error.code})`;
+        }
+      }
+      alert(`Google Sign-In Failed: ${errorMessage}`);
+      setLoading(false);
     }
   };
 
