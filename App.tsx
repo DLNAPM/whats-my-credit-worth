@@ -11,8 +11,11 @@ import ShareModal from './components/ShareModal';
 import Snapshot from './components/Snapshot';
 import type { MonthlyData } from './types';
 import ImportExportModal from './components/ImportExportModal';
+import { useAuth } from './contexts/AuthContext';
+import AuthScreen from './components/AuthScreen';
+import { LoadingScreen } from './components/ui/Spinner';
 
-function MainApp() {
+const MainApp: React.FC = () => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData } = useFinancialData();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -119,7 +122,8 @@ function MainApp() {
       </div>
     </div>
   );
-}
+};
+
 
 function App() {
   const path = window.location.pathname;
@@ -171,8 +175,17 @@ function App() {
     }
   }
 
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
+
   return <MainApp />;
 }
-
 
 export default App;

@@ -13,7 +13,8 @@
     "recharts": "^3.3.0",
     "react": "^19.2.0",
     "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "firebase": "^12.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
