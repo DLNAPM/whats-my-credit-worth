@@ -15,6 +15,7 @@ interface HeaderProps {
   onImportExport: () => void;
   view: View;
   setView: (view: View) => void;
+  onLogout: () => Promise<void>;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -25,9 +26,10 @@ const Header: React.FC<HeaderProps> = ({
   onShare,
   onImportExport,
   view,
-  setView
+  setView,
+  onLogout
 }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
@@ -70,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate" title={user.displayName || 'User'}>
                         {user.displayName}
                     </span>
-                    <Button onClick={logout} variant="secondary" size="small">Logout</Button>
+                    <Button onClick={onLogout} variant="secondary" size="small">Logout</Button>
                 </div>
             )}
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit Data</Button>

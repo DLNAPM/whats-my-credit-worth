@@ -16,7 +16,8 @@ import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
 
 const MainApp: React.FC = () => {
-  const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData } = useFinancialData();
+  const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveNow } = useFinancialData();
+  const { logout } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
@@ -54,6 +55,11 @@ const MainApp: React.FC = () => {
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
   };
+  
+  const handleLogout = async () => {
+    await saveNow();
+    await logout();
+  };
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans">
@@ -67,6 +73,7 @@ const MainApp: React.FC = () => {
           onImportExport={() => setIsImportExportModalOpen(true)}
           view={view}
           setView={setView}
+          onLogout={handleLogout}
         />
         
         <main>

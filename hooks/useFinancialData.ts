@@ -13,7 +13,10 @@ export function useFinancialData() {
 
   // Effect to load data on user change
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setFinancialData({}); // Clear data on logout
+      return;
+    }
 
     if ('isGuest' in user && user.isGuest) {
       try {
@@ -30,21 +33,21 @@ export function useFinancialData() {
         if (docSnap.exists()) {
           setFinancialData(docSnap.data() as FinancialData);
         } else {
-          // If Firestore is empty, check if there's local data to migrate
+          // New Google User: check for guest data to migrate
           const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+          let dataToMigrate: FinancialData = {};
           if (storedData) {
             try {
-              const localData = JSON.parse(storedData);
-              setFinancialData(localData);
-              // Save migrated data to Firestore
-              setDoc(docRef, localData).catch(err => console.error("Error migrating data to Firestore", err));
+              dataToMigrate = JSON.parse(storedData);
+              // Clear local data after migrating
+              localStorage.removeItem(LOCAL_STORAGE_KEY);
             } catch (error) {
               console.error("Error parsing local data for migration", error);
-              setFinancialData({});
             }
-          } else {
-            setFinancialData({});
           }
+          setFinancialData(dataToMigrate);
+          // Create the document in Firestore with migrated or empty data.
+          setDoc(docRef, dataToMigrate).catch(err => console.error("Error creating initial user doc in Firestore", err));
         }
       }).catch(error => {
         console.error("Error fetching data from Firestore:", error);
@@ -52,7 +55,7 @@ export function useFinancialData() {
     }
   }, [user]);
 
-  // Effect to save data on change
+  // Effect to save data on change (autosave)
   useEffect(() => {
     if (!user) return;
 
@@ -73,6 +76,22 @@ export function useFinancialData() {
           .catch(error => console.error("Error saving data to Firestore:", error));
     }
   }, [financialData, user]);
+  
+  const saveNow = useCallback(async () => {
+    if (user && !('isGuest' in user)) {
+      const sortedData = Object.keys(financialData).sort().reduce((obj, key) => {
+          obj[key] = financialData[key];
+          return obj;
+      }, {} as FinancialData);
+      
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, sortedData);
+      } catch (error) {
+        console.error("Error explicitly saving data on logout:", error);
+      }
+    }
+  }, [user, financialData]);
 
   const saveData = useCallback((data: FinancialData) => {
     setFinancialData(data);
@@ -134,5 +153,5 @@ a.click();
     return Object.keys(financialData).length > 0;
   }, [financialData]);
 
-  return { financialData, updateMonthData, getMonthData, importData, exportData, hasData, exportTemplateData };
+  return { financialData, updateMonthData, getMonthData, importData, exportData, hasData, exportTemplateData, saveNow };
 }
