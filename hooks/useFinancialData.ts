@@ -61,8 +61,6 @@ export function useFinancialData() {
         return obj;
     }, {} as FinancialData);
 
-    if (Object.keys(sortedData).length === 0) return; // Don't save empty data
-
     if ('isGuest' in user && user.isGuest) {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sortedData));
