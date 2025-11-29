@@ -10,6 +10,7 @@ const LOCAL_STORAGE_KEY = 'financialData';
 export function useFinancialData() {
   const { user } = useAuth();
   const [financialData, setFinancialData] = useState<FinancialData>({});
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'saving' | 'error'>('saved');
 
   // Effect to load data on user change
   useEffect(() => {
@@ -22,6 +23,7 @@ export function useFinancialData() {
       try {
         const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
         setFinancialData(storedData ? JSON.parse(storedData) : {});
+        setSaveStatus('saved');
       } catch (error) {
         console.error("Failed to read from localStorage", error);
         setFinancialData({});
@@ -32,6 +34,7 @@ export function useFinancialData() {
       getDoc(docRef).then(docSnap => {
         if (docSnap.exists()) {
           setFinancialData(docSnap.data() as FinancialData);
+          setSaveStatus('saved');
         } else {
           // New Google User: check for guest data to migrate
           const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -47,59 +50,60 @@ export function useFinancialData() {
           }
           setFinancialData(dataToMigrate);
           // Create the document in Firestore with migrated or empty data.
-          setDoc(docRef, dataToMigrate).catch(err => console.error("Error creating initial user doc in Firestore", err));
+          setDoc(docRef, dataToMigrate)
+            .then(() => setSaveStatus('saved'))
+            .catch(err => {
+              console.error("Error creating initial user doc in Firestore", err);
+              setSaveStatus('error');
+            });
         }
       }).catch(error => {
         console.error("Error fetching data from Firestore:", error);
+        setSaveStatus('error');
       });
     }
   }, [user]);
 
-  // Effect to save data on change (autosave)
+  // Effect to save data on change (autosave for GUESTS ONLY)
   useEffect(() => {
-    if (!user) return;
-
-    const sortedData = Object.keys(financialData).sort().reduce((obj, key) => {
-        obj[key] = financialData[key];
-        return obj;
-    }, {} as FinancialData);
-
-    if ('isGuest' in user && user.isGuest) {
+    if (user && 'isGuest' in user && user.isGuest) {
+      const sortedData = Object.keys(financialData).sort().reduce((obj, key) => {
+          obj[key] = financialData[key];
+          return obj;
+      }, {} as FinancialData);
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sortedData));
       } catch (error) {
         console.error("Failed to save to localStorage", error);
       }
-    } else {
-        const docRef = doc(db, 'users', user.uid);
-        setDoc(docRef, sortedData)
-          .catch(error => console.error("Error saving data to Firestore:", error));
     }
   }, [financialData, user]);
   
-  const saveNow = useCallback(async () => {
-    if (user && !('isGuest' in user)) {
+  const saveData = useCallback(async () => {
+    if (user && !('isGuest' in user) && saveStatus !== 'saving') {
+      setSaveStatus('saving');
       const sortedData = Object.keys(financialData).sort().reduce((obj, key) => {
           obj[key] = financialData[key];
           return obj;
       }, {} as FinancialData);
       
-      try {
-        const docRef = doc(db, 'users', user.uid);
-        await setDoc(docRef, sortedData);
-      } catch (error) {
-        console.error("Error explicitly saving data on logout:", error);
-      }
+      const docRef = doc(db, 'users', user.uid);
+      await setDoc(docRef, sortedData).then(() => {
+        setSaveStatus('saved');
+      }).catch((error) => {
+        console.error("Error saving data to Firestore:", error);
+        setSaveStatus('error');
+        throw error; // Re-throw to be caught by caller (e.g., logout handler)
+      });
     }
-  }, [user, financialData]);
-
-  const saveData = useCallback((data: FinancialData) => {
-    setFinancialData(data);
-  }, []);
+  }, [user, financialData, saveStatus]);
 
   const updateMonthData = useCallback((monthYear: string, data: MonthlyData) => {
     setFinancialData(prev => ({ ...prev, [monthYear]: data }));
-  }, []);
+    if (user && !('isGuest' in user)) {
+      setSaveStatus('unsaved');
+    }
+  }, [user]);
   
   const getMonthData = useCallback((monthYear: string): MonthlyData => {
       return financialData[monthYear] || getInitialData();
@@ -109,8 +113,11 @@ export function useFinancialData() {
     try {
       const parsedData = JSON.parse(jsonString);
       if (typeof parsedData === 'object' && parsedData !== null) {
-        saveData(parsedData as FinancialData);
-        alert('Data imported successfully!');
+        setFinancialData(parsedData as FinancialData);
+        if (user && !('isGuest' in user)) {
+            setSaveStatus('unsaved');
+        }
+        alert('Data imported successfully! Remember to save your changes.');
       } else {
         throw new Error("Invalid data format");
       }
@@ -118,7 +125,7 @@ export function useFinancialData() {
       console.error("Import failed", error);
       throw error;
     }
-  }, [saveData]);
+  }, [user]);
 
   const exportData = useCallback(() => {
     const jsonString = JSON.stringify(financialData, null, 2);
@@ -153,5 +160,5 @@ a.click();
     return Object.keys(financialData).length > 0;
   }, [financialData]);
 
-  return { financialData, updateMonthData, getMonthData, importData, exportData, hasData, exportTemplateData, saveNow };
+  return { financialData, updateMonthData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus };
 }

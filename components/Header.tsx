@@ -2,11 +2,12 @@ import React from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon } from './ui/Icons';
+import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, SaveIcon, CheckIcon, AlertTriangleIcon } from './ui/Icons';
 import HelpTooltip from './ui/HelpTooltip';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
+  saveStatus?: 'saved' | 'unsaved' | 'saving' | 'error';
   currentMonthYear: string;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
@@ -16,9 +17,11 @@ interface HeaderProps {
   view: View;
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
+  onSave?: () => Promise<void>;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
+  saveStatus,
   currentMonthYear, 
   onPreviousMonth, 
   onNextMonth,
@@ -27,9 +30,28 @@ const Header: React.FC<HeaderProps> = ({
   onImportExport,
   view,
   setView,
-  onLogout
+  onLogout,
+  onSave
 }) => {
   const { user } = useAuth();
+  const isGuest = user && 'isGuest' in user;
+
+  const SaveStatusButton = () => {
+      if (isGuest || !onSave) return null;
+
+      if (saveStatus === 'saving') {
+          return <Button variant="secondary" size="small" disabled>Saving...</Button>;
+      }
+      if (saveStatus === 'saved') {
+          return <Button variant="secondary" size="small" disabled className="!bg-green-100 dark:!bg-green-800/50 !text-positive"><CheckIcon /> Saved</Button>;
+      }
+      if (saveStatus === 'error') {
+          return <Button onClick={onSave} variant="danger" size="small"><AlertTriangleIcon /> Save Error</Button>;
+      }
+      // unsaved
+      return <Button onClick={onSave} variant="primary" size="small"><SaveIcon /> Save</Button>;
+  };
+
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
@@ -75,6 +97,7 @@ const Header: React.FC<HeaderProps> = ({
                     <Button onClick={onLogout} variant="secondary" size="small">Logout</Button>
                 </div>
             )}
+            <SaveStatusButton />
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit Data</Button>
             <Button onClick={onImportExport} variant="secondary"><ImportIcon /> Import/Export</Button>
             <Button onClick={onShare} variant="secondary"><ShareIcon /> Share</Button>
