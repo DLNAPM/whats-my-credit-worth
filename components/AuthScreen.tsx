@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Button from './ui/Button';
+import HelpTooltip from './ui/HelpTooltip';
 
 const GoogleIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 48 48">
@@ -18,7 +19,10 @@ const AuthScreen: React.FC = () => {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 space-y-6 animate-fade-in">
         <div className="text-center">
-            <h1 className="text-3xl font-bold text-brand-primary dark:text-brand-light">What's My Credit Worth?</h1>
+            <div className="flex items-center justify-center gap-2">
+                <h1 className="text-3xl font-bold text-brand-primary dark:text-brand-light">What's My Credit Worth?</h1>
+                <HelpTooltip text="This app helps you track your financial health by monitoring your income, credit scores, assets, and liabilities. Sign in with Google to save your data and access it from any device, or continue as a guest to try it out with data stored only in this browser session." />
+            </div>
             <p className="mt-2 text-gray-600 dark:text-gray-300">Your personal finance dashboard.</p>
         </div>
         <div className="space-y-4">
