@@ -12,20 +12,20 @@ const GoogleIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
 );
 
 const ChartIcon = () => (
-    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
 );
 
-const ScoreIcon = () => (
-    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+const ShieldIcon = () => (
+    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
     </svg>
 );
 
-const ReportIcon = () => (
-    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+const TrendIcon = () => (
+    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
     </svg>
 );
 
@@ -33,86 +33,111 @@ const AuthScreen: React.FC = () => {
   const { loginWithGoogle, loginAsGuest } = useAuth();
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans text-gray-900">
-        {/* Navigation */}
-        <nav className="w-full py-6 px-6 md:px-12 flex justify-between items-center max-w-7xl mx-auto">
-            <div className="text-2xl font-bold text-brand-primary flex items-center gap-2">
-                 <span>💰</span> 
-                 <span>What's My Credit Worth?</span>
-                 <div className="ml-1">
-                    <HelpTooltip text="Welcome! This app helps you track your Net Worth, Credit Scores, Assets, and Debts. Log in with Google to sync your data across devices, or try Guest Mode to store data privately on this device." />
-                 </div>
-            </div>
-            <div className="hidden md:block">
-                <button onClick={loginWithGoogle} className="text-sm font-semibold text-gray-600 hover:text-brand-primary transition-colors">
-                    Member Login
-                </button>
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-brand-primary flex flex-col">
+        
+        {/* Navigation - Glassmorphism */}
+        <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+            <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                     <span className="text-3xl">💰</span> 
+                     <span className="text-xl font-bold tracking-tight text-brand-primary">WMCW</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={loginAsGuest}
+                        className="hidden md:block text-sm font-medium text-gray-500 hover:text-brand-primary transition-colors"
+                    >
+                        Guest Mode
+                    </button>
+                    <button 
+                        onClick={loginWithGoogle} 
+                        className="bg-brand-primary hover:bg-brand-secondary text-white text-sm font-semibold py-2.5 px-6 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    >
+                        Login
+                    </button>
+                </div>
             </div>
         </nav>
 
         {/* Hero Section */}
-        <header className="flex-grow flex flex-col justify-center items-center text-center px-6 py-16 md:py-24 max-w-4xl mx-auto animate-fade-in">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight mb-6">
-                Understand Your <span className="text-brand-primary">Financial True North</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-                Stop guessing. Start tracking. A comprehensive, private dashboard for your income, credit scores, assets, and liabilities. Calculate your net worth instantly.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                 <button 
-                    onClick={loginWithGoogle} 
-                    className="flex-1 flex items-center justify-center gap-3 bg-brand-primary hover:bg-brand-secondary text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                 >
-                    <GoogleIcon className="w-6 h-6 bg-white rounded-full p-0.5" />
-                    <span>Sign in with Google</span>
-                </button>
-                <button 
-                    onClick={loginAsGuest} 
-                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 px-8 rounded-xl transition-all"
-                >
-                    Try as Guest
-                </button>
+        <header className="flex-grow pt-40 pb-20 px-6">
+            <div className="max-w-4xl mx-auto text-center animate-fade-in">
+                <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-blue-50 text-brand-primary text-sm font-semibold tracking-wide uppercase">
+                    Personal Finance Dashboard
+                </div>
+                <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 leading-[1.1] mb-8">
+                    Know Your Worth.<br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-accent">
+                        Grow Your Future.
+                    </span>
+                </h1>
+                <p className="text-xl md:text-2xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+                    The comprehensive, private way to track your assets, liabilities, and credit scores across all major bureaus.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto">
+                     <button 
+                        onClick={loginWithGoogle} 
+                        className="flex-1 flex items-center justify-center gap-3 bg-brand-primary hover:bg-brand-secondary text-white font-bold py-4 px-8 rounded-xl transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+                     >
+                        <GoogleIcon className="w-6 h-6 bg-white rounded-full p-0.5" />
+                        <span>Sign in with Google</span>
+                    </button>
+                    <button 
+                        onClick={loginAsGuest} 
+                        className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-8 rounded-xl border border-gray-200 transition-all shadow-md hover:shadow-lg"
+                    >
+                        Try as Guest
+                    </button>
+                </div>
+                <p className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
+                    <ShieldIcon /> Secure & Private. Guest data stays on your device.
+                </p>
             </div>
-            <p className="mt-6 text-sm text-gray-400">
-                Secure & Private. Guest mode stores data locally on your device.
-            </p>
         </header>
 
         {/* Feature Section */}
-        <section className="bg-gray-50 py-20 px-6">
+        <section className="bg-gray-50 py-24 px-6 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
             <div className="max-w-7xl mx-auto">
-                <div className="grid md:grid-cols-3 gap-12">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Everything you need to succeed</h2>
+                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                        Stop using spreadsheets. Get a clear, unified view of your financial health in seconds.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
                     {/* Feature 1 */}
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
-                        <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-6 text-brand-primary">
+                    <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-brand-primary group-hover:scale-110 transition-transform duration-300">
                            <ChartIcon />
                         </div>
                         <h3 className="text-xl font-bold mb-3 text-gray-900">Net Worth Tracking</h3>
                         <p className="text-gray-600 leading-relaxed">
-                            Automatically calculate your net worth by aggregating your assets (investments, cash) and liabilities (loans, credit cards) in one unified view.
+                            Automatically calculate your net worth by aggregating your investments, cash, loans, and credit cards in one beautiful dashboard.
                         </p>
                     </div>
 
                     {/* Feature 2 */}
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
-                        <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6 text-green-600">
-                            <ScoreIcon />
+                    <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 text-green-600 group-hover:scale-110 transition-transform duration-300">
+                            <ShieldIcon />
                         </div>
-                        <h3 className="text-xl font-bold mb-3 text-gray-900">Credit Score History</h3>
+                        <h3 className="text-xl font-bold mb-3 text-gray-900">Multi-Bureau Monitoring</h3>
                         <p className="text-gray-600 leading-relaxed">
-                            Keep a historical log of your FICO® scores from Experian, Equifax, and TransUnion. Visualize trends and improvement over time.
+                            Log and visualize your FICO® scores from Experian, Equifax, and TransUnion. Spot trends and improvements instantly.
                         </p>
                     </div>
 
                     {/* Feature 3 */}
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
-                        <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6 text-purple-600">
-                             <ReportIcon />
+                    <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 group-hover:scale-110 transition-transform duration-300">
+                             <TrendIcon />
                         </div>
-                        <h3 className="text-xl font-bold mb-3 text-gray-900">Comparison Reports</h3>
+                        <h3 className="text-xl font-bold mb-3 text-gray-900">Growth Analytics</h3>
                         <p className="text-gray-600 leading-relaxed">
-                            Generate monthly, quarterly, and annual reports to see exactly how your financial health is evolving and where you stand today.
+                            Generate detailed monthly, quarterly, and annual reports. Analyze your debt-to-income ratio and track your financial velocity.
                         </p>
                     </div>
                 </div>
@@ -120,10 +145,15 @@ const AuthScreen: React.FC = () => {
         </section>
 
         {/* Footer */}
-        <footer className="bg-white py-12 border-t border-gray-100 text-center">
-            <p className="text-gray-500 text-sm">
-                &copy; {new Date().getFullYear()} What's My Credit Worth. All data is encrypted and secure.
-            </p>
+        <footer className="bg-white py-12 border-t border-gray-100">
+            <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-2 text-gray-900 font-bold">
+                    <span>💰</span> WMCW
+                </div>
+                <p className="text-gray-500 text-sm">
+                    &copy; {new Date().getFullYear()} What's My Credit Worth. All rights reserved.
+                </p>
+            </div>
         </footer>
     </div>
   );
