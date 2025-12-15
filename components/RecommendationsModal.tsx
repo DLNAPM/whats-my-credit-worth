@@ -36,6 +36,14 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setError(null);
 
     try {
+      // Check if user has selected an API key
+      if ((window as any).aistudio) {
+        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+            await (window as any).aistudio.openSelectKey();
+        }
+      }
+
       // 1. Prepare data for the prompt
       const netWorth = calculateNetWorth(data);
       const income = calculateMonthlyIncome(data.income.jobs);
@@ -110,7 +118,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("Error generating recommendations:", err);
-      setError("Failed to generate recommendations. Please try again later.");
+      setError("Failed to generate recommendations. Ensure you have selected a valid API Key.");
     } finally {
       setLoading(false);
     }
@@ -141,6 +149,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
              <div className="flex flex-col items-center justify-center h-64 space-y-4">
                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
                <p className="text-purple-600 font-medium animate-pulse">Analyzing your finances...</p>
+               <p className="text-xs text-gray-400">This may take a few seconds...</p>
              </div>
            ) : error ? (
              <div className="text-center py-10">
