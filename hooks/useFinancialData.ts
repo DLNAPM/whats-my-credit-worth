@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { FinancialData, MonthlyData } from '../types';
-import { getInitialData, getCurrentMonthYear } from '../utils/helpers';
+import { getInitialData, getCurrentMonthYear, getDummyData } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -22,7 +22,13 @@ export function useFinancialData() {
     if ('isGuest' in user && user.isGuest) {
       try {
         const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        setFinancialData(storedData ? JSON.parse(storedData) : {});
+        if (storedData) {
+            setFinancialData(JSON.parse(storedData));
+        } else {
+            // Initialize with dummy data for new guests so they can test features
+            const dummyData = getDummyData();
+            setFinancialData(dummyData);
+        }
         setSaveStatus('saved');
       } catch (error) {
         console.error("Failed to read from localStorage", error);
@@ -67,14 +73,17 @@ export function useFinancialData() {
   // Effect to save data on change (autosave for GUESTS ONLY)
   useEffect(() => {
     if (user && 'isGuest' in user && user.isGuest) {
-      const sortedData = Object.keys(financialData).sort().reduce((obj, key) => {
-          obj[key] = financialData[key];
-          return obj;
-      }, {} as FinancialData);
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sortedData));
-      } catch (error) {
-        console.error("Failed to save to localStorage", error);
+      // Only save if we have data to avoid overwriting with empty object on initial load race conditions
+      if (Object.keys(financialData).length > 0) {
+        const sortedData = Object.keys(financialData).sort().reduce((obj, key) => {
+            obj[key] = financialData[key];
+            return obj;
+        }, {} as FinancialData);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sortedData));
+        } catch (error) {
+          console.error("Failed to save to localStorage", error);
+        }
       }
     }
   }, [financialData, user]);

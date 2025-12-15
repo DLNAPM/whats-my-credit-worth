@@ -1,5 +1,5 @@
 
-import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource } from '../types';
+import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource, FinancialData } from '../types';
 
 export const getInitialData = (): MonthlyData => ({
   income: {
@@ -32,6 +32,58 @@ export const getInitialData = (): MonthlyData => ({
   ],
   monthlyBills: [{ id: crypto.randomUUID(), name: 'Electric', amount: 0 }],
 });
+
+export const getDummyData = (): FinancialData => {
+  const currentMonth = getCurrentMonthYear();
+  const prevMonth = getPreviousMonthYear(currentMonth);
+  const prev2Month = getPreviousMonthYear(prevMonth);
+
+  const createMonthlyData = (offset: number): MonthlyData => ({
+    income: {
+      jobs: [
+        { id: crypto.randomUUID(), name: 'Tech Corp Inc.', amount: 5200 + (offset * 150), frequency: 'monthly' },
+        { id: crypto.randomUUID(), name: 'Consulting Gig', amount: 1500, frequency: 'monthly' }
+      ]
+    },
+    creditScores: {
+      experian: { score8: 720 + (offset * 5) },
+      equifax: { score8: 715 + (offset * 4) },
+      transunion: { score8: 718 + (offset * 6) },
+      lendingTree: 725 + (offset * 5),
+      creditKarma: 720 + (offset * 5),
+      creditSesame: 718 + (offset * 5),
+      mrCooper: 730 + (offset * 5)
+    },
+    creditCards: [
+      { id: crypto.randomUUID(), name: 'Sapphire Preferred', balance: 1200 - (offset * 100), limit: 15000 },
+      { id: crypto.randomUUID(), name: 'Freedom Unlimited', balance: 450, limit: 8000 },
+      { id: crypto.randomUUID(), name: 'Amex Gold', balance: 800 + (offset * 50), limit: 25000 }
+    ],
+    loans: [
+      { id: crypto.randomUUID(), name: 'Car Loan', balance: 18000 - (offset * 400), limit: 25000 },
+      { id: crypto.randomUUID(), name: 'Student Loan', balance: 12000 - (offset * 100), limit: 15000 }
+    ],
+    assets: [
+      { id: crypto.randomUUID(), name: 'High Yield Savings', value: 15000 + (offset * 1000) },
+      { id: crypto.randomUUID(), name: '401k', value: 45000 + (offset * 1200) },
+      { id: crypto.randomUUID(), name: 'Roth IRA', value: 12000 + (offset * 500) },
+      { id: crypto.randomUUID(), name: 'Crypto Wallet', value: 2500 + (offset * 200) }
+    ],
+    monthlyBills: [
+      { id: crypto.randomUUID(), name: 'Rent', amount: 1800 },
+      { id: crypto.randomUUID(), name: 'Utilities', amount: 150 },
+      { id: crypto.randomUUID(), name: 'Insurance', amount: 120 },
+      { id: crypto.randomUUID(), name: 'Groceries', amount: 600 }
+    ]
+  });
+
+  // Return 3 months of data with slight progression
+  return {
+      [prev2Month]: createMonthlyData(0),
+      [prevMonth]: createMonthlyData(1),
+      [currentMonth]: createMonthlyData(2)
+  };
+};
 
 
 export const calculateTotal = (items: (NamedAmount | Asset)[]) => {
