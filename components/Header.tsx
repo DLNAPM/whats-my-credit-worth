@@ -2,7 +2,7 @@ import React from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, SaveIcon, CheckIcon, AlertTriangleIcon } from './ui/Icons';
+import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, SaveIcon, CheckIcon, AlertTriangleIcon, SparklesIcon } from './ui/Icons';
 import HelpTooltip from './ui/HelpTooltip';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,6 +14,7 @@ interface HeaderProps {
   onEdit: () => void;
   onShare: () => void;
   onImportExport: () => void;
+  onRecommendations: () => void;
   view: View;
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
@@ -28,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({
   onEdit,
   onShare,
   onImportExport,
+  onRecommendations,
   view,
   setView,
   onLogout,
@@ -57,11 +59,20 @@ const Header: React.FC<HeaderProps> = ({
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
         
-        <div className="flex items-center gap-2 justify-center lg:justify-start">
-          <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">What's My Credit Worth?</h1>
-          <HelpTooltip 
-            text="Welcome to your personal finance dashboard! Use this app to track your financial health. Click 'Edit Data' to enter your monthly income, assets, and liabilities. Use the arrows to navigate your history, 'Import/Export' to save or load data, and 'Share' to create a read-only snapshot. The 'Reports' tab compares your progress over time."
-          />
+        <div className="flex flex-col items-center lg:items-start">
+          <div className="flex items-center gap-2 justify-center lg:justify-start">
+            <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">What's My Credit Worth?</h1>
+            <HelpTooltip 
+              text="Welcome to your personal finance dashboard! Use this app to track your financial health. Click 'Edit Data' to enter your monthly income, assets, and liabilities. Use the arrows to navigate your history, 'Import/Export' to save or load data, and 'Share' to create a read-only snapshot. The 'Reports' tab compares your progress over time."
+            />
+          </div>
+          <button 
+            onClick={onRecommendations} 
+            className="mt-1 flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition-colors border border-purple-200"
+          >
+            <SparklesIcon />
+            <span>RECOMMENDATIONS</span>
+          </button>
         </div>
         
         <div className="flex items-center justify-center gap-4">

@@ -133,3 +133,9 @@ export const AlertTriangleIcon = () => (
         <line x1="12" y1="17" x2="12.01" y2="17"></line>
     </svg>
 );
+
+export const SparklesIcon = () => (
+  <svg {...iconProps} className="w-5 h-5 text-purple-500">
+    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" stroke="none"/>
+  </svg>
+);

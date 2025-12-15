@@ -14,6 +14,7 @@ import ImportExportModal from './components/ImportExportModal';
 import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
+import RecommendationsModal from './components/RecommendationsModal';
 
 const MainApp: React.FC = () => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus } = useFinancialData();
@@ -23,6 +24,7 @@ const MainApp: React.FC = () => {
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
+  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [view, setView] = useState<View>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -82,6 +84,7 @@ const MainApp: React.FC = () => {
           onEdit={() => setIsEditorOpen(true)}
           onShare={() => setIsShareModalOpen(true)}
           onImportExport={() => setIsImportExportModalOpen(true)}
+          onRecommendations={() => setIsRecommendationsOpen(true)}
           view={view}
           setView={setView}
           onLogout={handleLogout}
@@ -130,6 +133,13 @@ const MainApp: React.FC = () => {
                 setIsUploadHelpOpen(true);
             }}
             hasData={hasData()}
+        />
+
+        <RecommendationsModal
+          isOpen={isRecommendationsOpen}
+          onClose={() => setIsRecommendationsOpen(false)}
+          data={currentMonthData}
+          monthYear={currentMonthYear}
         />
 
         <input
