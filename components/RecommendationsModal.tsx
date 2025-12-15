@@ -36,14 +36,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setError(null);
 
     try {
-      // Check if user has selected an API key
-      if ((window as any).aistudio) {
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-            await (window as any).aistudio.openSelectKey();
-        }
-      }
-
       // 1. Prepare data for the prompt
       const netWorth = calculateNetWorth(data);
       const income = calculateMonthlyIncome(data.income.jobs);
@@ -66,8 +58,8 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         Liabilities: ${[...data.creditCards, ...data.loans].map(l => `${l.name} ($${l.balance})`).join(', ')}
       `;
 
-      // 2. Initialize GenAI
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // 2. Initialize GenAI with the provided API key
+      const ai = new GoogleGenAI({ apiKey: "AIzaSyCUIrhQcZnIUshJ-y4dod7cNbR7LnxJ_Rg" });
 
       // 3. Define Schema
       const schema = {
@@ -118,7 +110,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("Error generating recommendations:", err);
-      setError("Failed to generate recommendations. Ensure you have selected a valid API Key.");
+      setError("Failed to generate recommendations. Please try again later.");
     } finally {
       setLoading(false);
     }
