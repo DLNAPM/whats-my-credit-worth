@@ -25,11 +25,17 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset recommendations when the month changes so that we fetch new advice for the selected month.
   useEffect(() => {
-    if (isOpen && !recommendations) {
+    setRecommendations(null);
+    setError(null);
+  }, [monthYear]);
+
+  useEffect(() => {
+    if (isOpen && !recommendations && !loading) {
       fetchRecommendations();
     }
-  }, [isOpen]);
+  }, [isOpen, recommendations, loading]);
 
   const fetchRecommendations = async () => {
     setLoading(true);
@@ -83,7 +89,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       // 4. Call Model
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Act as a financial expert. Analyze the following financial profile and provide 4-5 tailored recommendations.
+        contents: `Act as a financial expert. Analyze the following financial profile for ${monthYear} and provide 4-5 tailored recommendations.
         
         Focus on:
         1. Loans or Credit Cards that match this profile (e.g., balance transfer, rewards, debt consolidation, credit building).
@@ -140,7 +146,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
            {loading ? (
              <div className="flex flex-col items-center justify-center h-64 space-y-4">
                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
-               <p className="text-purple-600 font-medium animate-pulse">Analyzing your finances...</p>
+               <p className="text-purple-600 font-medium animate-pulse">Analyzing your finances for {monthYear}...</p>
                <p className="text-xs text-gray-400">This may take a few seconds...</p>
              </div>
            ) : error ? (
