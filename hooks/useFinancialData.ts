@@ -18,7 +18,7 @@ export function useFinancialData() {
   const dataRef = useRef<FinancialData>({});
   const isSavingRef = useRef(false);
 
-  // Sync ref with state when state changes normally
+  // Sync ref with state when state changes from loading
   useEffect(() => {
     dataRef.current = financialData;
   }, [financialData]);
@@ -85,7 +85,7 @@ export function useFinancialData() {
         setSaveStatus('error');
       });
     }
-  }, [user?.uid]); // Only re-run if UID changes
+  }, [user?.uid]);
 
   // Robust save function - returns a Promise
   const saveData = useCallback(async (): Promise<void> => {
@@ -94,11 +94,12 @@ export function useFinancialData() {
     isSavingRef.current = true;
     setSaveStatus('saving');
     
-    const currentData = dataRef.current;
+    // Always read from the synchronous ref to get the most recent updates
+    const currentDataToPersist = dataRef.current;
     
     // Ensure keys are sorted for consistent storage
-    const sortedData = Object.keys(currentData).sort().reduce((obj, key) => {
-        obj[key] = currentData[key];
+    const sortedData = Object.keys(currentDataToPersist).sort().reduce((obj, key) => {
+        obj[key] = currentDataToPersist[key];
         return obj;
     }, {} as FinancialData);
 
@@ -110,7 +111,7 @@ export function useFinancialData() {
         await setDoc(docRef, sortedData);
       }
       setSaveStatus('saved');
-      setRefreshCounter(prev => prev + 1); // Trigger a refresh key
+      setRefreshCounter(prev => prev + 1);
     } catch (error) {
       console.error("Error persisting data:", error);
       setSaveStatus('error');
@@ -124,31 +125,35 @@ export function useFinancialData() {
   useEffect(() => {
     if (saveStatus === 'unsaved') {
       const timer = setTimeout(() => {
-        saveData();
-      }, 3000); // 3 second debounce for autosave
+        saveData().catch(() => {}); // Handle errors silently for autosave
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [financialData, saveStatus, saveData]);
 
   const updateMonthData = useCallback((monthYear: string, data: MonthlyData) => {
-    setFinancialData(prev => {
-      const next = { ...prev, [monthYear]: data };
-      dataRef.current = next; // CRITICAL: Update ref immediately
-      return next;
-    });
+    // 1. Update the reference synchronously so subsequent calls see it immediately
+    const nextData = { ...dataRef.current, [monthYear]: data };
+    dataRef.current = nextData;
+    
+    // 2. Trigger React state update for UI
+    setFinancialData(nextData);
+    
+    // 3. Mark as unsaved
     setSaveStatus('unsaved');
   }, []);
   
   const getMonthData = useCallback((monthYear: string): MonthlyData => {
-      return financialData[monthYear] || getInitialData();
-  }, [financialData]);
+      return dataRef.current[monthYear] || getInitialData();
+  }, []);
 
   const importData = useCallback((jsonString: string) => {
     try {
       const parsedData = JSON.parse(jsonString);
       if (typeof parsedData === 'object' && parsedData !== null) {
-        setFinancialData(parsedData as FinancialData);
-        dataRef.current = parsedData; // Update ref immediately
+        const newData = parsedData as FinancialData;
+        dataRef.current = newData; // Sync ref immediately
+        setFinancialData(newData);
         setSaveStatus('unsaved');
         alert('Data imported! The app will save your changes automatically.');
       } else {
@@ -187,7 +192,7 @@ export function useFinancialData() {
     URL.revokeObjectURL(url);
   }, []);
 
-  const hasData = useCallback(() => Object.keys(financialData).length > 0, [financialData]);
+  const hasData = useCallback(() => Object.keys(dataRef.current).length > 0, []);
 
   return { 
     financialData, 

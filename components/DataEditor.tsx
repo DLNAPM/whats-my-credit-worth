@@ -146,13 +146,17 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     if (isSaving) return;
     setIsSaving(true);
     try {
+        // 1. Update the centralized data store
         updateMonthData(monthYear, data);
-        // Force an immediate save to ensure "persistence" and "refresh"
+        
+        // 2. Explicitly trigger and await the persistence operation
         await saveData();
+        
+        // 3. Only close if persistence succeeded
         onClose();
     } catch (err) {
         console.error("Save error:", err);
-        alert("Failed to save changes. Please try again.");
+        alert("There was an error saving your data. Please try again or check your connection.");
     } finally {
         setIsSaving(false);
     }
