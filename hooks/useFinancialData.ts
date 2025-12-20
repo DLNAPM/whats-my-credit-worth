@@ -14,7 +14,7 @@ export function useFinancialData() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'saving' | 'error'>('saved');
   const [refreshCounter, setRefreshCounter] = useState(0);
   
-  // Use a ref to always have access to the latest data in async operations
+  // Use a ref to always have access to the latest data in async operations (like saveData)
   const dataRef = useRef<FinancialData>({});
   const isSavingRef = useRef(false);
 
@@ -144,8 +144,9 @@ export function useFinancialData() {
   }, []);
   
   const getMonthData = useCallback((monthYear: string): MonthlyData => {
-      return dataRef.current[monthYear] || getInitialData();
-  }, []);
+      // Use state for rendering to ensure React reactivity
+      return financialData[monthYear] || getInitialData();
+  }, [financialData]);
 
   const importData = useCallback((jsonString: string) => {
     try {
@@ -192,7 +193,7 @@ export function useFinancialData() {
     URL.revokeObjectURL(url);
   }, []);
 
-  const hasData = useCallback(() => Object.keys(dataRef.current).length > 0, []);
+  const hasData = useCallback(() => Object.keys(financialData).length > 0, [financialData]);
 
   return { 
     financialData, 
