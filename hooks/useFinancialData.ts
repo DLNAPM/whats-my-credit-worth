@@ -12,6 +12,7 @@ export function useFinancialData() {
   const { user } = useAuth();
   const [financialData, setFinancialData] = useState<FinancialData>({});
   const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'saving' | 'error'>('saved');
+  const [refreshCounter, setRefreshCounter] = useState(0);
   
   // Use a ref to always have access to the latest data in async operations
   const dataRef = useRef<FinancialData>({});
@@ -86,8 +87,8 @@ export function useFinancialData() {
     }
   }, [user?.uid]); // Only re-run if UID changes
 
-  // Robust save function
-  const saveData = useCallback(async () => {
+  // Robust save function - returns a Promise
+  const saveData = useCallback(async (): Promise<void> => {
     if (!user || isSavingRef.current) return;
 
     isSavingRef.current = true;
@@ -109,6 +110,7 @@ export function useFinancialData() {
         await setDoc(docRef, sortedData);
       }
       setSaveStatus('saved');
+      setRefreshCounter(prev => prev + 1); // Trigger a refresh key
     } catch (error) {
       console.error("Error persisting data:", error);
       setSaveStatus('error');
@@ -196,6 +198,7 @@ export function useFinancialData() {
     hasData, 
     exportTemplateData, 
     saveData, 
-    saveStatus 
+    saveStatus,
+    refreshCounter
   };
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -17,7 +18,7 @@ import { LoadingScreen } from './components/ui/Spinner';
 import RecommendationsModal from './components/RecommendationsModal';
 
 const MainApp: React.FC = () => {
-  const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus } = useFinancialData();
+  const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
   const { logout } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -93,8 +94,19 @@ const MainApp: React.FC = () => {
         />
         
         <main>
-          {view === 'dashboard' && <Dashboard data={currentMonthData} allData={financialData} />}
-          {view === 'reports' && <Reports allData={financialData} />}
+          {view === 'dashboard' && (
+            <Dashboard 
+              key={`dashboard-${refreshCounter}-${currentMonthYear}`} 
+              data={currentMonthData} 
+              allData={financialData} 
+            />
+          )}
+          {view === 'reports' && (
+            <Reports 
+              key={`reports-${refreshCounter}`} 
+              allData={financialData} 
+            />
+          )}
         </main>
 
         <DataEditor 

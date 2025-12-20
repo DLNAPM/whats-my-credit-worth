@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource } from '../types';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { AddIcon, DeleteIcon } from './ui/Icons';
+import { AddIcon, DeleteIcon, SaveIcon } from './ui/Icons';
 
 interface DataEditorProps {
   isOpen: boolean;
@@ -21,14 +22,16 @@ const InputField = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<
 type ItemType = 'creditCards' | 'loans' | 'assets' | 'monthlyBills';
 
 const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) => {
-  const { getMonthData, updateMonthData, financialData } = useFinancialData();
+  const { getMonthData, updateMonthData, financialData, saveData } = useFinancialData();
   const [data, setData] = useState<MonthlyData>(getMonthData(monthYear));
   const [copyFromMonth, setCopyFromMonth] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setData(getMonthData(monthYear));
       setCopyFromMonth(''); 
+      setIsSaving(false);
     }
   }, [monthYear, getMonthData, isOpen]);
 
@@ -139,9 +142,20 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     setData(prev => ({ ...prev, [list]: prev[list].filter((_, i) => i !== index) as any }));
   };
   
-  const handleSave = () => {
-    updateMonthData(monthYear, data);
-    onClose();
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+        updateMonthData(monthYear, data);
+        // Force an immediate save to ensure "persistence" and "refresh"
+        await saveData();
+        onClose();
+    } catch (err) {
+        console.error("Save error:", err);
+        alert("Failed to save changes. Please try again.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const renderListEditor = <T extends {id: string, name: string}>(
@@ -264,8 +278,20 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
             {renderListEditor<NamedAmount>('Monthly Bills', 'monthlyBills', data.monthlyBills, ['name', 'amount'])}
         </div>
         <div className="p-6 flex justify-end gap-4 sticky bottom-0 bg-white dark:bg-gray-900 border-t">
-          <Button onClick={onClose} variant="secondary">Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
+          <Button onClick={onClose} variant="secondary" disabled={isSaving}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+                <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                    Saving...
+                </>
+            ) : (
+                <>
+                    <SaveIcon />
+                    Save Changes
+                </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
