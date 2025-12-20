@@ -22,22 +22,58 @@ interface Recommendation {
   actionItem: string;
 }
 
+/**
+ * FIX: Re-declared global window extensions to match existing environment definitions.
+ * The environment already defines window.aistudio with the AIStudio type.
+ */
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
+  interface Window {
+    readonly aistudio: AIStudio;
+  }
+}
+
 const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onClose, data, monthYear }) => {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [needsKey, setNeedsKey] = useState(false);
 
   useEffect(() => {
     // Reset state when the month changes so we don't show stale advice
     setRecommendations(null);
     setError(null);
-  }, [monthYear]);
+    setNeedsKey(false);
+  }, [monthYear, isOpen]);
 
   useEffect(() => {
-    if (isOpen && !recommendations && !loading) {
-      fetchRecommendations();
-    }
+    const checkKey = async () => {
+        if (isOpen && !recommendations && !loading) {
+            const hasKey = await window.aistudio.hasSelectedApiKey();
+            if (!hasKey) {
+                setNeedsKey(true);
+            } else {
+                fetchRecommendations();
+            }
+        }
+    };
+    checkKey();
   }, [isOpen, recommendations, loading]);
+
+  const handleConnectKey = async () => {
+      try {
+          await window.aistudio.openSelectKey();
+          setNeedsKey(false);
+          // Key selection is assumed successful per guidelines, proceed to fetch
+          fetchRecommendations();
+      } catch (err) {
+          console.error("Failed to open key selection:", err);
+      }
+  };
 
   const fetchRecommendations = async () => {
     setLoading(true);
@@ -65,7 +101,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         Liability Breakdown: ${[...data.creditCards, ...data.loans].map(l => `${l.name} ($${l.balance})`).join(', ')}
       `;
 
-      // Initialize API with the project-level key
+      // Initialize API inside the function to ensure the most up-to-date key
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const schema = {
@@ -88,9 +124,9 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         required: ['recommendations']
       };
 
-      // Using gemini-3-pro-preview for better complex reasoning on financial figures
+      // Using gemini-3-flash-preview for robust performance with the project key
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: [{
             parts: [{
                 text: `You are a world-class senior financial advisor. Analyze the following financial profile for ${monthYear} and provide 4-5 high-impact, tailored recommendations.
@@ -109,7 +145,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            temperature: 0.4 // Lower temperature for more consistent financial logic
+            temperature: 0.4
         }
       });
 
@@ -132,10 +168,14 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("AI Generation Error:", err);
-      // Check for specific error types if needed, otherwise show generic
-      const msg = err.message?.includes('API key') 
-        ? "Configuration error: Missing API Key." 
-        : "Failed to connect to the AI advisor. Please check your internet connection.";
+      
+      // Handle the "Requested entity was not found" error by prompting for key reset
+      if (err.message?.includes('Requested entity was not found') || err.message?.includes('API key')) {
+          setNeedsKey(true);
+          return;
+      }
+
+      const msg = "Failed to connect to the AI advisor. Please try again later.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -163,7 +203,31 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900/50">
-           {loading ? (
+           {needsKey ? (
+             <div className="text-center py-12 px-4 max-w-md mx-auto">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 text-purple-600 mb-6">
+                    <SparklesIcon />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Connect Your AI Advisor</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    To use high-performance financial analysis, you need to connect an API key from a paid GCP project.
+                </p>
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-8 text-left">
+                    <h4 className="text-sm font-bold mb-2">Instructions:</h4>
+                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-4">
+                        <li>Click "Connect API Key" below.</li>
+                        <li>Select a key from a project with billing enabled.</li>
+                        <li>Learn more about <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-brand-primary underline">Gemini API billing</a>.</li>
+                    </ul>
+                </div>
+                <div className="flex flex-col gap-3">
+                    <Button onClick={handleConnectKey} className="w-full py-4">
+                        <SparklesIcon /> Connect API Key
+                    </Button>
+                    <Button onClick={onClose} variant="secondary">Cancel</Button>
+                </div>
+             </div>
+           ) : loading ? (
              <div className="flex flex-col items-center justify-center h-64 space-y-4">
                <div className="relative">
                  <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-600"></div>
