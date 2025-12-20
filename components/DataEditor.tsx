@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource, PayFrequency } from '../types';
+import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource } from '../types';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
@@ -27,8 +26,10 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
   const [copyFromMonth, setCopyFromMonth] = useState<string>('');
 
   useEffect(() => {
-    setData(getMonthData(monthYear));
-    setCopyFromMonth(''); // Reset on open/month change
+    if (isOpen) {
+      setData(getMonthData(monthYear));
+      setCopyFromMonth(''); 
+    }
   }, [monthYear, getMonthData, isOpen]);
 
   if (!isOpen) return null;
@@ -42,8 +43,6 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     
     if (window.confirm(`Are you sure you want to replace this month's data with the data from ${formatMonthYear(copyFromMonth)}? All current edits will be lost.`)) {
         const dataToCopy = getMonthData(copyFromMonth);
-        
-        // Deep clone and regenerate IDs to ensure they are unique for the new month
         const deepClonedData = JSON.parse(JSON.stringify(dataToCopy));
         
         deepClonedData.income.jobs.forEach((item: IncomeSource) => item.id = crypto.randomUUID());
@@ -53,19 +52,41 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
         deepClonedData.monthlyBills.forEach((item: NamedAmount) => item.id = crypto.randomUUID());
 
         setData(deepClonedData);
-        setCopyFromMonth(''); // Reset select
+        setCopyFromMonth(''); 
     }
   };
 
   const handleSimpleChange = (e: React.ChangeEvent<HTMLInputElement>, ...path: string[]) => {
     const { name, value } = e.target;
+    const numValue = Number(value) || 0;
+    
     setData(prev => {
-        let nested = prev;
-        for(let i = 0; i < path.length - 1; i++) {
-            nested = nested[path[i]];
+        if (path.length === 1) {
+            const section = path[0] as keyof MonthlyData;
+            return {
+                ...prev,
+                [section]: {
+                    ...(prev[section] as any),
+                    [name]: numValue
+                }
+            };
         }
-        nested[path[path.length - 1]][name] = Number(value) || 0;
-        return { ...prev };
+        if (path.length === 2) {
+            const section = path[0] as keyof MonthlyData;
+            const subsection = path[1];
+            const currentSection = prev[section] as any;
+            return {
+                ...prev,
+                [section]: {
+                    ...currentSection,
+                    [subsection]: {
+                        ...currentSection[subsection],
+                        [name]: numValue
+                    }
+                }
+            };
+        }
+        return prev;
     });
   };
 
@@ -73,8 +94,14 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     const { name, value } = e.target;
     setData(prev => {
         const jobs = [...prev.income.jobs];
-        jobs[index] = { ...jobs[index], [name]: name === 'name' || name === 'frequency' ? value : Number(value) || 0 };
-        return { ...prev, income: { ...prev.income, jobs } };
+        jobs[index] = { 
+            ...jobs[index], 
+            [name]: name === 'name' || name === 'frequency' ? value : Number(value) || 0 
+        };
+        return { 
+            ...prev, 
+            income: { ...prev.income, jobs } 
+        };
     });
   };
   
@@ -96,7 +123,10 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     const { name, value } = e.target;
     setData(prev => {
         const items = [...prev[list]];
-        items[index] = { ...items[index], [name]: name === 'name' ? value : Number(value) || 0 };
+        items[index] = { 
+            ...items[index], 
+            [name]: name === 'name' ? value : Number(value) || 0 
+        };
         return { ...prev, [list]: items as any };
     });
   };
@@ -150,7 +180,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 sticky top-0 bg-white dark:bg-gray-900 border-b z-10">
-            <h2 className="text-2xl font-bold">Edit Data for {formatMonthYear(monthYear)}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Data for {formatMonthYear(monthYear)}</h2>
             {availableMonths.length > 0 && (
               <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 <label htmlFor="copy-month-select" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">

@@ -1,4 +1,3 @@
-
 import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource, FinancialData } from '../types';
 
 export const getInitialData = (): MonthlyData => ({
@@ -77,7 +76,6 @@ export const getDummyData = (): FinancialData => {
     ]
   });
 
-  // Return 3 months of data with slight progression
   return {
       [prev2Month]: createMonthlyData(0),
       [prevMonth]: createMonthlyData(1),
@@ -85,51 +83,58 @@ export const getDummyData = (): FinancialData => {
   };
 };
 
-
-export const calculateTotal = (items: (NamedAmount | Asset)[]) => {
-  return items.reduce((acc, item) => acc + ('amount' in item ? item.amount : item.value), 0);
+export const calculateTotal = (items: (NamedAmount | Asset)[] = []) => {
+  if (!items) return 0;
+  return items.reduce((acc, item) => {
+    const val = 'amount' in item ? item.amount : item.value;
+    return acc + (Number(val) || 0);
+  }, 0);
 };
 
-export const calculateMonthlyIncome = (jobs: IncomeSource[]): number => {
+export const calculateMonthlyIncome = (jobs: IncomeSource[] = []): number => {
+  if (!jobs) return 0;
   return jobs.reduce((total, job) => {
     let monthlyAmount = 0;
     const weeksInMonth = 52 / 12; 
+    const amount = Number(job.amount) || 0;
     switch (job.frequency) {
       case 'weekly':
-        monthlyAmount = job.amount * weeksInMonth;
+        monthlyAmount = amount * weeksInMonth;
         break;
       case 'bi-weekly':
-        monthlyAmount = job.amount * (weeksInMonth / 2);
+        monthlyAmount = amount * (weeksInMonth / 2);
         break;
       case 'twice-a-month':
-        monthlyAmount = job.amount * 2;
+        monthlyAmount = amount * 2;
         break;
       case 'monthly':
-        monthlyAmount = job.amount;
+        monthlyAmount = amount;
         break;
       case 'yearly':
-        monthlyAmount = job.amount / 12;
+        monthlyAmount = amount / 12;
         break;
     }
     return total + monthlyAmount;
   }, 0);
 };
 
-export const calculateTotalBalance = (items: (CreditCard | Loan)[]) => {
-  return items.reduce((acc, item) => acc + item.balance, 0);
+export const calculateTotalBalance = (items: (CreditCard | Loan)[] = []) => {
+  if (!items) return 0;
+  return items.reduce((acc, item) => acc + (Number(item.balance) || 0), 0);
 };
 
-export const calculateTotalLimit = (items: (CreditCard | Loan)[]) => {
-  return items.reduce((acc, item) => acc + item.limit, 0);
+export const calculateTotalLimit = (items: (CreditCard | Loan)[] = []) => {
+  if (!items) return 0;
+  return items.reduce((acc, item) => acc + (Number(item.limit) || 0), 0);
 };
 
 export const calculateUtilization = (balance: number, limit: number): number => {
-  if (limit === 0) return 0;
+  if (limit === 0 || isNaN(limit)) return 0;
   return (balance / limit) * 100;
 };
 
 export const calculateDTI = (monthlyBills: number, monthlyIncome: number): number => {
-  if (monthlyIncome === 0) return 0;
+  if (monthlyIncome === 0 || isNaN(monthlyIncome)) return 0;
   return (monthlyBills / monthlyIncome) * 100;
 };
 
@@ -141,6 +146,7 @@ export const calculateNetWorth = (data?: MonthlyData): number => {
 };
 
 export const formatCurrency = (amount: number): string => {
+  if (isNaN(amount)) return '$0.00';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -152,9 +158,8 @@ export const getCurrentMonthYear = (): string => {
   return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 };
 
-// FIX: The `format` parameter for `toLocaleString`'s `month` option must be a specific string literal.
-// Changed the type of `format` from `string` to a union of allowed values.
 export const formatMonthYear = (monthYear: string, format: 'long' | 'short' | 'numeric' | '2-digit' | 'narrow' = 'long'): string => {
+    if (!monthYear) return '';
     const [year, month] = monthYear.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
     return date.toLocaleString('default', { month: format, year: 'numeric' });
