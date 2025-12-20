@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { MonthlyData } from '../types';
@@ -25,7 +26,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset recommendations when the month changes so that we fetch new advice for the selected month.
   useEffect(() => {
     setRecommendations(null);
     setError(null);
@@ -42,14 +42,13 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setError(null);
 
     try {
-      // 1. Prepare data for the prompt
       const netWorth = calculateNetWorth(data);
       const income = calculateMonthlyIncome(data.income.jobs);
       const totalDebt = calculateTotalBalance(data.creditCards) + calculateTotalBalance(data.loans);
       
       const scores = Object.entries(data.creditScores)
          .map(([key, val]) => {
-             const score = typeof val === 'object' && val !== null && 'score8' in val ? val.score8 : val;
+             const score = typeof val === 'object' && val !== null && 'score8' in val ? (val as any).score8 : val;
              return `${key}: ${score}`;
          })
          .join(', ');
@@ -64,10 +63,9 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         Liabilities: ${[...data.creditCards, ...data.loans].map(l => `${l.name} ($${l.balance})`).join(', ')}
       `;
 
-      // 2. Initialize GenAI with the provided API key
-      const ai = new GoogleGenAI({ apiKey: "AIzaSyCUIrhQcZnIUshJ-y4dod7cNbR7LnxJ_Rg" });
+      // Use the injected API key and the latest recommended model
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-      // 3. Define Schema
       const schema = {
         type: Type.OBJECT,
         properties: {
@@ -80,20 +78,21 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                         description: { type: Type.STRING },
                         category: { type: Type.STRING, description: "One of: 'Credit Cards', 'Loans', 'Savings', 'Investments', 'General'" },
                         actionItem: { type: Type.STRING, description: "A specific, short actionable step." }
-                    }
+                    },
+                    required: ['title', 'description', 'category', 'actionItem']
                 }
             }
-        }
+        },
+        required: ['recommendations']
       };
 
-      // 4. Call Model
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `Act as a financial expert. Analyze the following financial profile for ${monthYear} and provide 4-5 tailored recommendations.
         
         Focus on:
-        1. Loans or Credit Cards that match this profile (e.g., balance transfer, rewards, debt consolidation, credit building).
-        2. Savings Account and Investment strategies to increase net worth (e.g., HYSA, index funds, debt payoff avalanche/snowball).
+        1. Loans or Credit Cards that match this profile (e.g., balance transfer, rewards, debt consolidation).
+        2. Savings Account and Investment strategies to increase net worth.
         
         Profile:
         ${financialProfile}
@@ -102,13 +101,14 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            temperature: 0.7
+            temperature: 0.7,
+            thinkingConfig: { thinkingBudget: 0 }
         }
       });
 
-      const responseText = response.text;
-      if (responseText) {
-          const parsed = JSON.parse(responseText);
+      const text = response.text;
+      if (text) {
+          const parsed = JSON.parse(text);
           setRecommendations(parsed.recommendations);
       } else {
           setError("No recommendations generated.");
@@ -134,7 +134,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Financial Recommendations</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Tailored advice based on your {monthYear} snapshot</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Tailored advice for {monthYear}</p>
               </div>
            </div>
            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
@@ -146,8 +146,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
            {loading ? (
              <div className="flex flex-col items-center justify-center h-64 space-y-4">
                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div>
-               <p className="text-purple-600 font-medium animate-pulse">Analyzing your finances for {monthYear}...</p>
-               <p className="text-xs text-gray-400">This may take a few seconds...</p>
+               <p className="text-purple-600 font-medium animate-pulse">Analyzing your finances...</p>
              </div>
            ) : error ? (
              <div className="text-center py-10">
@@ -163,12 +162,12 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                 {recommendations?.map((rec, index) => (
                     <Card key={index} title={
                         <div className="flex items-center justify-between">
-                            <span>{rec.title}</span>
-                            <span className="text-xs font-bold uppercase tracking-wide bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300">
+                            <span className="font-bold">{rec.title}</span>
+                            <span className="text-xs font-bold uppercase tracking-wide bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded text-purple-700 dark:text-purple-300">
                                 {rec.category}
                             </span>
                         </div>
-                    } className="transform transition-all hover:scale-[1.01] hover:shadow-lg border border-purple-100 dark:border-gray-700">
+                    } className="border border-purple-100 dark:border-gray-700">
                         <div className="space-y-4">
                             <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
                                 {rec.description}
@@ -184,13 +183,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                         </div>
                     </Card>
                 ))}
-             </div>
-           )}
-           
-           {!loading && !error && (
-             <div className="mt-8 text-center text-xs text-gray-400 max-w-2xl mx-auto">
-                Disclaimer: These recommendations are generated by AI for informational purposes only and do not constitute professional financial advice. 
-                Please consult with a qualified financial advisor before making significant financial decisions.
              </div>
            )}
         </div>

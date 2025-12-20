@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
@@ -36,24 +37,22 @@ const Header: React.FC<HeaderProps> = ({
   onSave
 }) => {
   const { user } = useAuth();
-  const isGuest = user && 'isGuest' in user;
 
-  const SaveStatusButton = () => {
-      if (isGuest || !onSave) return null;
+  const SaveStatusIndicator = () => {
+      if (!saveStatus) return null;
 
       if (saveStatus === 'saving') {
-          return <Button variant="secondary" size="small" disabled>Saving...</Button>;
+          return <div className="text-xs flex items-center gap-1.5 text-gray-400 font-medium bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-full"><div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" /> Saving...</div>;
       }
       if (saveStatus === 'saved') {
-          return <Button variant="secondary" size="small" disabled className="!bg-green-100 dark:!bg-green-800/50 !text-positive"><CheckIcon /> Saved</Button>;
+          return <div className="text-xs flex items-center gap-1.5 text-positive font-medium bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full"><CheckIcon /> Saved</div>;
       }
       if (saveStatus === 'error') {
           return <Button onClick={onSave} variant="danger" size="small"><AlertTriangleIcon /> Save Error</Button>;
       }
       // unsaved
-      return <Button onClick={onSave} variant="primary" size="small"><SaveIcon /> Save</Button>;
+      return <Button onClick={onSave} variant="primary" size="small"><SaveIcon /> Save Changes</Button>;
   };
-
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
@@ -63,16 +62,19 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 justify-center lg:justify-start">
             <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">What's My Credit Worth?</h1>
             <HelpTooltip 
-              text="Welcome to your personal finance dashboard! Use this app to track your financial health. Click 'Edit Data' to enter your monthly income, assets, and liabilities. Use the arrows to navigate your history, 'Import/Export' to save or load data, and 'Share' to create a read-only snapshot. The 'Reports' tab compares your progress over time."
+              text="Track your financial health. Click 'Edit Data' to enter info. Nav arrows move through time. AI Recommendations offer insights."
             />
           </div>
-          <button 
-            onClick={onRecommendations} 
-            className="mt-1 flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition-colors border border-purple-200"
-          >
-            <SparklesIcon />
-            <span>RECOMMENDATIONS</span>
-          </button>
+          <div className="flex items-center gap-2 mt-1">
+            <button 
+              onClick={onRecommendations} 
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition-colors border border-purple-200"
+            >
+              <SparklesIcon />
+              <span>AI ADVICE</span>
+            </button>
+            <SaveStatusIndicator />
+          </div>
         </div>
         
         <div className="flex items-center justify-center gap-4">
@@ -89,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={() => setView(v)}
                 className={`px-4 py-2 text-sm font-medium rounded-md transition-colors capitalize ${
                     view === v
-                    ? 'bg-brand-primary text-white'
+                    ? 'bg-brand-primary text-white shadow-sm'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-brand-light hover:text-brand-primary'
                 }`}
                 >
@@ -99,19 +101,18 @@ const Header: React.FC<HeaderProps> = ({
             </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap justify-center lg:justify-end">
+        <div className="flex items-center gap-3 flex-wrap justify-center lg:justify-end">
             {user && (
-                <div className="flex items-center gap-2 border-r pr-4 mr-2">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate" title={user.displayName || 'User'}>
+                <div className="flex items-center gap-2 border-r pr-4 border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[120px] truncate" title={user.displayName || 'User'}>
                         {user.displayName}
                     </span>
                     <Button onClick={onLogout} variant="secondary" size="small">Logout</Button>
                 </div>
             )}
-            <SaveStatusButton />
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit Data</Button>
-            <Button onClick={onImportExport} variant="secondary"><ImportIcon /> Import/Export</Button>
-            <Button onClick={onShare} variant="secondary"><ShareIcon /> Share</Button>
+            <Button onClick={onShare} variant="secondary" size="small"><ShareIcon /></Button>
+            <Button onClick={onImportExport} variant="secondary" size="small"><ImportIcon /></Button>
         </div>
       </div>
     </header>
