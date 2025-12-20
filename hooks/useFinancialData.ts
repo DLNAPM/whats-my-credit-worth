@@ -15,7 +15,9 @@ export function useFinancialData() {
   
   // Use a ref to always have access to the latest data in async operations
   const dataRef = useRef<FinancialData>({});
+  const isSavingRef = useRef(false);
 
+  // Sync ref with state when state changes normally
   useEffect(() => {
     dataRef.current = financialData;
   }, [financialData]);
@@ -25,6 +27,7 @@ export function useFinancialData() {
     if (!user) {
       setFinancialData({});
       dataRef.current = {};
+      setSaveStatus('saved');
       return;
     }
 
@@ -81,13 +84,15 @@ export function useFinancialData() {
         setSaveStatus('error');
       });
     }
-  }, [user]);
+  }, [user?.uid]); // Only re-run if UID changes
 
-  // Manual save function that uses the latest ref data
+  // Robust save function
   const saveData = useCallback(async () => {
-    if (!user || saveStatus === 'saving') return;
+    if (!user || isSavingRef.current) return;
 
+    isSavingRef.current = true;
     setSaveStatus('saving');
+    
     const currentData = dataRef.current;
     
     // Ensure keys are sorted for consistent storage
@@ -108,21 +113,27 @@ export function useFinancialData() {
       console.error("Error persisting data:", error);
       setSaveStatus('error');
       throw error;
+    } finally {
+      isSavingRef.current = false;
     }
-  }, [user, saveStatus]);
+  }, [user]);
 
   // Debounced Autosave Effect
   useEffect(() => {
     if (saveStatus === 'unsaved') {
       const timer = setTimeout(() => {
         saveData();
-      }, 2000); // 2 second debounce for autosave
+      }, 3000); // 3 second debounce for autosave
       return () => clearTimeout(timer);
     }
   }, [financialData, saveStatus, saveData]);
 
   const updateMonthData = useCallback((monthYear: string, data: MonthlyData) => {
-    setFinancialData(prev => ({ ...prev, [monthYear]: data }));
+    setFinancialData(prev => {
+      const next = { ...prev, [monthYear]: data };
+      dataRef.current = next; // CRITICAL: Update ref immediately
+      return next;
+    });
     setSaveStatus('unsaved');
   }, []);
   
@@ -135,8 +146,9 @@ export function useFinancialData() {
       const parsedData = JSON.parse(jsonString);
       if (typeof parsedData === 'object' && parsedData !== null) {
         setFinancialData(parsedData as FinancialData);
+        dataRef.current = parsedData; // Update ref immediately
         setSaveStatus('unsaved');
-        alert('Data imported! Autosaving shortly...');
+        alert('Data imported! The app will save your changes automatically.');
       } else {
         throw new Error("Invalid format");
       }
