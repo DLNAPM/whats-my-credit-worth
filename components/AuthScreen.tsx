@@ -1,6 +1,6 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import HelpTooltip from './ui/HelpTooltip';
 
 const GoogleIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
     <svg className={className} viewBox="0 0 48 48">
@@ -17,25 +17,38 @@ const ChartIcon = () => (
     </svg>
 );
 
-const ShieldIcon = () => (
-    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-    </svg>
-);
-
 const TrendIcon = () => (
     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
     </svg>
 );
 
+const FeatureShieldIcon = () => (
+    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+);
+
 const AuthScreen: React.FC = () => {
   const { loginWithGoogle, loginAsGuest } = useAuth();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleGoogleLogin = async () => {
+    setIsAuthenticating(true);
+    setAuthError(null);
+    try {
+      await loginWithGoogle();
+    } catch (err: any) {
+      setAuthError(err.message || "Failed to sign in with Google.");
+      setIsAuthenticating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-brand-primary flex flex-col">
         
-        {/* Navigation - Glassmorphism */}
+        {/* Navigation */}
         <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -45,15 +58,17 @@ const AuthScreen: React.FC = () => {
                 <div className="flex items-center gap-4">
                     <button 
                         onClick={loginAsGuest}
-                        className="hidden md:block text-sm font-medium text-gray-500 hover:text-brand-primary transition-colors"
+                        disabled={isAuthenticating}
+                        className="hidden md:block text-sm font-medium text-gray-500 hover:text-brand-primary transition-colors disabled:opacity-50"
                     >
                         Guest Mode
                     </button>
                     <button 
-                        onClick={loginWithGoogle} 
-                        className="bg-brand-primary hover:bg-brand-secondary text-white text-sm font-semibold py-2.5 px-6 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        onClick={handleGoogleLogin} 
+                        disabled={isAuthenticating}
+                        className="bg-brand-primary hover:bg-brand-secondary text-white text-sm font-semibold py-2.5 px-6 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Login
+                        {isAuthenticating ? 'Signing in...' : 'Login'}
                     </button>
                 </div>
             </div>
@@ -75,23 +90,35 @@ const AuthScreen: React.FC = () => {
                     The comprehensive, private way to track your assets, liabilities, and credit scores across all major bureaus.
                 </p>
                 
+                {authError && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium animate-fade-in">
+                        {authError}
+                    </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto">
                      <button 
-                        onClick={loginWithGoogle} 
-                        className="flex-1 flex items-center justify-center gap-3 bg-brand-primary hover:bg-brand-secondary text-white font-bold py-4 px-8 rounded-xl transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+                        onClick={handleGoogleLogin} 
+                        disabled={isAuthenticating}
+                        className="flex-1 flex items-center justify-center gap-3 bg-brand-primary hover:bg-brand-secondary text-white font-bold py-4 px-8 rounded-xl transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-75 disabled:transform-none"
                      >
-                        <GoogleIcon className="w-6 h-6 bg-white rounded-full p-0.5" />
-                        <span>Sign in with Google</span>
+                        {isAuthenticating ? (
+                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <GoogleIcon className="w-6 h-6 bg-white rounded-full p-0.5" />
+                        )}
+                        <span>{isAuthenticating ? 'Connecting...' : 'Sign in with Google'}</span>
                     </button>
                     <button 
                         onClick={loginAsGuest} 
-                        className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-8 rounded-xl border border-gray-200 transition-all shadow-md hover:shadow-lg"
+                        disabled={isAuthenticating}
+                        className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-8 rounded-xl border border-gray-200 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                     >
                         Try as Guest
                     </button>
                 </div>
                 <p className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
-                    <ShieldIcon /> Secure & Private. Guest data stays on your device.
+                    <FeatureShieldIcon /> Secure & Private. Guest data stays on your device.
                 </p>
             </div>
         </header>
@@ -122,7 +149,7 @@ const AuthScreen: React.FC = () => {
                     {/* Feature 2 */}
                     <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 text-green-600 group-hover:scale-110 transition-transform duration-300">
-                            <ShieldIcon />
+                            <FeatureShieldIcon />
                         </div>
                         <h3 className="text-xl font-bold mb-3 text-gray-900">Multi-Bureau Monitoring</h3>
                         <p className="text-gray-600 leading-relaxed">

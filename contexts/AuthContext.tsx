@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -20,12 +21,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
+        // Firebase user logged in
         setUser(firebaseUser);
         sessionStorage.removeItem('guestUser');
       } else {
+        // No Firebase user, check for guest session
         const guestData = sessionStorage.getItem('guestUser');
         if (guestData) {
-          setUser(JSON.parse(guestData));
+          try {
+            setUser(JSON.parse(guestData));
+          } catch (e) {
+            setUser(null);
+            sessionStorage.removeItem('guestUser');
+          }
         } else {
           setUser(null);
         }
@@ -37,12 +45,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const loginWithGoogle = async () => {
-    setLoading(true);
     const provider = new GoogleAuthProvider();
+    // Add custom parameters if needed
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
     try {
       await signInWithPopup(auth, provider);
-      // On success, the onAuthStateChanged listener will handle setting the user
-      // and clearing guest data from session storage.
+      // onAuthStateChanged will handle the UI state transition
     } catch (error: any) {
       console.error("Google sign-in error", error);
       
@@ -50,42 +59,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error.code) {
         switch (error.code) {
           case 'auth/popup-closed-by-user':
-            errorMessage = "The sign-in window was closed before completing. Please try again.";
+            errorMessage = "Sign-in window closed. Please try again.";
             break;
           case 'auth/popup-blocked':
-            errorMessage = "The sign-in popup was blocked by your browser. Please allow popups for this site and try again.";
+            errorMessage = "Popup blocked! Please allow popups for this site.";
             break;
-          case 'auth/cancelled-popup-request':
-            errorMessage = "Sign-in was cancelled.";
+          case 'auth/network-request-failed':
+            errorMessage = "Network error. Please check your connection.";
             break;
-          case 'auth/operation-not-allowed':
-             errorMessage = "Sign-in with Google is not enabled for this app. Please check your Firebase project settings to ensure the Google provider is enabled.";
-             break;
           default:
-            errorMessage = `Sign-in failed. Please check your connection or try again later. (Error code: ${error.code})`;
+            errorMessage = error.message;
         }
       }
-      alert(`Google Sign-In Failed: ${errorMessage}`);
-      setLoading(false);
+      throw new Error(errorMessage);
     }
   };
 
   const loginAsGuest = () => {
-    setLoading(true);
     const guestUser: GuestUser = {
       uid: `guest_${Date.now()}`,
       isGuest: true,
-      displayName: 'Guest',
+      displayName: 'Guest User',
     };
     sessionStorage.setItem('guestUser', JSON.stringify(guestUser));
     setUser(guestUser);
-    setLoading(false);
   };
 
   const logout = async () => {
-    sessionStorage.removeItem('guestUser');
-    await signOut(auth);
-    setUser(null);
+    try {
+      setLoading(true);
+      await signOut(auth);
+      sessionStorage.removeItem('guestUser');
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const value = { user, loading, loginWithGoogle, loginAsGuest, logout };

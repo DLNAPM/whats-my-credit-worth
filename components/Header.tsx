@@ -54,6 +54,12 @@ const Header: React.FC<HeaderProps> = ({
       return <Button onClick={onSave} variant="primary" size="small"><SaveIcon /> Save Changes</Button>;
   };
 
+  const LogoutIcon = () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+  );
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
@@ -103,11 +109,30 @@ const Header: React.FC<HeaderProps> = ({
 
         <div className="flex items-center gap-3 flex-wrap justify-center lg:justify-end">
             {user && (
-                <div className="flex items-center gap-2 border-r pr-4 border-gray-200 dark:border-gray-700">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[120px] truncate" title={user.displayName || 'User'}>
-                        {user.displayName}
-                    </span>
-                    <Button onClick={onLogout} variant="secondary" size="small">Logout</Button>
+                <div className="flex items-center gap-3 border-r pr-4 border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2">
+                        {('photoURL' in user && user.photoURL) ? (
+                            <img 
+                                src={user.photoURL} 
+                                alt={user.displayName || 'User'} 
+                                className="w-8 h-8 rounded-full border border-gray-200 shadow-sm"
+                            />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs">
+                                {user.displayName?.charAt(0) || 'U'}
+                            </div>
+                        )}
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100 max-w-[100px] truncate" title={user.displayName || 'User'}>
+                            {user.displayName?.split(' ')[0]}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={onLogout} 
+                        className="text-gray-500 hover:text-negative p-1.5 rounded-lg hover:bg-red-50 transition-colors group"
+                        title="Logout"
+                    >
+                        <LogoutIcon />
+                    </button>
                 </div>
             )}
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit Data</Button>
