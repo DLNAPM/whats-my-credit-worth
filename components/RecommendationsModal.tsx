@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
-import type { MonthlyData } from '../types';
+import type { MonthlyData, RecommendationItem } from '../types';
+import { getLocalRecommendations } from '../utils/recommendationEngine';
 import Button from './ui/Button';
-import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
+import { SparklesIcon, AlertTriangleIcon, CheckIcon, InfoIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
 
-// Define the AI Studio interface for the key selection dialog
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -24,51 +24,40 @@ interface RecommendationsModalProps {
   monthYear: string;
 }
 
-interface RecommendationItem {
-  title: string;
-  description: string;
-  category: 'Debt Reduction' | 'Investment' | 'Life Insurance & Protection' | 'Strategic Move';
-  actionItem: string;
-}
-
 const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onClose, data, monthYear }) => {
   const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showKeySelection, setShowKeySelection] = useState(false);
+  const [advisorMode, setAdvisorMode] = useState<'local' | 'ai'>('local');
 
-  // Safely get the API Key from process.env if it exists
-  const getEnvApiKey = () => {
-    try {
-      return process.env.API_KEY;
-    } catch {
-      return undefined;
+  useEffect(() => {
+    if (isOpen) {
+      // Default to Local Engine for immediate, reliable results
+      setRecommendations(getLocalRecommendations(data));
+      setAdvisorMode('local');
+      setError(null);
     }
-  };
+  }, [isOpen, monthYear, data]);
 
-  const fetchRecommendations = async () => {
-    const apiKey = getEnvApiKey();
-    
-    // Check if we need to show the selection UI
+  const fetchAiDeepDive = async () => {
+    let apiKey = '';
+    try {
+      apiKey = process.env.API_KEY || '';
+    } catch {}
+
     if (!apiKey && window.aistudio) {
       const hasKey = await window.aistudio.hasSelectedApiKey();
       if (!hasKey) {
-        setShowKeySelection(true);
-        return;
+        await window.aistudio.openSelectKey();
+        // GUIDELINE: Proceed after triggering dialog
       }
     }
 
-    setIsLoading(true);
+    setIsAiLoading(true);
     setError(null);
-    setRecommendations(null);
-    setShowKeySelection(false);
 
     try {
-      /**
-       * CRITICAL: Create a new GoogleGenAI instance right before making an API call 
-       * to ensure it uses the most up-to-date API key from the environment or dialog.
-       */
-      const ai = new GoogleGenAI({ apiKey: getEnvApiKey() });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const netWorth = calculateNetWorth(data);
       const totalIncome = calculateMonthlyIncome(data.income.jobs);
@@ -76,8 +65,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       const cardBalance = calculateTotalBalance(data.creditCards);
       const cardLimit = calculateTotalLimit(data.creditCards);
       const utilization = calculateUtilization(cardBalance, cardLimit);
-      const loanBalance = calculateTotalBalance(data.loans);
-      const totalDebt = cardBalance + loanBalance;
+      const totalDebt = cardBalance + calculateTotalBalance(data.loans);
       const dti = calculateDTI(totalBills, totalIncome);
       const scores = `Experian: ${data.creditScores.experian.score8}, Equifax: ${data.creditScores.equifax.score8}, TransUnion: ${data.creditScores.transunion.score8}`;
 
@@ -104,21 +92,15 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         required: ['recommendations']
       };
 
-      const prompt = `You are a high-end personal wealth manager. Provide 4 tailored, data-driven financial strategies for ${formatMonthYear(monthYear)} based on:
+      const prompt = `Perform a high-end personal wealth analysis for ${formatMonthYear(monthYear)}:
         - Net Worth: ${formatCurrency(netWorth)}
-        - Monthly Gross Income: ${formatCurrency(totalIncome)}
-        - Total Liabilities: ${formatCurrency(totalDebt)}
-        - Credit Card Utilization: ${utilization.toFixed(1)}%
-        - Debt-to-Income Ratio: ${dti.toFixed(1)}%
-        - FICO Scores: ${scores}
-
-        REQUIREMENTS:
-        1. "Debt Reduction": Analyze their specific loan/CC balance and suggest a payoff or refinancing move.
-        2. "Investment": Recommend a wealth-building vehicle based on current cash flow.
-        3. "Life Insurance & Protection": Evaluate insurance needs based on debt footprint.
-        4. "Strategic Move": A custom move to optimize credit worthiness.
-
-        Format: Professional, actionable, and encouraging. Use JSON response.`;
+        - Income: ${formatCurrency(totalIncome)}
+        - Debt: ${formatCurrency(totalDebt)}
+        - CC Utilization: ${utilization.toFixed(1)}%
+        - DTI: ${dti.toFixed(1)}%
+        - Scores: ${scores}
+        
+        Provide 4 creative, sophisticated, and actionable strategies. Focus on wealth velocity and credit optimization.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -133,51 +115,35 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       const parsed = JSON.parse(response.text || '{}');
       if (parsed.recommendations) {
         setRecommendations(parsed.recommendations);
-      } else {
-        throw new Error("Invalid response format from AI");
+        setAdvisorMode('ai');
       }
-
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      
-      const errorMessage = err.message || "";
-      // Handle "Requested entity was not found" or missing key errors by resetting key selection state
-      if (errorMessage.includes("Requested entity was not found") || 
-          errorMessage.includes("API Key") || 
-          errorMessage.includes("API key not found")) {
-        setShowKeySelection(true);
-      } else {
-        setError("AI Advisor is temporarily unavailable. Please verify your connection.");
-      }
+      setError("Unable to reach the AI Deep Dive engine. This may be due to an API key issue or connectivity.");
     } finally {
-      setIsLoading(false);
+      setIsAiLoading(false);
     }
   };
-
-  const handleOpenSelectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setShowKeySelection(false);
-      // Assume selection successful and proceed immediately
-      fetchRecommendations();
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) fetchRecommendations();
-  }, [isOpen, monthYear]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-purple-100 dark:border-purple-900/30 animate-fade-in">
-        <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-purple-50 to-white dark:from-purple-900/10 dark:to-gray-900">
+        
+        {/* Header */}
+        <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-brand-primary/5 to-white dark:from-brand-primary/10 dark:to-gray-900">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-xl"><SparklesIcon /></div>
+            <div className={`p-2 rounded-xl ${advisorMode === 'ai' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-blue-100 dark:bg-blue-900/40'}`}>
+              {advisorMode === 'ai' ? <SparklesIcon /> : <InfoIcon />}
+            </div>
             <div>
-              <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">Tailored Advisor</h2>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Unique Financial Footprint Analysis</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {advisorMode === 'ai' ? 'AI Advisor Deep Dive' : 'Local Insight Engine'}
+              </h2>
+              <p className="text-xs text-gray-500 font-medium">
+                {advisorMode === 'ai' ? 'Nuanced Generative Analysis' : 'Rules-Based Financial Logic'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
@@ -185,51 +151,42 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           </button>
         </div>
         
+        {/* Content */}
         <div className="p-6 overflow-y-auto flex-grow">
-          {showKeySelection ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-full animate-pulse">
-                <SparklesIcon />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold">Connect Gemini AI</h3>
-                <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                  To generate personalized financial insights, you need to connect a valid API key from a paid GCP project.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 w-full max-w-xs">
-                <Button onClick={handleOpenSelectKey}>Connect API Key</Button>
-                <a 
-                  href="https://ai.google.dev/gemini-api/docs/billing" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-purple-600 hover:underline"
-                >
-                  View Billing Documentation
-                </a>
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 rounded-xl flex items-start gap-3">
+              <AlertTriangleIcon />
+              <div className="text-xs text-red-800 dark:text-red-200 font-medium leading-relaxed">
+                {error}
+                <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
               </div>
             </div>
-          ) : isLoading ? (
+          )}
+
+          {isAiLoading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-5">
               <div className="w-12 h-12 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
-              <p className="text-lg font-semibold animate-pulse text-purple-700">Analyzing footprint...</p>
-              <p className="text-sm text-gray-500 max-w-xs text-center">Correlating income, debt ratios, and credit history to identify growth opportunities.</p>
-            </div>
-          ) : error ? (
-            <div className="p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 rounded-xl text-center space-y-4">
-              <div className="flex justify-center"><AlertTriangleIcon /></div>
-              <p className="text-sm text-red-800 dark:text-red-200 font-medium">{error}</p>
-              <Button onClick={fetchRecommendations} variant="secondary" size="small">Try Again</Button>
+              <p className="text-lg font-semibold animate-pulse text-purple-700">Synthesizing deep-dive insights...</p>
+              <p className="text-sm text-gray-500 max-w-xs text-center">Comparing your footprint against global wealth management benchmarks.</p>
             </div>
           ) : recommendations ? (
             <div className="space-y-4">
-              <div className="bg-gradient-to-br from-brand-primary/5 to-purple-50 p-4 rounded-xl mb-4 border border-brand-primary/10">
-                <p className="text-sm text-brand-primary font-medium">
-                  Analysis complete for <strong>{formatMonthYear(monthYear)}</strong>. Here are 4 high-impact opportunities:
+              <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Showing <strong>{recommendations.length} tailored strategies</strong> for {formatMonthYear(monthYear)}.
                 </p>
+                {advisorMode === 'local' && (
+                  <button 
+                    onClick={fetchAiDeepDive}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold shadow transition-all"
+                  >
+                    <SparklesIcon /> UPGRADE TO AI
+                  </button>
+                )}
               </div>
+
               {recommendations.map((rec, idx) => (
-                <div key={idx} className="p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm hover:border-purple-300 transition-all group">
+                <div key={idx} className="p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm hover:border-brand-primary/30 transition-all group">
                   <div className="flex justify-between items-start mb-2">
                     <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded shadow-sm ${
                       rec.category === 'Debt Reduction' ? 'bg-red-50 text-red-600 border border-red-100' :
@@ -240,7 +197,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                       {rec.category}
                     </span>
                   </div>
-                  <h4 className="font-bold mb-1 text-gray-900 dark:text-white group-hover:text-purple-700 transition-colors">{rec.title}</h4>
+                  <h4 className="font-bold mb-1 text-gray-900 dark:text-white group-hover:text-brand-primary transition-colors">{rec.title}</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">{rec.description}</p>
                   <div className="flex items-center gap-2 text-xs font-bold text-positive bg-green-50/50 dark:bg-green-900/10 p-2 rounded-lg border border-green-100 dark:border-green-900/20">
                     <CheckIcon /> <span>ACTION: {rec.actionItem}</span>
@@ -251,8 +208,18 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           ) : null}
         </div>
 
-        <div className="p-4 border-t bg-gray-50 dark:bg-gray-800/50 flex justify-end">
-          <Button onClick={onClose} variant="secondary" size="small">Close Advisor</Button>
+        {/* Footer */}
+        <div className="p-4 border-t bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3">
+          {advisorMode === 'ai' && (
+            /* Fix: Changed logical OR to block statement to avoid 'void' truthiness test error */
+            <Button onClick={() => {
+              setRecommendations(getLocalRecommendations(data));
+              setAdvisorMode('local');
+            }} variant="secondary" size="small">
+              Switch to Local Mode
+            </Button>
+          )}
+          <Button onClick={onClose} variant="secondary" size="small">Close</Button>
         </div>
       </div>
     </div>

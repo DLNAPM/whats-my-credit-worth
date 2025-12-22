@@ -1,4 +1,4 @@
-import * as firebaseApp from 'firebase/app';
+import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -12,7 +12,8 @@ const firebaseConfig = {
   measurementId: "G-Y52XV704K6"
 };
 
-const app = firebaseApp.initializeApp(firebaseConfig);
+// Fix: Use direct initializeApp function instead of namespace property access
+const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);

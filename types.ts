@@ -61,4 +61,11 @@ export interface FinancialData {
   [monthYear: string]: MonthlyData;
 }
 
+export interface RecommendationItem {
+  title: string;
+  description: string;
+  category: 'Debt Reduction' | 'Investment' | 'Life Insurance & Protection' | 'Strategic Move';
+  actionItem: string;
+}
+
 export type AppUser = User;
