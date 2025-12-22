@@ -6,7 +6,7 @@ import Button from './ui/Button';
 import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
 
-// Define the AI Studio interface for the key selection dialog
+// Define the AI Studio interface for the key selection dialog (kept for future-proofing)
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -35,7 +35,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsKeySelection, setNeedsKeySelection] = useState(false);
 
   const fetchRecommendations = async () => {
     setIsLoading(true);
@@ -43,33 +42,8 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setRecommendations(null);
 
     try {
-      // Check for API Key in environment or via AI Studio selection
-      let apiKey = process.env.API_KEY;
-
-      // If key is missing from environment, check if user has selected one via AI Studio
-      if (!apiKey && window.aistudio) {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasKey) {
-          setNeedsKeySelection(true);
-          setIsLoading(false);
-          return;
-        }
-        // If they have selected one, process.env.API_KEY will be automatically updated by the platform
-        apiKey = process.env.API_KEY;
-      }
-
-      // Final check before proceeding
-      if (!apiKey) {
-        // If we are on Render and the env var isn't reaching the browser, 
-        // we prompt the user to select one manually.
-        if (window.aistudio) {
-          setNeedsKeySelection(true);
-        } else {
-          setError("API Key not found in environment. Please ensure 'API_KEY' is set in your deployment settings.");
-        }
-        setIsLoading(false);
-        return;
-      }
+      // Manual test key as requested by the user for testing
+      const apiKey = 'AIzaSyCMm5e1rozDjUor8snvEh873e4OYTkT_XI';
 
       const ai = new GoogleGenAI({ apiKey });
       
@@ -138,24 +112,9 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      
-      const msg = err.message || "";
-      if (msg.includes("API Key must be set") || msg.includes("entity was not found")) {
-        setNeedsKeySelection(true);
-      } else {
-        setError("AI Advisor is currently unavailable. Please verify your connection or API key status.");
-      }
+      setError("AI Advisor encountered an error. Please verify your manual API key status or connection.");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleOpenSelectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setNeedsKeySelection(false);
-      // Immediately retry after selection attempt
-      fetchRecommendations();
     }
   };
 
@@ -182,30 +141,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
         
         <div className="p-6 overflow-y-auto flex-grow">
-          {needsKeySelection ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-full">
-                <SparklesIcon />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold">Connect Gemini AI</h3>
-                <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                  To generate personalized financial insights, you need to connect a valid Gemini API key.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 w-full max-w-xs">
-                <Button onClick={handleOpenSelectKey}>Connect API Key</Button>
-                <a 
-                  href="https://ai.google.dev/gemini-api/docs/billing" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-purple-600 hover:underline"
-                >
-                  Learn about Gemini API billing
-                </a>
-              </div>
-            </div>
-          ) : isLoading ? (
+          {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-5">
               <div className="w-12 h-12 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
               <p className="text-lg font-semibold animate-pulse text-purple-700">Analyzing footprint...</p>
