@@ -6,7 +6,7 @@ import Button from './ui/Button';
 import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
 
-// Fix: Defining AIStudio interface to match existing global expectations
+// Define the AI Studio interface for the key selection dialog
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -35,7 +35,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsKey, setNeedsKey] = useState(false);
+  const [needsKeySelection, setNeedsKeySelection] = useState(false);
 
   const fetchRecommendations = async () => {
     setIsLoading(true);
@@ -43,20 +43,35 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setRecommendations(null);
 
     try {
-      // Handle AI Studio managed key selection first (if running in AI Studio UI)
-      if (window.aistudio) {
+      // Check for API Key in environment or via AI Studio selection
+      let apiKey = process.env.API_KEY;
+
+      // If key is missing from environment, check if user has selected one via AI Studio
+      if (!apiKey && window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
         if (!hasKey) {
-          setNeedsKey(true);
+          setNeedsKeySelection(true);
           setIsLoading(false);
           return;
         }
+        // If they have selected one, process.env.API_KEY will be automatically updated by the platform
+        apiKey = process.env.API_KEY;
       }
 
-      // Initialize API. 
-      // SECURE PRACTICE: Always use process.env.API_KEY.
-      // Set this variable in your hosting platform's (Render/Firebase) Environment Settings.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Final check before proceeding
+      if (!apiKey) {
+        // If we are on Render and the env var isn't reaching the browser, 
+        // we prompt the user to select one manually.
+        if (window.aistudio) {
+          setNeedsKeySelection(true);
+        } else {
+          setError("API Key not found in environment. Please ensure 'API_KEY' is set in your deployment settings.");
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const netWorth = calculateNetWorth(data);
       const totalIncome = calculateMonthlyIncome(data.income.jobs);
@@ -101,10 +116,10 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         - FICO Scores: ${scores}
 
         REQUIREMENTS:
-        1. "Debt Reduction": Analyze their specific loan/CC balance and suggest a payoff or refinancing move (e.g., Consolidation, 0% APR Transfer).
-        2. "Investment": Recommend a wealth-building vehicle (e.g., Roth IRA, Brokerage, Real Estate) based on their current cash flow and net worth.
-        3. "Life Insurance & Protection": Evaluate if they need Term/Whole Life, Disability, or an Umbrella policy based on their income and debt footprint.
-        4. "Strategic Move": A custom move to optimize their credit worthiness or tax efficiency.
+        1. "Debt Reduction": Analyze their specific loan/CC balance and suggest a payoff or refinancing move.
+        2. "Investment": Recommend a wealth-building vehicle based on current cash flow.
+        3. "Life Insurance & Protection": Evaluate insurance needs based on debt footprint.
+        4. "Strategic Move": A custom move to optimize credit worthiness.
 
         Format: Professional, actionable, and encouraging. Use JSON response.`;
 
@@ -124,28 +139,22 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     } catch (err: any) {
       console.error("Gemini Error:", err);
       
-      const errorMsg = err.message || "";
-      
-      if (errorMsg.includes("leaked")) {
-        setError("Your API key was revoked because it was shared publicly. Please generate a NEW key in Google AI Studio and update your environment variables.");
-      } else if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API Key must be set")) {
-        if (window.aistudio) {
-          setNeedsKey(true);
-        } else {
-          setError("API Key missing or invalid. Please check your Render/Firebase environment variables.");
-        }
+      const msg = err.message || "";
+      if (msg.includes("API Key must be set") || msg.includes("entity was not found")) {
+        setNeedsKeySelection(true);
       } else {
-        setError("An error occurred while generating tailored insights. Please check your console for details.");
+        setError("AI Advisor is currently unavailable. Please verify your connection or API key status.");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSelectKey = async () => {
+  const handleOpenSelectKey = async () => {
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
-      setNeedsKey(false);
+      setNeedsKeySelection(false);
+      // Immediately retry after selection attempt
       fetchRecommendations();
     }
   };
@@ -158,7 +167,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-purple-100 dark:border-purple-900/30">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-purple-100 dark:border-purple-900/30 animate-fade-in">
         <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-purple-50 to-white dark:from-purple-900/10 dark:to-gray-900">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-xl"><SparklesIcon /></div>
@@ -173,26 +182,34 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
         
         <div className="p-6 overflow-y-auto flex-grow">
-          {needsKey ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
-              <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center"><SparklesIcon /></div>
-              <h3 className="text-lg font-bold">Connect AI Engine</h3>
-              <p className="text-sm text-gray-500 max-w-xs">To generate tailored recommendations, you must connect a valid Gemini API key from Google AI Studio.</p>
-              <a 
-                href="https://ai.google.dev/gemini-api/docs/billing" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-xs text-purple-600 hover:underline mb-2"
-              >
-                Learn about Gemini API billing
-              </a>
-              <Button onClick={handleSelectKey}>Select API Key</Button>
+          {needsKeySelection ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-full">
+                <SparklesIcon />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold">Connect Gemini AI</h3>
+                <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                  To generate personalized financial insights, you need to connect a valid Gemini API key.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                <Button onClick={handleOpenSelectKey}>Connect API Key</Button>
+                <a 
+                  href="https://ai.google.dev/gemini-api/docs/billing" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-purple-600 hover:underline"
+                >
+                  Learn about Gemini API billing
+                </a>
+              </div>
             </div>
           ) : isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-5">
               <div className="w-12 h-12 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
               <p className="text-lg font-semibold animate-pulse text-purple-700">Analyzing footprint...</p>
-              <p className="text-sm text-gray-500 max-w-xs text-center">We're correlating your income, debt ratios, and credit history to find growth opportunities.</p>
+              <p className="text-sm text-gray-500 max-w-xs text-center">Correlating income, debt ratios, and credit history to identify growth opportunities.</p>
             </div>
           ) : error ? (
             <div className="p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 rounded-xl text-center space-y-4">
@@ -204,7 +221,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
             <div className="space-y-4">
               <div className="bg-gradient-to-br from-brand-primary/5 to-purple-50 p-4 rounded-xl mb-4 border border-brand-primary/10">
                 <p className="text-sm text-brand-primary font-medium">
-                  We've identified 4 high-impact opportunities for your <strong>{formatMonthYear(monthYear)}</strong> footprint.
+                  Analysis complete for <strong>{formatMonthYear(monthYear)}</strong>. Here are 4 high-impact opportunities:
                 </p>
               </div>
               {recommendations.map((rec, idx) => (
@@ -222,7 +239,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                   <h4 className="font-bold mb-1 text-gray-900 dark:text-white group-hover:text-purple-700 transition-colors">{rec.title}</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">{rec.description}</p>
                   <div className="flex items-center gap-2 text-xs font-bold text-positive bg-green-50/50 dark:bg-green-900/10 p-2 rounded-lg border border-green-100 dark:border-green-900/20">
-                    <CheckIcon /> <span>NEXT STEP: {rec.actionItem}</span>
+                    <CheckIcon /> <span>ACTION: {rec.actionItem}</span>
                   </div>
                 </div>
               ))}
