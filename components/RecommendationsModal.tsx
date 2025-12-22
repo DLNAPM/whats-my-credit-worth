@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import type { MonthlyData } from '../types';
 import Button from './ui/Button';
-import { SparklesIcon } from './ui/Icons';
+import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI } from '../utils/helpers';
 
 interface RecommendationsModalProps {
@@ -13,116 +13,277 @@ interface RecommendationsModalProps {
   monthYear: string;
 }
 
+interface RecommendationItem {
+  title: string;
+  description: string;
+  category: string;
+  actionItem: string;
+}
+
 const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onClose, data, monthYear }) => {
-  const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsKey, setNeedsKey] = useState(false);
 
-  // Function to generate content from Gemini API
-  const generateRecommendations = async () => {
+  const checkKeyStatus = async () => {
+    const aistudio = (window as any).aistudio;
+    
+    // Check if key is available in environment or via selection
+    if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
+      try {
+        const hasKey = await aistudio.hasSelectedApiKey();
+        if (!hasKey && !process.env.API_KEY) {
+          setNeedsKey(true);
+          return;
+        }
+      } catch (err) {
+        console.warn("AI Studio key check skipped:", err);
+      }
+    }
+    
+    // If we have a key or can't check, proceed with fetch
+    fetchRecommendations();
+  };
+
+  const handleOpenKeyDialog = async () => {
+    const aistudio = (window as any).aistudio;
+    if (aistudio && typeof aistudio.openSelectKey === 'function') {
+      await aistudio.openSelectKey();
+      setNeedsKey(false);
+      // We assume selection success and proceed
+      fetchRecommendations();
+    }
+  };
+
+  const fetchRecommendations = async () => {
     setIsLoading(true);
     setError(null);
+    setRecommendations(null);
+
     try {
-      // Use the injected API_KEY from environment variables
+      // Create a fresh instance to ensure we use the latest selected key
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const netWorth = calculateNetWorth(data);
       const totalIncome = calculateMonthlyIncome(data.income.jobs);
       const totalBills = calculateTotal(data.monthlyBills);
-      const totalAssets = calculateTotal(data.assets);
       const totalDebt = calculateTotalBalance(data.creditCards) + calculateTotalBalance(data.loans);
       const dti = calculateDTI(totalBills, totalIncome);
 
+      // Extract scores cleanly
+      const scores = `Experian: ${data.creditScores.experian.score8}, Equifax: ${data.creditScores.equifax.score8}, TransUnion: ${data.creditScores.transunion.score8}`;
+
+      const schema = {
+        type: Type.OBJECT,
+        properties: {
+          recommendations: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                category: { type: Type.STRING, description: "One of: 'Credit Cards', 'Loans', 'Savings', 'Investments', 'General'" },
+                actionItem: { type: Type.STRING, description: "A short, actionable step (max 15 words)." }
+              },
+              required: ['title', 'description', 'category', 'actionItem']
+            }
+          }
+        },
+        required: ['recommendations']
+      };
+
       const prompt = `
-        As an expert financial advisor, provide 3-5 personalized, actionable recommendations based on the following financial snapshot for ${formatMonthYear(monthYear)}:
+        As an expert financial advisor for "What's my Credit Worth", analyze this financial snapshot for ${formatMonthYear(monthYear)} and provide 4 high-impact recommendations.
         
+        FINANCIAL PROFILE:
         - Net Worth: ${formatCurrency(netWorth)}
         - Monthly Income: ${formatCurrency(totalIncome)}
-        - Total Monthly Bills: ${formatCurrency(totalBills)}
-        - Total Assets: ${formatCurrency(totalAssets)}
+        - Monthly Bills: ${formatCurrency(totalBills)}
         - Total Debt: ${formatCurrency(totalDebt)}
-        - Debt-to-Income (DTI) Ratio: ${dti.toFixed(2)}%
+        - Debt-to-Income (DTI): ${dti.toFixed(2)}%
+        - FICO 8 Scores: ${scores}
         
-        Details:
-        - Income Sources: ${data.income.jobs.map(j => `${j.name} (${formatCurrency(j.amount)} ${j.frequency})`).join(', ')}
-        - Credit Cards: ${data.creditCards.map(c => `${c.name}: Balance ${formatCurrency(c.balance)}, Limit ${formatCurrency(c.limit)}`).join(', ')}
-        - Loans: ${data.loans.map(l => `${l.name}: Balance ${formatCurrency(l.balance)}, Limit ${formatCurrency(l.limit)}`).join(', ')}
-        - Assets: ${data.assets.map(a => `${a.name}: Value ${formatCurrency(a.value)}`).join(', ')}
-        - Monthly Bills: ${data.monthlyBills.map(b => `${b.name}: ${formatCurrency(b.amount)}`).join(', ')}
-        - Credit Scores: Experian (${data.creditScores.experian.score8}), Equifax (${data.creditScores.equifax.score8}), TransUnion (${data.creditScores.transunion.score8})
+        ASSETS: ${data.assets.map(a => `${a.name}: ${formatCurrency(a.value)}`).join(', ')}
+        DEBT BREAKDOWN: ${[...data.creditCards, ...data.loans].map(d => `${d.name}: ${formatCurrency(d.balance)} balance / ${formatCurrency(d.limit)} limit`).join(', ')}
 
-        Please format the output in Markdown. Focus on improving credit health, reducing debt, and optimizing savings.
+        Analyze for:
+        1. Credit score improvement (utilization focus).
+        2. Debt reduction prioritization.
+        3. Savings or investment opportunities.
+        4. General budget health (DTI).
+
+        Return strictly valid JSON matching the provided schema.
       `;
 
-      // Using gemini-3-pro-preview for complex reasoning task
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
-          thinkingConfig: { thinkingBudget: 4000 }
+          responseMimeType: "application/json",
+          responseSchema: schema,
+          thinkingConfig: { thinkingBudget: 32768 } // Max budget for pro
         }
       });
 
-      // Extracting text output directly from the response object
-      setRecommendation(response.text || "Could not generate recommendations at this time.");
+      const text = response.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (parsed.recommendations) {
+          setRecommendations(parsed.recommendations);
+        } else {
+          throw new Error("Invalid response format");
+        }
+      }
     } catch (err: any) {
       console.error("Gemini API Error:", err);
-      setError("Failed to fetch recommendations. Please check your connection and try again.");
+      // Check for common key errors
+      const msg = err.message || "";
+      if (msg.includes('API_KEY') || msg.includes('API key') || msg.includes('403') || msg.includes('401') || msg.includes('not set')) {
+        setNeedsKey(true);
+      } else {
+        setError("Failed to analyze data. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Trigger recommendation generation when modal opens if not already loaded
   useEffect(() => {
-    if (isOpen && !recommendation && !isLoading && data) {
-      generateRecommendations();
+    if (isOpen) {
+      checkKeyStatus();
     }
-  }, [isOpen, data, recommendation, isLoading]);
+  }, [isOpen, monthYear]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Modal Header */}
-        <div className="p-6 border-b flex items-center justify-between bg-purple-50 dark:bg-purple-900/20">
-          <div className="flex items-center gap-2">
-            <SparklesIcon />
-            <h2 className="text-2xl font-bold text-purple-900 dark:text-purple-100">AI Financial Recommendations</h2>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-purple-100 dark:border-purple-900/30">
+        {/* Header */}
+        <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-purple-50 to-white dark:from-purple-900/10 dark:to-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-xl">
+              <SparklesIcon />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">AI Financial Advisor</h2>
+              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">{formatMonthYear(monthYear)} Analysis</p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+          >
+             <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
              </svg>
           </button>
         </div>
         
-        {/* Modal Content */}
-        <div className="p-6 overflow-y-auto flex-grow prose dark:prose-invert max-w-none">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-              <p className="text-gray-600 dark:text-gray-400 animate-pulse">Analyzing your financial data...</p>
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-grow custom-scrollbar">
+          {needsKey ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center space-y-6">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                <SparklesIcon />
+              </div>
+              <div className="max-w-xs">
+                <h3 className="text-lg font-bold mb-2">Connect AI Advisor</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  To receive personalized financial advice, you need to connect your Gemini API key.
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  (Required for Gemini 3 Pro models)
+                </p>
+              </div>
+              <Button onClick={handleOpenKeyDialog} className="w-full sm:w-auto">
+                Select API Key
+              </Button>
+              <a 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-brand-primary hover:underline"
+              >
+                Learn about API keys
+              </a>
+            </div>
+          ) : isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-5">
+              <div className="relative">
+                <div className="w-12 h-12 border-4 border-purple-100 dark:border-purple-900/30 rounded-full"></div>
+                <div className="absolute top-0 w-12 h-12 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                   <SparklesIcon />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">Analyzing Snapshot...</p>
+                <p className="text-sm text-gray-400 animate-pulse">Running complex reasoning with Gemini 3 Pro</p>
+              </div>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
-              <p>{error}</p>
-              <Button onClick={generateRecommendations} variant="danger" className="mt-4">Try Again</Button>
+            <div className="p-6 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-2xl text-center space-y-4">
+              <div className="flex justify-center text-negative">
+                <AlertTriangleIcon />
+              </div>
+              <div>
+                <h4 className="font-bold text-negative">Analysis Interrupted</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{error}</p>
+              </div>
+              <Button onClick={fetchRecommendations} variant="secondary" size="small">Try Again</Button>
+            </div>
+          ) : recommendations ? (
+            <div className="space-y-4">
+              {recommendations.map((rec, idx) => (
+                <div 
+                  key={idx} 
+                  className="group p-4 bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 rounded-2xl hover:border-purple-200 dark:hover:border-purple-800 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded">
+                      {rec.category}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-1">{rec.title}</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                    {rec.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs font-bold text-positive bg-green-50 dark:bg-green-900/20 p-2 rounded-xl border border-green-100 dark:border-green-900/30">
+                    <CheckIcon />
+                    <span>{rec.actionItem}</span>
+                  </div>
+                </div>
+              ))}
+              
+              <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                 <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+                   <strong>Pro Tip:</strong> These insights are based on your current Debt-to-Income ratio (${calculateDTI(calculateTotal(data.monthlyBills), calculateMonthlyIncome(data.income.jobs)).toFixed(1)}%) and credit utilization. Update your data monthly to track improvements.
+                 </p>
+              </div>
             </div>
           ) : (
-            <div className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
-              {recommendation}
-            </div>
+             <div className="text-center py-10 text-gray-500">
+               Click refresh to generate advice.
+             </div>
           )}
         </div>
 
-        {/* Modal Footer */}
+        {/* Footer */}
         <div className="p-4 border-t bg-gray-50 dark:bg-gray-800/50 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center sm:text-left">
-            Disclaimer: These recommendations are generated by AI and are for informational purposes only. Consult with a professional financial advisor for specific advice.
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 italic text-center sm:text-left max-w-[70%]">
+            AI-generated advice is for informational purposes only. Consult with a professional financial advisor for specific investment or debt strategies.
           </p>
-          <Button onClick={onClose} variant="secondary">Close</Button>
+          <div className="flex gap-2">
+            {!needsKey && !isLoading && (
+              <Button onClick={fetchRecommendations} variant="secondary" size="small">
+                Refresh
+              </Button>
+            )}
+            <Button onClick={onClose} variant="secondary" size="small">Close</Button>
+          </div>
         </div>
       </div>
     </div>
