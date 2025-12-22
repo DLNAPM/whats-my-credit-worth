@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import type { MonthlyData } from '../types';
@@ -6,12 +7,14 @@ import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI } from '../utils/helpers';
 
 // Extend window interface for aistudio properties
+// Fix: Defining AIStudio interface to match existing global expectations and avoid type collision.
 declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
   interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
+    aistudio?: AIStudio;
   }
 }
 
@@ -41,10 +44,17 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setRecommendations(null);
 
     try {
-      // Rule: When using paid models like gemini-3-pro-preview, check for API key selection.
-      const hasKey = await window.aistudio.hasSelectedApiKey();
-      if (!hasKey) {
-        setNeedsKey(true);
+      // Rule: Check for API key selection if the bridge is available
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          setNeedsKey(true);
+          setIsLoading(false);
+          return;
+        }
+      } else if (!process.env.API_KEY) {
+        // Fallback: If no bridge and no environment variable, we can't proceed
+        setError("API configuration missing. Please ensure an API Key is provided.");
         setIsLoading(false);
         return;
       }
@@ -103,7 +113,11 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       console.error("Gemini Error:", err);
       // Rule: Handle case where key selection is required or expired.
       if (err.message?.includes("Requested entity was not found") || err.message?.includes("API Key must be set")) {
-        setNeedsKey(true);
+        if (window.aistudio) {
+          setNeedsKey(true);
+        } else {
+          setError("The API Key provided is invalid or has expired.");
+        }
       } else {
         setError("Failed to generate insights. Please check your connection or try again later.");
       }
@@ -114,10 +128,12 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
   const handleSelectKey = async () => {
     // Rule: Use window.aistudio.openSelectKey() to prompt user for key selection.
-    await window.aistudio.openSelectKey();
-    // Rule: Assume success and retry immediately.
-    setNeedsKey(false);
-    fetchRecommendations();
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Rule: Assume success and retry immediately.
+      setNeedsKey(false);
+      fetchRecommendations();
+    }
   };
 
   useEffect(() => {
@@ -148,7 +164,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
               <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center"><SparklesIcon /></div>
               <h3 className="text-lg font-bold">Connect AI Engine</h3>
               <p className="text-sm text-gray-500 max-w-xs">To use the AI Advisor, you must select your own paid Gemini API key from a project with billing enabled.</p>
-              {/* Rule: Provide link to billing documentation. */}
               <a 
                 href="https://ai.google.dev/gemini-api/docs/billing" 
                 target="_blank" 
