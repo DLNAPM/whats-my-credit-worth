@@ -35,31 +35,40 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsKey, setNeedsKey] = useState(false);
+  const [showKeySelection, setShowKeySelection] = useState(false);
+
+  // Safely get the API Key from process.env if it exists
+  const getEnvApiKey = () => {
+    try {
+      return process.env.API_KEY;
+    } catch {
+      return undefined;
+    }
+  };
 
   const fetchRecommendations = async () => {
-    // 1. Check for API key selection state
-    if (window.aistudio) {
+    const apiKey = getEnvApiKey();
+    
+    // Check if we need to show the selection UI
+    if (!apiKey && window.aistudio) {
       const hasKey = await window.aistudio.hasSelectedApiKey();
-      if (!hasKey && !process.env.API_KEY) {
-        setNeedsKey(true);
+      if (!hasKey) {
+        setShowKeySelection(true);
         return;
       }
-    } else if (!process.env.API_KEY) {
-      setError("API Key not found. If you're using Render, ensure the API_KEY environment variable is set and correctly prefixed if required by your build tool.");
-      return;
     }
 
     setIsLoading(true);
     setError(null);
     setRecommendations(null);
+    setShowKeySelection(false);
 
     try {
       /**
        * CRITICAL: Create a new GoogleGenAI instance right before making an API call 
        * to ensure it uses the most up-to-date API key from the environment or dialog.
        */
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: getEnvApiKey() });
       
       const netWorth = calculateNetWorth(data);
       const totalIncome = calculateMonthlyIncome(data.income.jobs);
@@ -122,27 +131,34 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       });
 
       const parsed = JSON.parse(response.text || '{}');
-      if (parsed.recommendations) setRecommendations(parsed.recommendations);
+      if (parsed.recommendations) {
+        setRecommendations(parsed.recommendations);
+      } else {
+        throw new Error("Invalid response format from AI");
+      }
 
     } catch (err: any) {
       console.error("Gemini Error:", err);
       
-      // If key is invalid/missing, prompt for selection again
-      if (err.message?.includes("not found") || err.message?.includes("API Key")) {
-        setNeedsKey(true);
+      const errorMessage = err.message || "";
+      // Handle "Requested entity was not found" or missing key errors by resetting key selection state
+      if (errorMessage.includes("Requested entity was not found") || 
+          errorMessage.includes("API Key") || 
+          errorMessage.includes("API key not found")) {
+        setShowKeySelection(true);
       } else {
-        setError("AI Advisor encountered an error. Please verify your connection or try again.");
+        setError("AI Advisor is temporarily unavailable. Please verify your connection.");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleConnectKey = async () => {
+  const handleOpenSelectKey = async () => {
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
-      setNeedsKey(false);
-      // Proceed immediately after triggering the dialog as per guidelines
+      setShowKeySelection(false);
+      // Assume selection successful and proceed immediately
       fetchRecommendations();
     }
   };
@@ -170,26 +186,26 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
         
         <div className="p-6 overflow-y-auto flex-grow">
-          {needsKey ? (
+          {showKeySelection ? (
             <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
               <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-full animate-pulse">
                 <SparklesIcon />
               </div>
               <div className="space-y-2">
-                <h3 className="text-lg font-bold">Secure AI Connection Required</h3>
+                <h3 className="text-lg font-bold">Connect Gemini AI</h3>
                 <p className="text-sm text-gray-500 max-w-xs mx-auto">
-                  To provide personalized financial advice, we need a valid Gemini API key. Please connect your key to continue.
+                  To generate personalized financial insights, you need to connect a valid API key from a paid GCP project.
                 </p>
               </div>
               <div className="flex flex-col gap-3 w-full max-w-xs">
-                <Button onClick={handleConnectKey}>Connect Gemini AI</Button>
+                <Button onClick={handleOpenSelectKey}>Connect API Key</Button>
                 <a 
                   href="https://ai.google.dev/gemini-api/docs/billing" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-xs text-purple-600 hover:underline"
                 >
-                  Learn about Gemini API billing & project requirements
+                  View Billing Documentation
                 </a>
               </div>
             </div>
