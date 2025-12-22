@@ -3,8 +3,7 @@ import React from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, SaveIcon, CheckIcon, AlertTriangleIcon, SparklesIcon } from './ui/Icons';
-import HelpTooltip from './ui/HelpTooltip';
+import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
@@ -15,7 +14,6 @@ interface HeaderProps {
   onEdit: () => void;
   onShare: () => void;
   onImportExport: () => void;
-  onRecommendations: () => void;
   view: View;
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
@@ -30,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
   onEdit,
   onShare,
   onImportExport,
-  onRecommendations,
   view,
   setView,
   onLogout,
@@ -67,16 +64,8 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex flex-col items-center lg:items-start">
           <div className="flex items-center gap-2 justify-center lg:justify-start">
             <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">WMCW Dashboard</h1>
-            <HelpTooltip text="Real-time cloud financial monitoring." />
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <button 
-              onClick={onRecommendations} 
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-bold transition-colors border border-purple-200"
-            >
-              <SparklesIcon />
-              <span>AI ADVICE</span>
-            </button>
             <SaveStatusIndicator />
           </div>
         </div>

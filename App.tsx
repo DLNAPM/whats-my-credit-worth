@@ -15,7 +15,6 @@ import ImportExportModal from './components/ImportExportModal';
 import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
-import RecommendationsModal from './components/RecommendationsModal';
 
 const MainApp: React.FC = () => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
@@ -25,7 +24,6 @@ const MainApp: React.FC = () => {
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
-  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [view, setView] = useState<View>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -61,18 +59,10 @@ const MainApp: React.FC = () => {
   
   const handleLogout = async () => {
     // If there are unsaved changes or a previous save failed, try saving again.
-    if (saveStatus === 'unsaved' || saveStatus === 'error') {
-      try {
-        await saveData();
-      } catch (error) {
-        // If saving fails, confirm with the user before logging out.
-        const confirmLogout = window.confirm("Failed to save your latest changes. Your data may be lost. Are you sure you want to log out?");
-        if (!confirmLogout) {
-          return; // User cancelled logout
-        }
-      }
+    if (saveStatus === 'saving' || saveStatus === 'error') {
+       // Note: In cloud sync mode, saving status is managed automatically
     }
-    await logout(); // Proceed with logout if save was successful or user confirmed
+    await logout(); 
   };
 
   return (
@@ -85,7 +75,6 @@ const MainApp: React.FC = () => {
           onEdit={() => setIsEditorOpen(true)}
           onShare={() => setIsShareModalOpen(true)}
           onImportExport={() => setIsImportExportModalOpen(true)}
-          onRecommendations={() => setIsRecommendationsOpen(true)}
           view={view}
           setView={setView}
           onLogout={handleLogout}
@@ -145,13 +134,6 @@ const MainApp: React.FC = () => {
                 setIsUploadHelpOpen(true);
             }}
             hasData={hasData()}
-        />
-
-        <RecommendationsModal
-          isOpen={isRecommendationsOpen}
-          onClose={() => setIsRecommendationsOpen(false)}
-          data={currentMonthData}
-          monthYear={currentMonthYear}
         />
 
         <input
