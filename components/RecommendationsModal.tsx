@@ -43,7 +43,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setRecommendations(null);
 
     try {
-      // Handle AI Studio managed key selection first
+      // Handle AI Studio managed key selection first (if running in AI Studio UI)
       if (window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
         if (!hasKey) {
@@ -53,10 +53,10 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         }
       }
 
-      // Create a new instance for every call to ensure the latest API key is used
-      // NOTE: process.env.API_KEY is the standard location for the key. 
-      // If you are testing manually, replace the variable below with your string.
-      const ai = new GoogleGenAI({ apiKey: "AIzaSyCUIrhQcZnIUshJ-y4dod7cNbR7LnxJ_Rg" });
+      // Initialize API. 
+      // SECURE PRACTICE: Always use process.env.API_KEY.
+      // Set this variable in your hosting platform's (Render/Firebase) Environment Settings.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const netWorth = calculateNetWorth(data);
       const totalIncome = calculateMonthlyIncome(data.income.jobs);
@@ -123,12 +123,16 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      // Handle the specific error if the entity (API Key) is not found or missing
-      if (err.message?.includes("Requested entity was not found") || err.message?.includes("API Key must be set") || err.message?.includes("API key not found")) {
+      
+      const errorMsg = err.message || "";
+      
+      if (errorMsg.includes("leaked")) {
+        setError("Your API key was revoked because it was shared publicly. Please generate a NEW key in Google AI Studio and update your environment variables.");
+      } else if (errorMsg.includes("Requested entity was not found") || errorMsg.includes("API Key must be set")) {
         if (window.aistudio) {
           setNeedsKey(true);
         } else {
-          setError("API Key configuration error. If testing manually, ensure your key is valid. Otherwise, check your Render/Firebase environment variables.");
+          setError("API Key missing or invalid. Please check your Render/Firebase environment variables.");
         }
       } else {
         setError("An error occurred while generating tailored insights. Please check your console for details.");
