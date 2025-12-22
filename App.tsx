@@ -12,6 +12,7 @@ import ShareModal from './components/ShareModal';
 import Snapshot from './components/Snapshot';
 import type { MonthlyData } from './types';
 import ImportExportModal from './components/ImportExportModal';
+import RecommendationsModal from './components/RecommendationsModal';
 import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
@@ -24,6 +25,7 @@ const MainApp: React.FC = () => {
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
+  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [view, setView] = useState<View>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -58,10 +60,6 @@ const MainApp: React.FC = () => {
   };
   
   const handleLogout = async () => {
-    // If there are unsaved changes or a previous save failed, try saving again.
-    if (saveStatus === 'saving' || saveStatus === 'error') {
-       // Note: In cloud sync mode, saving status is managed automatically
-    }
     await logout(); 
   };
 
@@ -75,6 +73,7 @@ const MainApp: React.FC = () => {
           onEdit={() => setIsEditorOpen(true)}
           onShare={() => setIsShareModalOpen(true)}
           onImportExport={() => setIsImportExportModalOpen(true)}
+          onRecommendations={() => setIsRecommendationsOpen(true)}
           view={view}
           setView={setView}
           onLogout={handleLogout}
@@ -136,6 +135,13 @@ const MainApp: React.FC = () => {
             hasData={hasData()}
         />
 
+        <RecommendationsModal
+          isOpen={isRecommendationsOpen}
+          onClose={() => setIsRecommendationsOpen(false)}
+          data={currentMonthData}
+          monthYear={currentMonthYear}
+        />
+
         <input
             type="file"
             accept=".json"
@@ -171,7 +177,6 @@ function App() {
     }
     
     try {
-      // Decode URL-safe base64 and handle UTF-8 characters.
       const urlSafeBase64ToStr = (base64Url: string): string => {
         let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const padding = '='.repeat((4 - base64.length % 4) % 4);

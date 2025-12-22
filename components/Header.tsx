@@ -3,7 +3,7 @@ import React from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon } from './ui/Icons';
+import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon, SparklesIcon } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
@@ -14,6 +14,7 @@ interface HeaderProps {
   onEdit: () => void;
   onShare: () => void;
   onImportExport: () => void;
+  onRecommendations: () => void;
   view: View;
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
@@ -28,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({
   onEdit,
   onShare,
   onImportExport,
+  onRecommendations,
   view,
   setView,
   onLogout,
@@ -66,6 +68,13 @@ const Header: React.FC<HeaderProps> = ({
             <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">WMCW Dashboard</h1>
           </div>
           <div className="flex items-center gap-2 mt-2">
+            <button 
+              onClick={onRecommendations} 
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-bold transition-colors border border-purple-200"
+            >
+              <SparklesIcon />
+              <span>AI ADVISOR</span>
+            </button>
             <SaveStatusIndicator />
           </div>
         </div>

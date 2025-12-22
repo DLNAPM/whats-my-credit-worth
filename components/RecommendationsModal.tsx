@@ -7,7 +7,6 @@ import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI } from '../utils/helpers';
 
 // Extend window interface for aistudio properties
-// Fix: Defining AIStudio interface to match existing global expectations and avoid type collision.
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -28,7 +27,7 @@ interface RecommendationsModalProps {
 interface RecommendationItem {
   title: string;
   description: string;
-  category: string;
+  category: 'Debt Reduction' | 'Investment' | 'Protection' | 'Strategy';
   actionItem: string;
 }
 
@@ -44,7 +43,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setRecommendations(null);
 
     try {
-      // Rule: Check for API key selection if the bridge is available
       if (window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
         if (!hasKey) {
@@ -53,13 +51,11 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           return;
         }
       } else if (!process.env.API_KEY) {
-        // Fallback: If no bridge and no environment variable, we can't proceed
-        setError("API configuration missing. Please ensure an API Key is provided.");
+        setError("API configuration missing. Please ensure an API Key is provided in your environment settings (e.g., Render.com).");
         setIsLoading(false);
         return;
       }
 
-      // Rule: Always use process.env.API_KEY directly and initialize right before call.
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const netWorth = calculateNetWorth(data);
@@ -79,7 +75,10 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
               properties: {
                 title: { type: Type.STRING },
                 description: { type: Type.STRING },
-                category: { type: Type.STRING },
+                category: { 
+                  type: Type.STRING,
+                  enum: ['Debt Reduction', 'Investment', 'Protection', 'Strategy']
+                },
                 actionItem: { type: Type.STRING }
               },
               required: ['title', 'description', 'category', 'actionItem']
@@ -89,29 +88,36 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         required: ['recommendations']
       };
 
-      const prompt = `Analyze this financial snapshot for ${formatMonthYear(monthYear)}:
-        Net Worth: ${formatCurrency(netWorth)}, Monthly Income: ${formatCurrency(totalIncome)}, Total Debt: ${formatCurrency(totalDebt)}, Debt-to-Income Ratio: ${dti.toFixed(1)}%, FICO Scores: ${scores}.
-        Provide 4 actionable and high-impact financial strategies for this user.`;
+      const prompt = `You are a world-class financial advisor. Analyze this financial snapshot for ${formatMonthYear(monthYear)}:
+        Net Worth: ${formatCurrency(netWorth)}, 
+        Monthly Income: ${formatCurrency(totalIncome)}, 
+        Total Debt: ${formatCurrency(totalDebt)}, 
+        Debt-to-Income (DTI) Ratio: ${dti.toFixed(1)}%, 
+        FICO Scores: ${scores}.
+        
+        Provide 4 highly tailored recommendations. Ensure you include exactly one recommendation for each of these three specific categories:
+        1. "Debt Reduction": Focus on specific loan or credit card strategies (e.g., snowball vs avalanche) based on their debt level.
+        2. "Investment": Suggest wealth-building vehicles (401k, IRA, Index funds) appropriate for their income and net worth.
+        3. "Protection": Recommend specific Life Insurance or disability insurance needs based on their financial footprint.
+        4. "Strategy": A general high-impact financial move.
 
-      // Rule: Use gemini-3-pro-preview for complex reasoning tasks.
+        Be specific and actionable. Return the result in the defined JSON format.`;
+
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
           responseMimeType: "application/json",
           responseSchema: schema,
-          // Rule: Max thinking budget for gemini-3-pro-preview is 32768.
           thinkingConfig: { thinkingBudget: 32768 }
         }
       });
 
-      // Rule: Access .text directly from response property.
       const parsed = JSON.parse(response.text || '{}');
       if (parsed.recommendations) setRecommendations(parsed.recommendations);
 
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      // Rule: Handle case where key selection is required or expired.
       if (err.message?.includes("Requested entity was not found") || err.message?.includes("API Key must be set")) {
         if (window.aistudio) {
           setNeedsKey(true);
@@ -127,10 +133,8 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   };
 
   const handleSelectKey = async () => {
-    // Rule: Use window.aistudio.openSelectKey() to prompt user for key selection.
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
-      // Rule: Assume success and retry immediately.
       setNeedsKey(false);
       fetchRecommendations();
     }
@@ -149,8 +153,8 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-xl"><SparklesIcon /></div>
             <div>
-              <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">AI Financial Advisor</h2>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Cloud Analysis Engine</p>
+              <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">Financial Advisor AI</h2>
+              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Tailored Wealth & Protection Engine</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
@@ -163,7 +167,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
             <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
               <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center"><SparklesIcon /></div>
               <h3 className="text-lg font-bold">Connect AI Engine</h3>
-              <p className="text-sm text-gray-500 max-w-xs">To use the AI Advisor, you must select your own paid Gemini API key from a project with billing enabled.</p>
+              <p className="text-sm text-gray-500 max-w-xs">To generate tailored recommendations, you must connect a valid Gemini API key.</p>
               <a 
                 href="https://ai.google.dev/gemini-api/docs/billing" 
                 target="_blank" 
@@ -177,7 +181,8 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           ) : isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-5">
               <div className="w-12 h-12 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
-              <p className="text-lg font-semibold animate-pulse">Running reasoning models...</p>
+              <p className="text-lg font-semibold animate-pulse">Analyzing footprint...</p>
+              <p className="text-sm text-gray-500 max-w-xs text-center">Comparing your debt, income, and scores against optimized growth benchmarks.</p>
             </div>
           ) : error ? (
             <div className="p-6 bg-red-50 dark:bg-red-900/10 border border-red-200 rounded-xl text-center space-y-4">
@@ -187,13 +192,27 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
             </div>
           ) : recommendations ? (
             <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl mb-4 border border-blue-100 dark:border-blue-900/30">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  Based on your <strong>{formatMonthYear(monthYear)}</strong> data, here is your path to financial freedom:
+                </p>
+              </div>
               {recommendations.map((rec, idx) => (
-                <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 rounded-xl">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-purple-600 mb-2 block">{rec.category}</span>
-                  <h4 className="font-bold mb-1">{rec.title}</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{rec.description}</p>
-                  <div className="flex items-center gap-2 text-xs font-bold text-positive bg-green-50 dark:bg-green-900/20 p-2 rounded-lg">
-                    <CheckIcon /> <span>{rec.actionItem}</span>
+                <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/50 rounded-xl hover:border-purple-200 dark:hover:border-purple-900/40 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${
+                      rec.category === 'Debt Reduction' ? 'bg-red-50 text-red-600' :
+                      rec.category === 'Investment' ? 'bg-green-50 text-green-600' :
+                      rec.category === 'Protection' ? 'bg-blue-50 text-blue-600' :
+                      'bg-purple-50 text-purple-600'
+                    }`}>
+                      {rec.category}
+                    </span>
+                  </div>
+                  <h4 className="font-bold mb-1 text-gray-900 dark:text-white">{rec.title}</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">{rec.description}</p>
+                  <div className="flex items-center gap-2 text-xs font-bold text-positive bg-green-50/50 dark:bg-green-900/10 p-2 rounded-lg border border-green-100 dark:border-green-900/20">
+                    <CheckIcon /> <span>NEXT STEP: {rec.actionItem}</span>
                   </div>
                 </div>
               ))}
@@ -202,7 +221,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
 
         <div className="p-4 border-t bg-gray-50 dark:bg-gray-800/50 flex justify-end">
-          <Button onClick={onClose} variant="secondary" size="small">Close</Button>
+          <Button onClick={onClose} variant="secondary" size="small">Close Advice</Button>
         </div>
       </div>
     </div>
