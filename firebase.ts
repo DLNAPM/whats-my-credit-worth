@@ -9,6 +9,7 @@ const firebaseConfig = {
   storageBucket: "whats-my-credit-worth.firebasestorage.app",
   messagingSenderId: "787892339198",
   appId: "1:787892339198:web:bd0cca8db56c5f896140af",
+  measurementId: "G-Y52XV704K6"
 };
 
 const app = firebaseApp.initializeApp(firebaseConfig);
