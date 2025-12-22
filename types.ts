@@ -1,3 +1,4 @@
+
 import type { User } from 'firebase/auth';
 
 export type View = 'dashboard' | 'reports';
@@ -60,10 +61,4 @@ export interface FinancialData {
   [monthYear: string]: MonthlyData;
 }
 
-export interface GuestUser {
-  uid: string;
-  isGuest: true;
-  displayName: string | null;
-}
-
-export type AppUser = User | GuestUser;
+export type AppUser = User;
