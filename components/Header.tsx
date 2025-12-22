@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg">
+    <header className="bg-white dark:bg-gray-800 shadow-md p-4 mb-6 rounded-lg border-b-4 border-brand-primary">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
         
         <div className="flex flex-col items-center lg:items-start">
@@ -70,10 +70,10 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 mt-2">
             <button 
               onClick={onRecommendations} 
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-bold transition-colors border border-purple-200"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[10px] font-bold transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
               <SparklesIcon />
-              <span>AI ADVISOR</span>
+              <span className="tracking-wider">AI ADVISOR</span>
             </button>
             <SaveStatusIndicator />
           </div>
