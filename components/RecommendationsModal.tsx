@@ -6,7 +6,7 @@ import Button from './ui/Button';
 import { SparklesIcon, AlertTriangleIcon, CheckIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
 
-// Define the AI Studio interface for the key selection dialog (kept for future-proofing)
+// Define the AI Studio interface for the key selection dialog
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -35,17 +35,31 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsKey, setNeedsKey] = useState(false);
 
   const fetchRecommendations = async () => {
+    // 1. Check for API key selection state
+    if (window.aistudio) {
+      const hasKey = await window.aistudio.hasSelectedApiKey();
+      if (!hasKey && !process.env.API_KEY) {
+        setNeedsKey(true);
+        return;
+      }
+    } else if (!process.env.API_KEY) {
+      setError("API Key not found. If you're using Render, ensure the API_KEY environment variable is set and correctly prefixed if required by your build tool.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setRecommendations(null);
 
     try {
-      // Manual test key as requested by the user for testing
-      const apiKey = 'AIzaSyCMm5e1rozDjUor8snvEh873e4OYTkT_XI';
-
-      const ai = new GoogleGenAI({ apiKey });
+      /**
+       * CRITICAL: Create a new GoogleGenAI instance right before making an API call 
+       * to ensure it uses the most up-to-date API key from the environment or dialog.
+       */
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const netWorth = calculateNetWorth(data);
       const totalIncome = calculateMonthlyIncome(data.income.jobs);
@@ -112,9 +126,24 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      setError("AI Advisor encountered an error. Please verify your manual API key status or connection.");
+      
+      // If key is invalid/missing, prompt for selection again
+      if (err.message?.includes("not found") || err.message?.includes("API Key")) {
+        setNeedsKey(true);
+      } else {
+        setError("AI Advisor encountered an error. Please verify your connection or try again.");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleConnectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setNeedsKey(false);
+      // Proceed immediately after triggering the dialog as per guidelines
+      fetchRecommendations();
     }
   };
 
@@ -141,7 +170,30 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
         
         <div className="p-6 overflow-y-auto flex-grow">
-          {isLoading ? (
+          {needsKey ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-full animate-pulse">
+                <SparklesIcon />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold">Secure AI Connection Required</h3>
+                <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                  To provide personalized financial advice, we need a valid Gemini API key. Please connect your key to continue.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                <Button onClick={handleConnectKey}>Connect Gemini AI</Button>
+                <a 
+                  href="https://ai.google.dev/gemini-api/docs/billing" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-purple-600 hover:underline"
+                >
+                  Learn about Gemini API billing & project requirements
+                </a>
+              </div>
+            </div>
+          ) : isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-5">
               <div className="w-12 h-12 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
               <p className="text-lg font-semibold animate-pulse text-purple-700">Analyzing footprint...</p>
