@@ -8,7 +8,7 @@ import HelpTooltip from './ui/HelpTooltip';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
-  saveStatus?: 'saved' | 'unsaved' | 'saving' | 'error';
+  saveStatus?: 'saved' | 'saving' | 'error';
   currentMonthYear: string;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
@@ -42,16 +42,16 @@ const Header: React.FC<HeaderProps> = ({
       if (!saveStatus) return null;
 
       if (saveStatus === 'saving') {
-          return <div className="text-xs flex items-center gap-1.5 text-gray-400 font-medium bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-full"><div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" /> Saving...</div>;
+          return <div className="text-[10px] flex items-center gap-1.5 text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full animate-pulse border border-blue-100">CLOUD SYNCING...</div>;
       }
       if (saveStatus === 'saved') {
-          return <div className="text-xs flex items-center gap-1.5 text-positive font-medium bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full"><CheckIcon /> Saved</div>;
+          return <div className="text-[10px] flex items-center gap-1.5 text-positive font-bold bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full border border-green-100"><CheckIcon /> DATABASE SECURED</div>;
       }
-      if (saveStatus === 'error') {
-          return <Button onClick={onSave} variant="danger" size="small"><AlertTriangleIcon /> Save Error</Button>;
-      }
-      // unsaved
-      return <Button onClick={onSave} variant="primary" size="small"><SaveIcon /> Save Changes</Button>;
+      return (
+        <button onClick={onSave} className="text-[10px] flex items-center gap-1.5 text-red-500 font-bold bg-red-50 dark:bg-red-900/20 px-3 py-1 rounded-full border border-red-100">
+          <AlertTriangleIcon /> SYNC ERROR - RETRY
+        </button>
+      );
   };
 
   const LogoutIcon = () => (
@@ -66,15 +66,13 @@ const Header: React.FC<HeaderProps> = ({
         
         <div className="flex flex-col items-center lg:items-start">
           <div className="flex items-center gap-2 justify-center lg:justify-start">
-            <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">What's My Credit Worth?</h1>
-            <HelpTooltip 
-              text="Track your financial health. Click 'Edit Data' to enter info. Nav arrows move through time. AI Recommendations offer insights."
-            />
+            <h1 className="text-2xl font-bold text-brand-primary dark:text-brand-light whitespace-nowrap">WMCW Dashboard</h1>
+            <HelpTooltip text="Real-time cloud financial monitoring." />
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-2">
             <button 
               onClick={onRecommendations} 
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition-colors border border-purple-200"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-bold transition-colors border border-purple-200"
             >
               <SparklesIcon />
               <span>AI ADVICE</span>
@@ -111,31 +109,17 @@ const Header: React.FC<HeaderProps> = ({
             {user && (
                 <div className="flex items-center gap-3 border-r pr-4 border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                        {('photoURL' in user && user.photoURL) ? (
-                            <img 
-                                src={user.photoURL} 
-                                alt={user.displayName || 'User'} 
-                                className="w-8 h-8 rounded-full border border-gray-200 shadow-sm"
-                            />
-                        ) : (
-                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs">
-                                {user.displayName?.charAt(0) || 'U'}
-                            </div>
-                        )}
-                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100 max-w-[100px] truncate" title={user.displayName || 'User'}>
-                            {user.displayName?.split(' ')[0]}
+                        <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs">
+                            {user.displayName?.charAt(0) || (user.isAnonymous ? 'G' : 'U')}
+                        </div>
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100 max-w-[80px] truncate">
+                            {user.isAnonymous ? 'Guest' : (user.displayName?.split(' ')[0] || 'User')}
                         </span>
                     </div>
-                    <button 
-                        onClick={onLogout} 
-                        className="text-gray-500 hover:text-negative p-1.5 rounded-lg hover:bg-red-50 transition-colors group"
-                        title="Logout"
-                    >
-                        <LogoutIcon />
-                    </button>
+                    <button onClick={onLogout} className="text-gray-500 hover:text-negative p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Logout"><LogoutIcon /></button>
                 </div>
             )}
-            <Button onClick={onEdit} variant="primary"><EditIcon /> Edit Data</Button>
+            <Button onClick={onEdit} variant="primary"><EditIcon /> Edit</Button>
             <Button onClick={onShare} variant="secondary" size="small"><ShareIcon /></Button>
             <Button onClick={onImportExport} variant="secondary" size="small"><ImportIcon /></Button>
         </div>
