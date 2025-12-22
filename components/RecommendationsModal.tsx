@@ -39,30 +39,22 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const checkKeyStatus = async () => {
     const aistudio = (window as any).aistudio;
     
-    // If we have an API key in the environment, we might not need to check aistudio
-    // but the guidelines suggest using hasSelectedApiKey() to check if one is selected.
+    // Check if we are in an environment with the AI Studio key selection helper
     if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
       try {
         const hasKey = await aistudio.hasSelectedApiKey();
+        // Only trigger the "Needs Key" state if there's no key in the environment AND no key selected in studio
         if (!hasKey && !process.env.API_KEY) {
           setNeedsKey(true);
-        } else {
-          fetchRecommendations();
+          return;
         }
       } catch (err) {
-        console.error("Error checking key status:", err);
-        // Fallback to fetch if check fails
-        fetchRecommendations();
-      }
-    } else {
-      // If aistudio is not present, we rely on the injected process.env.API_KEY
-      if (!process.env.API_KEY) {
-        // This is a problematic state where we have no key and no way to prompt for one
-        setError("API configuration is missing. Please contact support.");
-      } else {
-        fetchRecommendations();
+        console.warn("Could not check AI Studio key status, proceeding to fetch:", err);
       }
     }
+    
+    // If we have an API_KEY or no aistudio helper, attempt to fetch
+    fetchRecommendations();
   };
 
   const handleConnectKey = async () => {
@@ -71,28 +63,33 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       try {
         await aistudio.openSelectKey();
         setNeedsKey(false);
-        // Proceed as if selection was successful per guidelines
+        // guidelines: proceed immediately as if selection was successful after triggering the dialog
         fetchRecommendations();
       } catch (err) {
         console.error("Failed to open key selection:", err);
         setError("Could not open the API key selection dialog.");
       }
     } else {
-      setError("API key helper not found in this environment.");
+      setError("API key helper not found. Please check your environment variables.");
     }
   };
 
   const fetchRecommendations = async () => {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-      setNeedsKey(true);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
+      // guidelines: Always create fresh instance right before call
+      // Use process.env.API_KEY directly as required.
+      const apiKey = process.env.API_KEY;
+      
+      if (!apiKey && !(window as any).aistudio) {
+          // If we are strictly missing the key and have no way to prompt for it (like on a production host)
+          throw new Error("API_KEY_MISSING");
+      }
+
+      const ai = new GoogleGenAI({ apiKey: apiKey || '' });
+
       const netWorth = calculateNetWorth(data);
       const income = calculateMonthlyIncome(data.income.jobs);
       const totalDebt = calculateTotalBalance(data.creditCards) + calculateTotalBalance(data.loans);
@@ -114,9 +111,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         Liability Breakdown: ${[...data.creditCards, ...data.loans].map(l => `${l.name} ($${l.balance})`).join(', ')}
       `;
 
-      // Always create a fresh instance per guidelines
-      const ai = new GoogleGenAI({ apiKey });
-
       const schema = {
         type: Type.OBJECT,
         properties: {
@@ -137,7 +131,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         required: ['recommendations']
       };
 
-      // Using gemini-3-pro-preview for complex financial reasoning tasks
+      // Using gemini-3-pro-preview for complex financial tasks
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: [{
@@ -158,45 +152,41 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
-            temperature: 0.4
+            thinkingConfig: { thinkingBudget: 16000 } // Balanced thinking budget for detailed financial reasoning
         }
       });
 
       const text = response.text;
       if (text) {
-          try {
-              const parsed = JSON.parse(text);
-              if (parsed.recommendations && Array.isArray(parsed.recommendations)) {
-                  setRecommendations(parsed.recommendations);
-              } else {
-                  throw new Error("Invalid response format");
-              }
-          } catch (parseErr) {
-              console.error("Failed to parse AI response:", text);
-              setError("The AI returned an invalid response format.");
+          const parsed = JSON.parse(text);
+          if (parsed.recommendations && Array.isArray(parsed.recommendations)) {
+              setRecommendations(parsed.recommendations);
+          } else {
+              throw new Error("INVALID_RESPONSE");
           }
       } else {
-          setError("No recommendations could be generated.");
+          throw new Error("EMPTY_RESPONSE");
       }
 
     } catch (err: any) {
       console.error("AI Generation Error:", err);
       
-      // Handle key-related errors
-      if (err.message?.includes('Requested entity was not found') || 
-          err.message?.includes('API key') || 
-          err.message?.includes('403') || 
-          err.message?.includes('401')) {
-          
+      const isMissingKey = err.message === "API_KEY_MISSING" || 
+                          err.message?.includes('API key') || 
+                          err.message?.includes('403') || 
+                          err.message?.includes('401') ||
+                          err.message?.includes('not found');
+
+      if (isMissingKey) {
           if ((window as any).aistudio) {
               setNeedsKey(true);
           } else {
-              setError("API key is invalid or missing. Please ensure your environment is configured correctly.");
+              setError("The AI service is unavailable because the API configuration is missing or invalid in your environment settings.");
           }
           return;
       }
 
-      setError("Failed to connect to the AI advisor. Please try again later.");
+      setError("We encountered an issue connecting to the AI advisor. Please check your data and try again.");
     } finally {
       setLoading(false);
     }
@@ -214,7 +204,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Financial Advisor</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Analysis for {monthYear}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Personalized Insights for {monthYear}</p>
               </div>
            </div>
            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2">
@@ -228,36 +218,37 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 text-purple-600 mb-6">
                     <SparklesIcon />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Connect AI Studio</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Connect Your API Key</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    To use the financial advisor, you must connect your API key from a paid GCP project.
+                    To access high-quality AI recommendations, you must select a Gemini API key from a paid Google Cloud project.
                 </p>
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 mb-8 text-left">
-                    <h4 className="text-sm font-bold mb-2">Instructions:</h4>
+                    <h4 className="text-sm font-bold mb-2">Setup Steps:</h4>
                     <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-2 list-disc pl-4">
                         <li>Click "Connect API Key" below.</li>
-                        <li>Select a key from a project with billing enabled.</li>
-                        <li>Learn more about <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-brand-primary underline">Gemini API billing</a>.</li>
+                        <li>Follow the dialog to choose an existing key.</li>
+                        <li>Ensure billing is enabled in your Google Cloud project.</li>
+                        <li>Read more about <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-brand-primary underline font-semibold">Gemini API billing</a>.</li>
                     </ul>
                 </div>
                 <div className="flex flex-col gap-3">
-                    <Button onClick={handleConnectKey} className="w-full py-4">
+                    <Button onClick={handleConnectKey} className="w-full py-4 text-lg">
                         <SparklesIcon /> Connect API Key
                     </Button>
-                    <Button onClick={onClose} variant="secondary">Cancel</Button>
+                    <Button onClick={onClose} variant="secondary">Not Now</Button>
                 </div>
              </div>
            ) : loading ? (
              <div className="flex flex-col items-center justify-center h-64 space-y-4">
                <div className="relative">
-                 <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-600"></div>
-                 <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-purple-600"></div>
+                 <div className="absolute inset-0 flex items-center justify-center text-purple-600">
                     <SparklesIcon />
                  </div>
                </div>
                <div className="text-center">
-                 <p className="text-purple-600 dark:text-purple-400 font-bold animate-pulse text-lg">Analyzing your financial health...</p>
-                 <p className="text-xs text-gray-500 mt-1">Wait a moment while our advisor reviews your data.</p>
+                 <p className="text-purple-600 dark:text-purple-400 font-bold animate-pulse text-lg">Analyzing your financial snapshot...</p>
+                 <p className="text-xs text-gray-500 mt-2">Our AI advisor is reviewing your assets and liabilities.</p>
                </div>
              </div>
            ) : error ? (
@@ -265,11 +256,11 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-600 mb-4">
                  <InfoIcon />
                </div>
-               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Something Went Wrong</h3>
+               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Analysis Failed</h3>
                <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-sm mx-auto">{error}</p>
                <div className="flex justify-center gap-4">
-                 <Button onClick={onClose} variant="secondary">Cancel</Button>
-                 <Button onClick={checkKeyStatus}>Try Again</Button>
+                 <Button onClick={onClose} variant="secondary">Close</Button>
+                 <Button onClick={checkKeyStatus}>Retry Analysis</Button>
                </div>
              </div>
            ) : (
@@ -282,7 +273,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                                 {rec.category}
                             </span>
                         </div>
-                    } className="border border-purple-100 dark:border-gray-800 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800">
+                    } className="border border-purple-100 dark:border-gray-800 hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800">
                         <div className="space-y-4">
                             <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
                                 {rec.description}
@@ -302,9 +293,11 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
            )}
         </div>
 
-        <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center px-6">
-            <span className="text-[10px] text-gray-400 font-medium italic">AI advice is for informational purposes only. Consult with a professional.</span>
-            <Button onClick={onClose} variant="secondary">Close</Button>
+        <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center px-6 gap-3">
+            <span className="text-[10px] text-gray-400 font-medium italic text-center sm:text-left">
+                Disclaimer: AI advice is for informational purposes only. Consult with a qualified financial planner for personalized investment advice.
+            </span>
+            <Button onClick={onClose} variant="secondary">Close Advisor</Button>
         </div>
       </div>
     </div>
