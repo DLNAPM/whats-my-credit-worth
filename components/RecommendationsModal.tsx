@@ -43,6 +43,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setRecommendations(null);
 
     try {
+      // Handle AI Studio managed key selection first
       if (window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
         if (!hasKey) {
@@ -50,12 +51,11 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           setIsLoading(false);
           return;
         }
-      } else if (!process.env.API_KEY) {
-        setError("API configuration missing. Please ensure the 'API_KEY' environment variable is set in your hosting provider (Render or Firebase).");
-        setIsLoading(false);
-        return;
       }
 
+      // Create a new instance for every call to ensure the latest API key is used
+      // NOTE: process.env.API_KEY is the standard location for the key. 
+      // If you are testing manually, replace the variable below with your string.
       const ai = new GoogleGenAI({ apiKey: "AIzaSyCUIrhQcZnIUshJ-y4dod7cNbR7LnxJ_Rg" });
       
       const netWorth = calculateNetWorth(data);
@@ -123,14 +123,15 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
 
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      if (err.message?.includes("Requested entity was not found") || err.message?.includes("API Key must be set")) {
+      // Handle the specific error if the entity (API Key) is not found or missing
+      if (err.message?.includes("Requested entity was not found") || err.message?.includes("API Key must be set") || err.message?.includes("API key not found")) {
         if (window.aistudio) {
           setNeedsKey(true);
         } else {
-          setError("The API Key provided is invalid or has expired. Please check your Render/Firebase environment variables.");
+          setError("API Key configuration error. If testing manually, ensure your key is valid. Otherwise, check your Render/Firebase environment variables.");
         }
       } else {
-        setError("Failed to generate tailored insights. Please verify your internet connection or check API logs.");
+        setError("An error occurred while generating tailored insights. Please check your console for details.");
       }
     } finally {
       setIsLoading(false);
