@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FinancialData, MonthlyData } from '../types';
 import { getInitialData, getDummyData } from '../utils/helpers';
@@ -12,7 +13,6 @@ export function useFinancialData() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   
   const dataRef = useRef<FinancialData>({});
-  // Fix: Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout to avoid namespace errors in browser environments.
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 1. Real-time Subscription to Firebase
@@ -26,16 +26,25 @@ export function useFinancialData() {
     const docRef = doc(db, 'users', user.uid);
     
     // Subscribe to cloud changes
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    const unsubscribe = onSnapshot(docRef, async (docSnap) => {
       if (docSnap.exists()) {
         const cloudData = docSnap.data() as FinancialData;
         setFinancialData(cloudData);
         dataRef.current = cloudData;
         setSaveStatus('saved');
       } else {
-        // Handle new user seeding
+        // Initial data seed for new users
+        console.log("Seeding initial data for user:", user.uid);
         const initialSeed = user.isAnonymous ? getDummyData() : { [new Date().toISOString().slice(0, 7)]: getInitialData() };
-        setDoc(docRef, initialSeed);
+        
+        try {
+          // Use setDoc to create the initial document
+          await setDoc(docRef, initialSeed);
+          // Snapshot listener will trigger again automatically after setDoc
+        } catch (err) {
+          console.error("Failed to seed initial data:", err);
+          setSaveStatus('error');
+        }
       }
     }, (error) => {
       console.error("Firestore sync error:", error);

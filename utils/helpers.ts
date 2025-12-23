@@ -1,8 +1,9 @@
+
 import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource, FinancialData } from '../types';
 
 export const getInitialData = (): MonthlyData => ({
   income: {
-    jobs: [{ id: crypto.randomUUID(), name: 'Job 1', amount: 0, frequency: 'bi-weekly' }],
+    jobs: [{ id: crypto.randomUUID(), name: 'Main Job', amount: 0, frequency: 'monthly' }],
   },
   creditScores: {
     experian: { score8: 0 },
@@ -14,72 +15,69 @@ export const getInitialData = (): MonthlyData => ({
     mrCooper: 0,
   },
   creditCards: [
-    { id: crypto.randomUUID(), name: 'CC1', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'CC2', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'CC3', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'CC4', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'Primary Card', balance: 0, limit: 0 },
   ],
   loans: [
-    { id: crypto.randomUUID(), name: 'Loan1', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'Loan2', balance: 0, limit: 0 },
-    { id: crypto.randomUUID(), name: 'Loan3', balance: 0, limit: 0 },
+    { id: crypto.randomUUID(), name: 'Auto Loan', balance: 0, limit: 0 },
   ],
   assets: [
-    { id: crypto.randomUUID(), name: '401k', value: 0 },
-    { id: crypto.randomUUID(), name: 'IRA', value: 0 },
-    { id: crypto.randomUUID(), name: 'Asset3', value: 0 },
+    { id: crypto.randomUUID(), name: 'Savings Account', value: 0 },
   ],
-  monthlyBills: [{ id: crypto.randomUUID(), name: 'Electric', amount: 0 }],
+  monthlyBills: [{ id: crypto.randomUUID(), name: 'Rent/Mortgage', amount: 0 }],
 });
 
 export const getDummyData = (): FinancialData => {
   const currentMonth = getCurrentMonthYear();
-  const prevMonth = getPreviousMonthYear(currentMonth);
-  const prev2Month = getPreviousMonthYear(prevMonth);
+  const m1 = currentMonth;
+  const m2 = getPreviousMonthYear(m1);
+  const m3 = getPreviousMonthYear(m2);
+  const m4 = getPreviousMonthYear(m3);
 
   const createMonthlyData = (offset: number): MonthlyData => ({
     income: {
       jobs: [
-        { id: crypto.randomUUID(), name: 'Tech Corp Inc.', amount: 5200 + (offset * 150), frequency: 'monthly' },
-        { id: crypto.randomUUID(), name: 'Consulting Gig', amount: 1500, frequency: 'monthly' }
+        { id: crypto.randomUUID(), name: 'Global Tech Corp', amount: 4800 + (offset * 200), frequency: 'monthly' },
+        { id: crypto.randomUUID(), name: 'Advisory Retainer', amount: 1200, frequency: 'monthly' }
       ]
     },
     creditScores: {
-      experian: { score8: 720 + (offset * 5) },
-      equifax: { score8: 715 + (offset * 4) },
-      transunion: { score8: 718 + (offset * 6) },
-      lendingTree: 725 + (offset * 5),
-      creditKarma: 720 + (offset * 5),
-      creditSesame: 718 + (offset * 5),
-      mrCooper: 730 + (offset * 5)
+      experian: { score8: 680 + (offset * 12) },
+      equifax: { score8: 675 + (offset * 10) },
+      transunion: { score8: 682 + (offset * 11) },
+      lendingTree: 690 + (offset * 10),
+      creditKarma: 685 + (offset * 10),
+      creditSesame: 680 + (offset * 10),
+      mrCooper: 700 + (offset * 10)
     },
     creditCards: [
-      { id: crypto.randomUUID(), name: 'Sapphire Preferred', balance: 1200 - (offset * 100), limit: 15000 },
-      { id: crypto.randomUUID(), name: 'Freedom Unlimited', balance: 450, limit: 8000 },
-      { id: crypto.randomUUID(), name: 'Amex Gold', balance: 800 + (offset * 50), limit: 25000 }
+      { id: crypto.randomUUID(), name: 'Chase Sapphire', balance: 3500 - (offset * 600), limit: 12000 },
+      { id: crypto.randomUUID(), name: 'Amex Gold', balance: 1200 - (offset * 200), limit: 20000 },
+      { id: crypto.randomUUID(), name: 'Apple Card', balance: 400, limit: 5000 }
     ],
     loans: [
-      { id: crypto.randomUUID(), name: 'Car Loan', balance: 18000 - (offset * 400), limit: 25000 },
-      { id: crypto.randomUUID(), name: 'Student Loan', balance: 12000 - (offset * 100), limit: 15000 }
+      { id: crypto.randomUUID(), name: 'Tesla Model 3 Loan', balance: 32000 - (offset * 550), limit: 45000 },
+      { id: crypto.randomUUID(), name: 'SoFi Student Loan', balance: 14000 - (offset * 150), limit: 20000 }
     ],
     assets: [
-      { id: crypto.randomUUID(), name: 'High Yield Savings', value: 15000 + (offset * 1000) },
-      { id: crypto.randomUUID(), name: '401k', value: 45000 + (offset * 1200) },
-      { id: crypto.randomUUID(), name: 'Roth IRA', value: 12000 + (offset * 500) },
-      { id: crypto.randomUUID(), name: 'Crypto Wallet', value: 2500 + (offset * 200) }
+      { id: crypto.randomUUID(), name: 'Marcus HYSA', value: 8000 + (offset * 1500) },
+      { id: crypto.randomUUID(), name: 'Fidelity 401k', value: 24000 + (offset * 1100) },
+      { id: crypto.randomUUID(), name: 'Vanguard Roth IRA', value: 6500 + (offset * 400) },
+      { id: crypto.randomUUID(), name: 'Coinbase (ETH/BTC)', value: 3000 + (offset * 300) }
     ],
     monthlyBills: [
-      { id: crypto.randomUUID(), name: 'Rent', amount: 1800 },
-      { id: crypto.randomUUID(), name: 'Utilities', amount: 150 },
-      { id: crypto.randomUUID(), name: 'Insurance', amount: 120 },
-      { id: crypto.randomUUID(), name: 'Groceries', amount: 600 }
+      { id: crypto.randomUUID(), name: 'Apartment Rent', amount: 2100 },
+      { id: crypto.randomUUID(), name: 'Utilities & WiFi', amount: 220 },
+      { id: crypto.randomUUID(), name: 'Car Insurance', amount: 180 },
+      { id: crypto.randomUUID(), name: 'Gym Membership', amount: 65 },
+      { id: crypto.randomUUID(), name: 'Streaming Services', amount: 45 }
     ]
   });
 
   return {
-      [prev2Month]: createMonthlyData(0),
-      [prevMonth]: createMonthlyData(1),
-      [currentMonth]: createMonthlyData(2)
+      [m4]: createMonthlyData(0),
+      [m3]: createMonthlyData(1),
+      [m2]: createMonthlyData(2),
+      [m1]: createMonthlyData(3)
   };
 };
 

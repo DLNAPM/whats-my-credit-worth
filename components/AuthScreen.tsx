@@ -45,6 +45,17 @@ const AuthScreen: React.FC = () => {
     }
   };
 
+  const handleGuestLogin = async () => {
+    setIsAuthenticating(true);
+    setAuthError(null);
+    try {
+      await loginAsGuest();
+    } catch (err: any) {
+      setAuthError(err.message || "Failed to start guest session.");
+      setIsAuthenticating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-brand-primary flex flex-col">
         
@@ -57,11 +68,11 @@ const AuthScreen: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={loginAsGuest}
+                        onClick={handleGuestLogin}
                         disabled={isAuthenticating}
                         className="hidden md:block text-sm font-medium text-gray-500 hover:text-brand-primary transition-colors disabled:opacity-50"
                     >
-                        Guest Mode
+                        {isAuthenticating ? 'Connecting...' : 'Guest Mode'}
                     </button>
                     <button 
                         onClick={handleGoogleLogin} 
@@ -110,16 +121,18 @@ const AuthScreen: React.FC = () => {
                         <span>{isAuthenticating ? 'Connecting...' : 'Sign in with Google'}</span>
                     </button>
                     <button 
-                        onClick={loginAsGuest} 
+                        onClick={handleGuestLogin} 
                         disabled={isAuthenticating}
                         className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-8 rounded-xl border border-gray-200 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                     >
-                        Try as Guest
+                        {isAuthenticating ? (
+                             <div className="w-5 h-5 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                        ) : 'Try as Guest'}
                     </button>
                 </div>
-                <p className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
+                <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
                     <FeatureShieldIcon /> Secure & Private. Guest data stays on your device.
-                </p>
+                </div>
             </div>
         </header>
 
