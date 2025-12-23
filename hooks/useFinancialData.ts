@@ -1,9 +1,12 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FinancialData, MonthlyData } from '../types';
 import { getInitialData, getDummyData } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+
+const LOCAL_STORAGE_KEY = 'wmcw_local_guest_data';
 
 export function useFinancialData() {
   const { user } = useAuth();
@@ -14,7 +17,7 @@ export function useFinancialData() {
   const dataRef = useRef<FinancialData>({});
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 1. Real-time Subscription to Firebase
+  // 1. Data Subscription (Firebase OR LocalStorage)
   useEffect(() => {
     if (!user) {
       setFinancialData({});
@@ -22,9 +25,25 @@ export function useFinancialData() {
       return;
     }
 
+    // Handle Mock Guest (Local Storage Only)
+    if (user.isMock) {
+      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        setFinancialData(parsed);
+        dataRef.current = parsed;
+      } else {
+        const seed = getDummyData();
+        setFinancialData(seed);
+        dataRef.current = seed;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(seed));
+      }
+      setSaveStatus('saved');
+      return;
+    }
+
+    // Handle Firebase User
     const docRef = doc(db, 'users', user.uid);
-    
-    // Subscribe to cloud changes
     const unsubscribe = onSnapshot(docRef, async (docSnap) => {
       if (docSnap.exists()) {
         const cloudData = docSnap.data() as FinancialData;
@@ -32,17 +51,13 @@ export function useFinancialData() {
         dataRef.current = cloudData;
         setSaveStatus('saved');
       } else {
-        // Initial data seed for new users
-        console.log("Seeding initial data for user:", user.uid, "IsAnonymous:", user.isAnonymous);
-        
-        // Guests get a rich 4-month experience. Registered users get a clean current month.
+        console.log("Seeding initial data for Firebase user:", user.uid);
         const initialSeed = user.isAnonymous 
             ? getDummyData() 
             : { [new Date().toISOString().slice(0, 7)]: getInitialData() };
         
         try {
           await setDoc(docRef, initialSeed);
-          console.log("Successfully seeded initial data for:", user.uid);
         } catch (err) {
           console.error("Failed to seed initial data:", err);
           setSaveStatus('error');
@@ -54,38 +69,41 @@ export function useFinancialData() {
     });
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user?.uid, user?.isMock]);
 
-  // 2. Direct Cloud Save Function
-  const persistToCloud = useCallback(async (dataToSave: FinancialData) => {
+  // 2. Direct Persist Function
+  const persistData = useCallback(async (dataToSave: FinancialData) => {
     if (!user) return;
     
     setSaveStatus('saving');
     try {
-      const docRef = doc(db, 'users', user.uid);
-      await setDoc(docRef, dataToSave);
-      setSaveStatus('saved');
+      if (user.isMock) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+        setSaveStatus('saved');
+      } else {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, dataToSave);
+        setSaveStatus('saved');
+      }
       setRefreshCounter(prev => prev + 1);
     } catch (err) {
-      console.error("Cloud save failed:", err);
+      console.error("Save failed:", err);
       setSaveStatus('error');
     }
   }, [user]);
 
-  // 3. Data Update Logic (Database-first)
+  // 3. Data Update Logic
   const updateMonthData = useCallback((monthYear: string, newData: MonthlyData) => {
     const nextFullData = { ...dataRef.current, [monthYear]: newData };
     
-    // Optimistic UI update
     setFinancialData(nextFullData);
     dataRef.current = nextFullData;
 
-    // Debounced save to prevent database flooding while typing
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      persistToCloud(nextFullData);
+      persistData(nextFullData);
     }, 1000);
-  }, [persistToCloud]);
+  }, [persistData]);
   
   const getMonthData = useCallback((monthYear: string): MonthlyData => {
       return financialData[monthYear] || getInitialData();
@@ -95,13 +113,13 @@ export function useFinancialData() {
     try {
       const parsed = JSON.parse(jsonString);
       if (typeof parsed === 'object' && parsed !== null) {
-        await persistToCloud(parsed as FinancialData);
-        alert('Data successfully merged with your cloud profile!');
+        await persistData(parsed as FinancialData);
+        alert('Data successfully imported!');
       }
     } catch (error) {
       alert('Import failed: Invalid file format.');
     }
-  }, [persistToCloud]);
+  }, [persistData]);
 
   const exportData = useCallback(() => {
     const jsonString = JSON.stringify(financialData, null, 2);
@@ -109,7 +127,7 @@ export function useFinancialData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wmcw-cloud-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `wmcw-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, [financialData]);
@@ -124,6 +142,6 @@ export function useFinancialData() {
     exportTemplateData: () => {}, 
     saveStatus,
     refreshCounter,
-    saveData: () => persistToCloud(dataRef.current)
+    saveData: () => persistData(dataRef.current)
   };
 }

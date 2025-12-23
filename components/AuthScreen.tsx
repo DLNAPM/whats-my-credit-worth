@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -39,7 +40,6 @@ const AuthScreen: React.FC = () => {
     setAuthError(null);
     try {
       await loginWithGoogle();
-      // On success, the component will be unmounted as the user state in parent changes
     } catch (err: any) {
       console.error("Login failed", err);
       setAuthError(err.message || "Failed to sign in with Google.");
@@ -55,7 +55,6 @@ const AuthScreen: React.FC = () => {
     setAuthError(null);
     try {
       await loginAsGuest();
-      // On success, component unmounts as loading state in provider changes view
     } catch (err: any) {
       console.error("Guest login failed", err);
       setAuthError(err.message || "Failed to start guest session.");
@@ -138,7 +137,7 @@ const AuthScreen: React.FC = () => {
                     </button>
                 </div>
                 <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
-                    <FeatureShieldIcon /> Secure & Private. Demo with 4 months of sample data.
+                    <FeatureShieldIcon /> Secure & Private. Try Guest Mode with 4 months of sample data.
                 </div>
             </div>
         </header>

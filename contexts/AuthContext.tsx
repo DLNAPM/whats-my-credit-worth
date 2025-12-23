@@ -5,7 +5,7 @@ import { auth } from '../firebase';
 import type { AppUser } from '../types';
 
 interface AuthContextType {
-  user: AppUser | null;
+  user: (AppUser & { isMock?: boolean }) | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
@@ -15,17 +15,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user, setUser] = useState<(AppUser & { isMock?: boolean }) | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else if (!user?.isMock) {
+        // Only clear if we aren't in a mock guest session
+        setUser(null);
+      }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user?.isMock]);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -58,10 +63,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loginAsGuest = async () => {
     try {
       setLoading(true);
+      // Try real Firebase Anonymous Auth first
       await signInAnonymously(auth);
     } catch (error: any) {
-      console.error("Anonymous sign-in error", error);
-      throw new Error("Failed to start guest session. Please check your connection.");
+      console.warn("Firebase Anonymous Auth failed or is disabled. Falling back to local Guest Mode.", error);
+      
+      // Fallback: Create a mock user object to bypass AuthScreen
+      // This ensures "nothing happens" never occurs even if Firebase config is restrictive
+      const mockUser = {
+        uid: 'local-guest-' + Math.random().toString(36).substr(2, 9),
+        isAnonymous: true,
+        isMock: true,
+        displayName: 'Guest User',
+        email: null,
+        photoURL: null,
+      } as any;
+      
+      setUser(mockUser);
     } finally {
       setLoading(false);
     }
@@ -70,7 +88,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       setLoading(true);
-      await signOut(auth);
+      if (!user?.isMock) {
+        await signOut(auth);
+      }
       setUser(null);
     } finally {
       setLoading(false);
