@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -35,22 +34,30 @@ const AuthScreen: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
+    if (isAuthenticating) return;
     setIsAuthenticating(true);
     setAuthError(null);
     try {
       await loginWithGoogle();
+      // On success, the component will be unmounted as the user state in parent changes
     } catch (err: any) {
+      console.error("Login failed", err);
       setAuthError(err.message || "Failed to sign in with Google.");
       setIsAuthenticating(false);
     }
   };
 
-  const handleGuestLogin = async () => {
+  const handleGuestLogin = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (isAuthenticating) return;
+    
     setIsAuthenticating(true);
     setAuthError(null);
     try {
       await loginAsGuest();
+      // On success, component unmounts as loading state in provider changes view
     } catch (err: any) {
+      console.error("Guest login failed", err);
       setAuthError(err.message || "Failed to start guest session.");
       setIsAuthenticating(false);
     }
@@ -118,7 +125,7 @@ const AuthScreen: React.FC = () => {
                         ) : (
                             <GoogleIcon className="w-6 h-6 bg-white rounded-full p-0.5" />
                         )}
-                        <span>{isAuthenticating ? 'Connecting...' : 'Sign in with Google'}</span>
+                        <span>{isAuthenticating ? 'Signing in...' : 'Sign in with Google'}</span>
                     </button>
                     <button 
                         onClick={handleGuestLogin} 
@@ -131,7 +138,7 @@ const AuthScreen: React.FC = () => {
                     </button>
                 </div>
                 <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
-                    <FeatureShieldIcon /> Secure & Private. Guest data stays on your device.
+                    <FeatureShieldIcon /> Secure & Private. Demo with 4 months of sample data.
                 </div>
             </div>
         </header>

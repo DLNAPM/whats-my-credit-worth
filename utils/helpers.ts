@@ -1,9 +1,12 @@
-
 import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource, FinancialData } from '../types';
+
+const generateId = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
 
 export const getInitialData = (): MonthlyData => ({
   income: {
-    jobs: [{ id: crypto.randomUUID(), name: 'Main Job', amount: 0, frequency: 'monthly' }],
+    jobs: [{ id: generateId(), name: 'Main Job', amount: 0, frequency: 'monthly' }],
   },
   creditScores: {
     experian: { score8: 0 },
@@ -15,15 +18,15 @@ export const getInitialData = (): MonthlyData => ({
     mrCooper: 0,
   },
   creditCards: [
-    { id: crypto.randomUUID(), name: 'Primary Card', balance: 0, limit: 0 },
+    { id: generateId(), name: 'Primary Card', balance: 0, limit: 0 },
   ],
   loans: [
-    { id: crypto.randomUUID(), name: 'Auto Loan', balance: 0, limit: 0 },
+    { id: generateId(), name: 'Auto Loan', balance: 0, limit: 0 },
   ],
   assets: [
-    { id: crypto.randomUUID(), name: 'Savings Account', value: 0 },
+    { id: generateId(), name: 'Savings Account', value: 0 },
   ],
-  monthlyBills: [{ id: crypto.randomUUID(), name: 'Rent/Mortgage', amount: 0 }],
+  monthlyBills: [{ id: generateId(), name: 'Rent/Mortgage', amount: 0 }],
 });
 
 export const getDummyData = (): FinancialData => {
@@ -33,51 +36,52 @@ export const getDummyData = (): FinancialData => {
   const m3 = getPreviousMonthYear(m2);
   const m4 = getPreviousMonthYear(m3);
 
+  // Helper to create historical months with a growth trend
+  // offset 0 is oldest, offset 3 is current
   const createMonthlyData = (offset: number): MonthlyData => ({
     income: {
       jobs: [
-        { id: crypto.randomUUID(), name: 'Global Tech Corp', amount: 4800 + (offset * 200), frequency: 'monthly' },
-        { id: crypto.randomUUID(), name: 'Advisory Retainer', amount: 1200, frequency: 'monthly' }
+        { id: generateId(), name: 'Senior Engineer @ Tech Co', amount: 7500 + (offset * 250), frequency: 'monthly' },
+        { id: generateId(), name: 'Freelance Design', amount: 800 + (offset * 100), frequency: 'monthly' }
       ]
     },
     creditScores: {
-      experian: { score8: 680 + (offset * 12) },
-      equifax: { score8: 675 + (offset * 10) },
-      transunion: { score8: 682 + (offset * 11) },
-      lendingTree: 690 + (offset * 10),
-      creditKarma: 685 + (offset * 10),
-      creditSesame: 680 + (offset * 10),
-      mrCooper: 700 + (offset * 10)
+      experian: { score8: 685 + (offset * 15) },
+      equifax: { score8: 680 + (offset * 12) },
+      transunion: { score8: 690 + (offset * 14) },
+      lendingTree: 695 + (offset * 10),
+      creditKarma: 690 + (offset * 10),
+      creditSesame: 685 + (offset * 10),
+      mrCooper: 710 + (offset * 10)
     },
     creditCards: [
-      { id: crypto.randomUUID(), name: 'Chase Sapphire', balance: 3500 - (offset * 600), limit: 12000 },
-      { id: crypto.randomUUID(), name: 'Amex Gold', balance: 1200 - (offset * 200), limit: 20000 },
-      { id: crypto.randomUUID(), name: 'Apple Card', balance: 400, limit: 5000 }
+      { id: generateId(), name: 'Chase Sapphire Pref', balance: Math.max(0, 4200 - (offset * 1100)), limit: 15000 },
+      { id: generateId(), name: 'Amex Platinum', balance: Math.max(0, 1500 - (offset * 400)), limit: 30000 },
+      { id: generateId(), name: 'Apple Card', balance: 200, limit: 8000 }
     ],
     loans: [
-      { id: crypto.randomUUID(), name: 'Tesla Model 3 Loan', balance: 32000 - (offset * 550), limit: 45000 },
-      { id: crypto.randomUUID(), name: 'SoFi Student Loan', balance: 14000 - (offset * 150), limit: 20000 }
+      { id: generateId(), name: 'Mortgage (Fixed 3.5%)', balance: 345000 - (offset * 800), limit: 420000 },
+      { id: generateId(), name: 'BMW i4 Lease/Loan', balance: 42000 - (offset * 650), limit: 65000 }
     ],
     assets: [
-      { id: crypto.randomUUID(), name: 'Marcus HYSA', value: 8000 + (offset * 1500) },
-      { id: crypto.randomUUID(), name: 'Fidelity 401k', value: 24000 + (offset * 1100) },
-      { id: crypto.randomUUID(), name: 'Vanguard Roth IRA', value: 6500 + (offset * 400) },
-      { id: crypto.randomUUID(), name: 'Coinbase (ETH/BTC)', value: 3000 + (offset * 300) }
+      { id: generateId(), name: 'Marcus Savings', value: 12000 + (offset * 2000) },
+      { id: generateId(), name: 'Fidelity 401k', value: 85000 + (offset * 3200) },
+      { id: generateId(), name: 'Coinbase (BTC)', value: 15000 + (offset * 1100) },
+      { id: generateId(), name: 'Home Equity', value: 125000 + (offset * 500) }
     ],
     monthlyBills: [
-      { id: crypto.randomUUID(), name: 'Apartment Rent', amount: 2100 },
-      { id: crypto.randomUUID(), name: 'Utilities & WiFi', amount: 220 },
-      { id: crypto.randomUUID(), name: 'Car Insurance', amount: 180 },
-      { id: crypto.randomUUID(), name: 'Gym Membership', amount: 65 },
-      { id: crypto.randomUUID(), name: 'Streaming Services', amount: 45 }
+      { id: generateId(), name: 'Mortgage Payment', amount: 2450 },
+      { id: generateId(), name: 'Utilities', amount: 310 },
+      { id: generateId(), name: 'Car Insurance', amount: 210 },
+      { id: generateId(), name: 'Subscriptions', amount: 125 }
     ]
   });
 
   return {
-      [m4]: createMonthlyData(0),
+      [m4]: createMonthlyData(0), // Oldest
       [m3]: createMonthlyData(1),
       [m2]: createMonthlyData(2),
-      [m1]: createMonthlyData(3)
+      [m1]: createMonthlyData(3)  // Most Recent
   };
 };
 

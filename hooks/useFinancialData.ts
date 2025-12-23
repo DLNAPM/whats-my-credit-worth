@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FinancialData, MonthlyData } from '../types';
 import { getInitialData, getDummyData } from '../utils/helpers';
@@ -34,13 +33,16 @@ export function useFinancialData() {
         setSaveStatus('saved');
       } else {
         // Initial data seed for new users
-        console.log("Seeding initial data for user:", user.uid);
-        const initialSeed = user.isAnonymous ? getDummyData() : { [new Date().toISOString().slice(0, 7)]: getInitialData() };
+        console.log("Seeding initial data for user:", user.uid, "IsAnonymous:", user.isAnonymous);
+        
+        // Guests get a rich 4-month experience. Registered users get a clean current month.
+        const initialSeed = user.isAnonymous 
+            ? getDummyData() 
+            : { [new Date().toISOString().slice(0, 7)]: getInitialData() };
         
         try {
-          // Use setDoc to create the initial document
           await setDoc(docRef, initialSeed);
-          // Snapshot listener will trigger again automatically after setDoc
+          console.log("Successfully seeded initial data for:", user.uid);
         } catch (err) {
           console.error("Failed to seed initial data:", err);
           setSaveStatus('error');
