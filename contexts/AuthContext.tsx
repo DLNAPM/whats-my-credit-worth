@@ -20,13 +20,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log("Firebase Auth State Changed:", firebaseUser ? "User exists" : "No user");
       if (firebaseUser) {
         setUser(firebaseUser);
-      } else if (!user?.isMock) {
-        // Only clear if we aren't in a mock guest session
+        setLoading(false);
+      } else if (user?.isMock) {
+        // Keep mock user if it exists to maintain session across re-renders
+        setLoading(false);
+      } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -54,33 +58,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             errorMessage = error.message;
         }
       }
-      throw new Error(errorMessage);
-    } finally {
       setLoading(false);
+      throw new Error(errorMessage);
     }
   };
 
   const loginAsGuest = async () => {
+    console.log("Starting Guest Login Process...");
+    setLoading(true);
+    
+    // Fallback Mock User Template
+    const mockUser = {
+      uid: 'local-guest-' + Math.random().toString(36).substr(2, 9),
+      isAnonymous: true,
+      isMock: true,
+      displayName: 'Guest User',
+      email: null,
+      photoURL: null,
+    } as any;
+
     try {
-      setLoading(true);
-      // Try real Firebase Anonymous Auth first
-      await signInAnonymously(auth);
+      // Race Firebase against a 3-second timeout to ensure the UI doesn't hang
+      const firebaseAuthPromise = signInAnonymously(auth);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Firebase auth timeout")), 3000)
+      );
+
+      await Promise.race([firebaseAuthPromise, timeoutPromise]);
+      console.log("Firebase Anonymous Auth Success");
     } catch (error: any) {
-      console.warn("Firebase Anonymous Auth failed or is disabled. Falling back to local Guest Mode.", error);
-      
-      // Fallback: Create a mock user object to bypass AuthScreen
-      // This ensures "nothing happens" never occurs even if Firebase config is restrictive
-      const mockUser = {
-        uid: 'local-guest-' + Math.random().toString(36).substr(2, 9),
-        isAnonymous: true,
-        isMock: true,
-        displayName: 'Guest User',
-        email: null,
-        photoURL: null,
-      } as any;
-      
+      console.warn("Guest login fallback triggered due to:", error.message);
+      // Immediately set the mock user to unblock the UI
       setUser(mockUser);
     } finally {
+      // Ensure loading is cleared so the app renders the dashboard
       setLoading(false);
     }
   };
@@ -88,10 +99,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       setLoading(true);
-      if (!user?.isMock) {
+      if (user && !user.isMock) {
         await signOut(auth);
       }
       setUser(null);
+      if (user?.isMock) {
+          localStorage.removeItem('wmcw_local_guest_data');
+      }
     } finally {
       setLoading(false);
     }
