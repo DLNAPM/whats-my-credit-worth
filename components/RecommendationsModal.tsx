@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { MonthlyData, RecommendationItem } from '../types';
 import { getLocalRecommendations } from '../utils/recommendationEngine';
 import Button from './ui/Button';
-import { SparklesIcon, AlertTriangleIcon, CheckIcon, InfoIcon } from './ui/Icons';
+import { SparklesIcon, AlertTriangleIcon, CheckIcon, InfoIcon, DownloadIcon } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
 
 declare global {
@@ -27,25 +29,96 @@ interface RecommendationsModalProps {
 const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onClose, data, monthYear }) => {
   const [recommendations, setRecommendations] = useState<RecommendationItem[] | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [advisorMode, setAdvisorMode] = useState<'local' | 'ai'>('local');
+  const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      // Default to Local Engine for immediate, reliable results
       setRecommendations(getLocalRecommendations(data));
       setAdvisorMode('local');
       setError(null);
     }
   }, [isOpen, monthYear, data]);
 
+  const handleDownloadPdf = async () => {
+    if (!recommendations) return;
+    setIsExporting(true);
+
+    try {
+      // Create a hidden template for the PDF
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const container = document.createElement('div');
+      container.style.width = '800px';
+      container.style.padding = '40px';
+      container.style.background = 'white';
+      container.style.color = '#111827';
+      container.style.fontFamily = 'sans-serif';
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+
+      const content = `
+        <div style="border-bottom: 2px solid #0D47A1; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 32px; font-weight: bold; color: #0D47A1;">💰 WMCW</span>
+            <div style="font-size: 14px; color: #6B7280; margin-top: 4px;">What's My Credit Worth</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 18px; font-weight: bold;">Financial Strategy Report</div>
+            <div style="font-size: 14px; color: #6B7280;">${formatMonthYear(monthYear)}</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 40px;">
+          ${recommendations.map(rec => `
+            <div style="border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; background: #F9FAFB;">
+              <div style="font-size: 10px; font-weight: bold; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px;">${rec.category}</div>
+              <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #111827;">${rec.title}</div>
+              <div style="font-size: 13px; color: #4B5563; margin-bottom: 15px; line-height: 1.5;">${rec.description}</div>
+              <div style="background: white; border: 1px dashed #D1D5DB; padding: 10px; border-radius: 8px;">
+                <div style="font-size: 9px; color: #9CA3AF; text-transform: uppercase; font-weight: bold;">Recommended Action</div>
+                <div style="font-size: 13px; font-weight: bold; color: #0D47A1;">${rec.actionItem}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="margin-top: auto; padding-top: 40px; border-top: 1px solid #E5E7EB;">
+          <div style="font-size: 11px; color: #6B7280; text-align: center; font-style: italic; line-height: 1.6;">
+            <strong>Disclaimer:</strong> The contents of this report are for informational and educational purposes only and do not constitute professional financial advice. 
+            The results presented are automated recommendations based on provided data. You should consult with a <strong>CPA or Certified Financial Expert</strong> 
+            before making permanent financial decisions. WMCW is not responsible for any financial losses or actions taken based on these insights.
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = content;
+      document.body.appendChild(container);
+
+      const canvas = await html2canvas(container, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const imgProps = doc.getImageProperties(imgData);
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      doc.save(`WMCW-Advisor-Report-${monthYear}.pdf`);
+      
+      document.body.removeChild(container);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const fetchAiDeepDive = async () => {
-    // Check for API key selection if using AI Studio environment
     if (window.aistudio) {
       const hasKey = await window.aistudio.hasSelectedApiKey();
       if (!hasKey) {
         await window.aistudio.openSelectKey();
-        // Assuming key selection successful as per guidelines
       }
     }
 
@@ -53,7 +126,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setError(null);
 
     try {
-      // Create a fresh instance of GoogleGenAI to ensure the latest API key is used
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const netWorth = calculateNetWorth(data);
@@ -114,7 +186,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         }
       });
 
-      // Extract text directly from response.text property
       const parsed = JSON.parse(response.text || '{}');
       if (parsed.recommendations) {
         setRecommendations(parsed.recommendations);
@@ -122,7 +193,6 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
       }
     } catch (err: any) {
       console.error("Gemini Error:", err);
-      // If the API key is invalid or not found, prompt the user to re-select
       if (err?.message?.includes("Requested entity was not found") && window.aistudio) {
         await window.aistudio.openSelectKey();
       }
@@ -221,26 +291,26 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
             ))}
           </div>
 
-          {advisorMode === 'local' && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl flex items-start gap-3 border border-blue-100 dark:border-blue-800/50">
-                <div className="text-blue-500 mt-0.5"><InfoIcon /></div>
-                <div>
-                   <p className="text-sm font-bold text-blue-700 dark:text-blue-300">Upgrade to AI Deep Dive</p>
-                   <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1 leading-relaxed">
-                     Our local engine uses standard financial heuristics. Unlock the AI Advisor to get custom strategies based on current financial modeling and advanced credit optimization.
-                   </p>
-                </div>
-            </div>
-          )}
+          <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
+            <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest font-bold mb-2 italic">Legal Disclaimer</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center leading-relaxed">
+              The contents of this report are for informational purposes only. The results are automated recommendations based on your financial snapshot. You should consult with a <strong>CPA or Certified Financial Expert</strong> before making permanent financial decisions. WMCW and its AI Advisor do not assume liability for financial actions taken based on these outputs.
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-[10px] text-gray-400 font-medium">
-               <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-500">BILLING ENABLED PROJECT</a> IS REQUIRED FOR GEMINI 3 PRO ADVISOR
+               <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-500 uppercase">Billing Required for AI</a>
             </div>
             <div className="flex gap-3">
                 <Button onClick={onClose} variant="secondary">Dismiss</Button>
+                {recommendations && recommendations.length > 0 && (
+                  <Button onClick={handleDownloadPdf} variant="secondary" disabled={isExporting}>
+                    {isExporting ? 'Generating...' : <><DownloadIcon /> PDF Report</>}
+                  </Button>
+                )}
                 {advisorMode === 'local' ? (
                   <Button onClick={fetchAiDeepDive} disabled={isAiLoading}>
                     {isAiLoading ? (
@@ -256,7 +326,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
                   </Button>
                 ) : (
                   <Button onClick={() => { setRecommendations(getLocalRecommendations(data)); setAdvisorMode('local'); }} variant="secondary">
-                    Restore Basic View
+                    Restore Basic
                   </Button>
                 )}
             </div>
