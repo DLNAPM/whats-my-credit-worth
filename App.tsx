@@ -16,8 +16,9 @@ import RecommendationsModal from './components/RecommendationsModal';
 import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
+import PrivacyPolicy from './components/PrivacyPolicy';
 
-const MainApp: React.FC = () => {
+const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
   const { logout } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
@@ -26,7 +27,6 @@ const MainApp: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
-  const [view, setView] = useState<View>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentMonthData = useMemo(() => getMonthData(currentMonthYear), [getMonthData, currentMonthYear]);
@@ -63,6 +63,10 @@ const MainApp: React.FC = () => {
     await logout(); 
   };
 
+  if (view === 'privacy') {
+    return <PrivacyPolicy onBack={() => setView('dashboard')} />;
+  }
+
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans">
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
@@ -74,7 +78,7 @@ const MainApp: React.FC = () => {
           onShare={() => setIsShareModalOpen(true)}
           onImportExport={() => setIsImportExportModalOpen(true)}
           onRecommendations={() => setIsRecommendationsOpen(true)}
-          view={view}
+          view={view === 'dashboard' || view === 'reports' ? view : 'dashboard'}
           setView={setView}
           onLogout={handleLogout}
           onSave={saveData}
@@ -132,6 +136,10 @@ const MainApp: React.FC = () => {
                 setIsImportExportModalOpen(false);
                 setIsUploadHelpOpen(true);
             }}
+            onViewPrivacy={() => {
+              setIsImportExportModalOpen(false);
+              setView('privacy');
+            }}
             hasData={hasData()}
         />
 
@@ -156,6 +164,7 @@ const MainApp: React.FC = () => {
 
 
 function App() {
+  const [view, setView] = useState<View>('dashboard');
   const path = window.location.pathname;
 
   if (path.startsWith('/snapshot/')) {
@@ -206,15 +215,20 @@ function App() {
 
   const { user, loading } = useAuth();
 
+  // Allow users to see the privacy policy without being logged in
+  if (view === 'privacy') {
+    return <PrivacyPolicy onBack={() => setView('dashboard')} />;
+  }
+
   if (loading) {
     return <LoadingScreen />;
   }
 
   if (!user) {
-    return <AuthScreen />;
+    return <AuthScreen onViewPrivacy={() => setView('privacy')} />;
   }
 
-  return <MainApp />;
+  return <MainApp view={view} setView={setView} />;
 }
 
 export default App;

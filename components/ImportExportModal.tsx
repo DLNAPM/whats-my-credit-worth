@@ -1,7 +1,7 @@
 
 import React from 'react';
 import Button from './ui/Button';
-import { DownloadIcon, UploadIcon, InfoIcon } from './ui/Icons';
+import { DownloadIcon, UploadIcon, InfoIcon, FeatureShieldIcon } from './ui/Icons';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -9,10 +9,11 @@ interface ImportExportModalProps {
   onUpload: () => void;
   onDownload: () => void;
   onShowHelp: () => void;
+  onViewPrivacy?: () => void;
   hasData: boolean;
 }
 
-const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, onUpload, onDownload, onShowHelp, hasData }) => {
+const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, onUpload, onDownload, onShowHelp, onViewPrivacy, hasData }) => {
   if (!isOpen) return null;
 
   return (
@@ -51,10 +52,23 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, 
             </div>
           </div>
 
-          <div className="text-center pt-2">
-            <button onClick={onShowHelp} className="text-xs text-gray-500 hover:text-brand-primary underline transition-colors">
-              Help with file formats
-            </button>
+          <div className="space-y-3 pt-2">
+            <div className="text-center">
+              <button onClick={onShowHelp} className="text-xs text-gray-500 hover:text-brand-primary underline transition-colors">
+                Help with file formats
+              </button>
+            </div>
+            
+            {onViewPrivacy && (
+              <div className="flex justify-center border-t border-gray-100 dark:border-gray-800 pt-4">
+                <button 
+                  onClick={onViewPrivacy}
+                  className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-brand-primary transition-colors"
+                >
+                  <FeatureShieldIcon /> Review Privacy & Security Policy
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
