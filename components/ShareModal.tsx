@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
 import type { MonthlyData } from '../types';
 import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon } from './ui/Icons';
+import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon, InfoIcon, CheckIcon } from './ui/Icons';
 import Card from './ui/Card';
 import Snapshot from './Snapshot';
 
@@ -29,7 +29,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data, monthYea
   const monthlyIncome = calculateMonthlyIncome(data.income.jobs);
 
   const summaryText = `
-My Financial Snapshot for ${formatMonthYear(monthYear)}:
+My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
 - Net Worth: ${formatCurrency(netWorth)}
 - Monthly Income: ${formatCurrency(monthlyIncome)}
 - Total Assets: ${formatCurrency(data.assets.reduce((sum, a) => sum + a.value, 0))}
@@ -123,69 +123,114 @@ My Financial Snapshot for ${formatMonthYear(monthYear)}:
     : '#';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-lg">
-        <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold">Share Your Financial Snapshot</h2>
-        </div>
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col animate-fade-in border border-gray-100 dark:border-gray-800">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
           <div>
-              <h3 className="text-lg font-semibold mb-2">Share as Text</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Copy a text summary of your financial data for {formatMonthYear(monthYear)} to your clipboard.</p>
-              <Card title="Summary">
-                <pre className="whitespace-pre-wrap p-4 bg-gray-100 dark:bg-gray-800 rounded text-sm">{summaryText}</pre>
-              </Card>
-              <div className="mt-4 flex justify-end">
-                <Button onClick={handleCopyText}>
-                    <CopyIcon />
-                    {copiedText ? 'Copied!' : 'Copy Text'}
-                </Button>
-              </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Share & Publish Report</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Export your data for {formatMonthYear(monthYear)}</p>
           </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 text-xl">✕</button>
+        </div>
 
-           <div className="border-t pt-4 mt-4">
-              <h3 className="text-lg font-semibold mb-2">Share via Link</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Generate a private link to a read-only version of this snapshot. Anyone with the link will be able to view it.
+        <div className="p-6 space-y-8 max-h-[75vh] overflow-y-auto">
+          {/* Publishing Section */}
+           <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                  <LinkIcon /> Publish Live Snapshot
+                </h3>
+                {shareableLink && (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                    ● Live
+                  </span>
+                )}
+              </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Publishing creates a unique, read-only URL containing your financial status. Anyone with this link can view your results without needing your password.
               </p>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 flex gap-3">
+                <div className="text-blue-500 mt-0.5"><InfoIcon /></div>
+                <div>
+                   <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-tighter">Privacy Guarantee</p>
+                   <p className="text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-1 leading-relaxed">
+                     Publishing <span className="font-bold">does NOT</span> share your account numbers, passwords, or personal job identifiers. It only shares the high-level balances and scores shown on your dashboard.
+                   </p>
+                </div>
+              </div>
+
               {shareableLink ? (
-                <div className="space-y-3">
-                  <input 
-                    type="text" 
-                    readOnly 
-                    value={shareableLink} 
-                    className="w-full p-2 border rounded bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-                    onFocus={(e) => e.target.select()}
-                  />
+                <div className="space-y-3 animate-fade-in">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={shareableLink} 
+                      className="w-full p-3 pr-12 border rounded-xl bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-sm font-mono text-brand-primary"
+                      onFocus={(e) => e.target.select()}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-positive">
+                       <CheckIcon />
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleCopyLink}><CopyIcon /> {copiedLink ? 'Copied!' : 'Copy Link'}</Button>
+                    <Button onClick={handleCopyLink} className="bg-brand-primary hover:bg-brand-secondary text-white border-none">
+                      <CopyIcon /> {copiedLink ? 'Copied Link!' : 'Copy Published URL'}
+                    </Button>
                     <a 
                       href={mailtoLink}
-                      className="font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 focus:ring-gray-400 py-2 px-4 text-base"
+                      className="font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
                     >
-                        <EmailIcon /> Share via Email
+                        <EmailIcon /> Email Snapshot
                     </a>
                   </div>
                 </div>
               ) : (
-                <Button onClick={generateLink}><LinkIcon /> Create Shareable Link</Button>
+                <Button onClick={generateLink} className="w-full py-4 bg-gradient-to-r from-purple-600 to-brand-primary hover:from-purple-700 hover:to-brand-secondary text-white border-none shadow-lg">
+                  <LinkIcon /> Generate & Publish Snapshot
+                </Button>
               )}
             </div>
+
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <CopyIcon /> Quick Summary
+              </h3>
+              <Card title="Dashboard Text" className="bg-gray-50 dark:bg-gray-800/50">
+                <pre className="whitespace-pre-wrap p-4 text-xs font-mono text-gray-700 dark:text-gray-300 leading-relaxed">{summaryText}</pre>
+              </Card>
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleCopyText} variant="secondary">
+                    <CopyIcon />
+                    {copiedText ? 'Summary Copied!' : 'Copy Text Summary'}
+                </Button>
+              </div>
+          </div>
             
-            <div className="border-t pt-4 mt-4">
-                <h3 className="text-lg font-semibold mb-2">Download as JPEG</h3>
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                  <DownloadIcon /> Export for Print
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                    Download a high-quality JPEG image of the snapshot for printing or offline sharing.
+                    Download a high-resolution JPEG of the dashboard. Perfect for attachments or printing.
                 </p>
-                <Button onClick={handleDownloadImage} disabled={isGeneratingImage}>
-                    <DownloadIcon />
-                    {isGeneratingImage ? 'Generating JPEG...' : 'Download JPEG'}
+                <Button onClick={handleDownloadImage} disabled={isGeneratingImage} variant="secondary" className="w-full py-3">
+                    {isGeneratingImage ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                        Generating...
+                      </span>
+                    ) : (
+                      <><DownloadIcon /> Download JPEG Image</>
+                    )}
                 </Button>
             </div>
 
         </div>
-        <div className="p-6 flex justify-end gap-4 bg-gray-50 dark:bg-gray-800/50 border-t">
-          <Button onClick={onClose} variant="secondary">Close</Button>
+        <div className="p-6 flex justify-end gap-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+          <Button onClick={onClose} variant="secondary">Dismiss</Button>
         </div>
       </div>
     </div>

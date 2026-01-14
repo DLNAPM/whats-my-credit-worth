@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebase';
 import type { AppUser } from '../types';
 
@@ -19,6 +19,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle the result of the sign-in redirect when the page loads
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log("Redirect sign-in successful");
+        }
+      } catch (error: any) {
+        console.error("Error handling redirect result:", error);
+      }
+    };
+
+    handleRedirectResult();
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log("Firebase Auth State Changed:", firebaseUser ? "User exists" : "No user");
       if (firebaseUser) {
@@ -42,24 +56,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       setLoading(true);
-      await signInWithPopup(auth, provider);
+      // signInWithRedirect is more robust for mobile browsers than signInWithPopup
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      console.error("Google sign-in error", error);
-      let errorMessage = "An unknown error occurred during sign-in.";
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/popup-closed-by-user':
-            errorMessage = "Sign-in window closed. Please try again.";
-            break;
-          case 'auth/popup-blocked':
-            errorMessage = "Popup blocked! Please allow popups for this site.";
-            break;
-          default:
-            errorMessage = error.message;
-        }
-      }
+      console.error("Google redirect sign-in error", error);
       setLoading(false);
-      throw new Error(errorMessage);
+      throw new Error(error.message || "Failed to initiate Google sign-in.");
     }
   };
 

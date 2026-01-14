@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { HelpCircleIcon, PlayCircleIcon, CheckIcon, SparklesIcon, InfoIcon } from './ui/Icons';
+import PromotionalVideo from './ui/PromotionalVideo';
 
 const GoogleIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
     <svg className={className} viewBox="0 0 48 48">
@@ -13,7 +15,7 @@ const GoogleIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
 
 const ChartIcon = () => (
     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
 );
 
@@ -33,6 +35,7 @@ const AuthScreen: React.FC = () => {
   const { loginWithGoogle, loginAsGuest } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   const handleGoogleLogin = async () => {
     if (isAuthenticating) return;
@@ -63,7 +66,7 @@ const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-brand-primary flex flex-col">
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-brand-primary flex flex-col relative">
         
         {/* Navigation */}
         <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
@@ -73,6 +76,13 @@ const AuthScreen: React.FC = () => {
                      <span className="text-xl font-bold tracking-tight text-brand-primary">WMCW</span>
                 </div>
                 <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => setIsVideoModalOpen(true)}
+                        className="text-sm font-bold text-brand-primary hover:text-brand-secondary flex items-center gap-1 bg-brand-light/30 px-4 py-2 rounded-full transition-colors"
+                    >
+                        <PlayCircleIcon />
+                        Tour
+                    </button>
                     <button 
                         onClick={handleGuestLogin}
                         disabled={isAuthenticating}
@@ -127,13 +137,10 @@ const AuthScreen: React.FC = () => {
                         <span>{isAuthenticating ? 'Signing in...' : 'Sign in with Google'}</span>
                     </button>
                     <button 
-                        onClick={handleGuestLogin} 
-                        disabled={isAuthenticating}
+                        onClick={() => setIsVideoModalOpen(true)}
                         className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-8 rounded-xl border border-gray-200 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                     >
-                        {isAuthenticating ? (
-                             <div className="w-5 h-5 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
-                        ) : 'Try as Guest'}
+                        <PlayCircleIcon /> Watch Video
                     </button>
                 </div>
                 <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
@@ -141,6 +148,87 @@ const AuthScreen: React.FC = () => {
                 </div>
             </div>
         </header>
+
+        {/* How It Works Section (The "?" Helpers) */}
+        <section id="help-section" className="py-24 px-6 bg-white border-t border-gray-50">
+            <div className="max-w-7xl mx-auto">
+                <div className="flex flex-col md:flex-row items-center gap-12">
+                    <div className="flex-1 space-y-8">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-light/20 text-brand-primary rounded-lg text-sm font-bold uppercase tracking-widest">
+                            <HelpCircleIcon /> Question & Help Center
+                        </div>
+                        <h2 className="text-4xl font-bold text-gray-900">Four Simple Steps to Financial Freedom</h2>
+                        <div className="space-y-6">
+                            {[
+                                { step: 1, title: 'Secure Login', desc: 'Connect with Google or try Guest Mode. Your data is encrypted and private.' },
+                                { step: 2, title: 'Input Data', desc: 'Enter your income, scores, and debts. Our intuitive editor makes it easy.' },
+                                { step: 3, title: 'Analyze Trends', desc: 'Visualize your growth over time with interactive net worth and credit charts.' },
+                                { step: 4, title: 'AI Advisory', desc: 'Unlock personalized strategies from our Gemini-powered advisor to accelerate growth.' }
+                            ].map((item) => (
+                                <div key={item.step} className="flex gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-primary text-white flex items-center justify-center font-bold text-sm">
+                                        {item.step}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">{item.title}</h4>
+                                        <p className="text-gray-600 text-sm">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Link to Promotional Video Tour */}
+                        <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col sm:flex-row items-center gap-6 group">
+                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-brand-primary shadow-sm group-hover:scale-110 transition-transform">
+                                <PlayCircleIcon />
+                            </div>
+                            <div className="flex-1 text-center sm:text-left">
+                                <h4 className="font-bold text-gray-900">New to WMCW?</h4>
+                                <p className="text-sm text-gray-500 mb-3">Watch our 90-second animated tour explaining how to use sample data and master your metrics.</p>
+                                <button 
+                                    onClick={() => setIsVideoModalOpen(true)}
+                                    className="text-brand-primary font-bold text-sm flex items-center justify-center sm:justify-start gap-1 hover:underline"
+                                >
+                                    Play Tour Now <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-gray-50 rounded-3xl p-8 border border-gray-100 shadow-inner">
+                        <div className="space-y-6">
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform -rotate-1 hover:rotate-0 transition-transform">
+                                <div className="p-2 bg-blue-50 text-brand-primary rounded-lg">
+                                    <HelpCircleIcon />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-gray-900">Is my data shared with creditors?</p>
+                                    <p className="text-xs text-gray-500 mt-1">Absolutely not. WMCW is a private tracker. We never sell data or connect to your bank accounts without permission.</p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform rotate-1 hover:rotate-0 transition-transform translate-x-4">
+                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                    <SparklesIcon />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-gray-900">How does the AI Advisor work?</p>
+                                    <p className="text-xs text-gray-500 mt-1">It uses Google Gemini to analyze your debt-to-income and utilization ratios to suggest sophisticated wealth moves.</p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform -rotate-1 hover:rotate-0 transition-transform">
+                                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                                    <CheckIcon />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-gray-900">Can I export my reports?</p>
+                                    <p className="text-xs text-gray-500 mt-1">Yes! You can download snapshots as JPEGs or PDF reports to share with your personal financial advisor.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         {/* Feature Section */}
         <section className="bg-gray-50 py-24 px-6 relative overflow-hidden">
@@ -201,6 +289,24 @@ const AuthScreen: React.FC = () => {
                 </p>
             </div>
         </footer>
+
+        {/* Floating Help Button */}
+        <button 
+            onClick={() => document.getElementById('help-section')?.scrollIntoView({ behavior: 'smooth' })}
+            className="fixed bottom-8 right-8 w-14 h-14 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-secondary transform hover:scale-110 transition-all z-40 group"
+            aria-label="Help and FAQ"
+        >
+            <HelpCircleIcon />
+            <span className="absolute right-full mr-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Need Help?
+            </span>
+        </button>
+
+        {/* Video Modal */}
+        <PromotionalVideo 
+            isOpen={isVideoModalOpen} 
+            onClose={() => setIsVideoModalOpen(false)} 
+        />
     </div>
   );
 };
