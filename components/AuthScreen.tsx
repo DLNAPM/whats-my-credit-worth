@@ -15,7 +15,7 @@ const GoogleIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
 
 const ChartIcon = () => (
     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
 );
 
@@ -184,7 +184,7 @@ const AuthScreen: React.FC = () => {
                             </div>
                             <div className="flex-1 text-center sm:text-left">
                                 <h4 className="font-bold text-gray-900">New to WMCW?</h4>
-                                <p className="text-sm text-gray-500 mb-3">Watch our 90-second animated tour explaining how to use sample data and master your metrics.</p>
+                                <p className="text-sm text-gray-500 mb-3">Watch our promotional tour explaining how to master your financial metrics using sample data.</p>
                                 <button 
                                     onClick={() => setIsVideoModalOpen(true)}
                                     className="text-brand-primary font-bold text-sm flex items-center justify-center sm:justify-start gap-1 hover:underline"
