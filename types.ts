@@ -68,4 +68,8 @@ export interface RecommendationItem {
   actionItem: string;
 }
 
-export type AppUser = User;
+export interface AppUser extends User {
+  isMock?: boolean;
+  isPremium?: boolean;
+  isSuperUser?: boolean;
+}

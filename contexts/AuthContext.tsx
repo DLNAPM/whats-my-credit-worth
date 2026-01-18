@@ -5,58 +5,59 @@ import { auth } from '../firebase';
 import type { AppUser } from '../types';
 
 interface AuthContextType {
-  user: (AppUser & { isMock?: boolean }) | null;
+  user: AppUser | null;
   loading: boolean;
+  isPremium: boolean;
+  isSuperUser: boolean;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
+  upgradeToPremium: () => void;
 }
+
+const SUPER_USER_EMAILS = [
+  'reach_dlaniger@hotmail.com',
+  'dlaniger.napm.consulting@gmail.com'
+];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<(AppUser & { isMock?: boolean }) | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
+
+  const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
   useEffect(() => {
-    // Standard listener for authentication state changes
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log("Firebase Auth State Changed:", firebaseUser ? "User exists" : "No user");
-      
       if (firebaseUser) {
-        setUser(firebaseUser);
-      } else if (user?.isMock) {
-        // Maintain mock guest session if it already exists
-        // (This prevents accidental logout of guest sessions on minor network blips)
+        const appUser = firebaseUser as AppUser;
+        setUser(appUser);
+        // Check local storage or admin status for premium
+        const localPremium = localStorage.getItem(`premium_${firebaseUser.uid}`) === 'true';
+        setIsPremium(localPremium || SUPER_USER_EMAILS.includes(firebaseUser.email || ''));
       } else {
         setUser(null);
+        setIsPremium(false);
       }
-      
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user?.isMock]);
+  }, []);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    
     try {
       setLoading(true);
-      // signInWithPopup is more reliable in iframe/sandboxed environments than redirect
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        console.log("Popup sign-in successful:", result.user.displayName);
-        setUser(result.user);
-      }
-    } catch (error: any) {
-      console.error("Google popup sign-in error", error);
-      // Handle cases where popups are blocked
-      if (error.code === 'auth/popup-blocked') {
-        alert("Sign-in popup was blocked by your browser. Please allow popups for this site.");
-      } else {
-        alert(error.message || "Failed to sign in with Google.");
+        const appUser = result.user as AppUser;
+        setUser(appUser);
+        const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
+        setIsPremium(isAdmin);
       }
     } finally {
       setLoading(false);
@@ -64,31 +65,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginAsGuest = async () => {
-    console.log("Starting Guest Login Process...");
     setLoading(true);
-    
-    // Fallback Mock User Template
     const mockUser = {
-      uid: 'local-guest-' + Math.random().toString(36).substr(2, 9),
+      uid: 'guest-' + Math.random().toString(36).substr(2, 9),
       isAnonymous: true,
       isMock: true,
       displayName: 'Guest User',
       email: null,
-      photoURL: null,
-    } as any;
+    } as AppUser;
 
     try {
-      // Race Firebase against a 3-second timeout to ensure the UI doesn't hang
-      const firebaseAuthPromise = signInAnonymously(auth);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Firebase auth timeout")), 3000)
-      );
-
-      await Promise.race([firebaseAuthPromise, timeoutPromise]);
-      console.log("Firebase Anonymous Auth Success");
-    } catch (error: any) {
-      console.warn("Guest login fallback triggered due to:", error.message);
-      // Immediately set the mock user to unblock the UI
+      await signInAnonymously(auth);
+    } catch (e) {
       setUser(mockUser);
     } finally {
       setLoading(false);
@@ -98,31 +86,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       setLoading(true);
-      if (user && !user.isMock) {
-        await signOut(auth);
-      }
+      if (user && !user.isMock) await signOut(auth);
       setUser(null);
-      if (user?.isMock) {
-          localStorage.removeItem('wmcw_local_guest_data');
-      }
+      setIsPremium(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const value = { user, loading, loginWithGoogle, loginAsGuest, logout };
+  const upgradeToPremium = () => {
+    if (user) {
+      localStorage.setItem(`premium_${user.uid}`, 'true');
+      setIsPremium(true);
+    }
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = { 
+    user, 
+    loading, 
+    isPremium: isPremium || isSuperUser, 
+    isSuperUser,
+    loginWithGoogle, 
+    loginAsGuest, 
+    logout,
+    upgradeToPremium
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

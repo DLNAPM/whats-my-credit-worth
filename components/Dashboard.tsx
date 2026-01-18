@@ -7,7 +7,9 @@ import Metric from './ui/Metric';
 import NetWorthChart from './charts/NetWorthChart';
 import CreditScoreChart from './charts/CreditScoreChart';
 import SimulationModal from './SimulationModal';
+import MembershipModal from './MembershipModal';
 import { SimulationIcon } from './ui/Icons';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardProps {
   data?: MonthlyData;
@@ -18,72 +20,42 @@ interface DashboardProps {
 const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
   const utilization = Math.min(Math.max(value, 0), 100);
   const colorClass = utilization > 70 ? 'bg-red-500' : utilization > 30 ? 'bg-yellow-500' : 'bg-green-500';
-
-  return (
-    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-      <div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${utilization}%` }}></div>
-    </div>
-  );
+  return <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5"><div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${utilization}%` }}></div></div>;
 };
-
 
 const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
   const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
+  const [isMembershipOpen, setIsMembershipOpen] = useState(false);
+  const { isPremium } = useAuth();
 
-  if (!data) {
-    return (
-      <div className="text-center py-10">
-        <h2 className="text-xl font-semibold">No data available for this month.</h2>
-        <p className="text-gray-500">Please add data using the 'Edit Data' button.</p>
-      </div>
-    );
-  }
+  if (!data) return <div className="text-center py-10"><h2 className="text-xl font-semibold">No data available.</h2></div>;
+
+  const handleSimulationClick = () => {
+    if (isPremium) setIsSimulationOpen(true);
+    else setIsMembershipOpen(true);
+  };
 
   const netWorth = calculateNetWorth(data);
   const totalIncome = calculateMonthlyIncome(data.income.jobs);
   const totalBills = calculateTotal(data.monthlyBills);
   const totalAssets = calculateTotal(data.assets);
   const totalDebt = calculateTotalBalance(data.creditCards) + calculateTotalBalance(data.loans);
-
-  const totalCardBalance = calculateTotalBalance(data.creditCards);
-  const totalCardLimit = calculateTotalLimit(data.creditCards);
-  const totalCardUtilization = calculateUtilization(totalCardBalance, totalCardLimit);
-
-  const totalLoanBalance = calculateTotalBalance(data.loans);
-  const totalLoanLimit = calculateTotalLimit(data.loans);
-  const totalLoanUtilization = calculateUtilization(totalLoanBalance, totalLoanLimit);
-
+  const totalCardUtilization = calculateUtilization(calculateTotalBalance(data.creditCards), calculateTotalLimit(data.creditCards));
+  const totalLoanUtilization = calculateUtilization(calculateTotalBalance(data.loans), calculateTotalLimit(data.loans));
   const dti = calculateDTI(totalBills, totalIncome);
-  const getDtiStatus = (dtiValue: number): 'positive' | 'negative' | undefined => {
-    if (dtiValue <= 36) return 'positive';
-    if (dtiValue > 43) return 'negative';
-    return undefined;
-  };
-  const dtiStatus = getDtiStatus(dti);
   
   const ChartSwitcher = (
     <div className="flex items-center gap-4">
-        <button
-            onClick={() => setChartView('netWorth')}
-            className={`text-lg font-semibold pb-1 border-b-2 transition-colors focus:outline-none ${
-            chartView === 'netWorth'
-                ? 'text-brand-primary dark:text-brand-light border-brand-primary'
-                : 'text-gray-500 border-transparent hover:text-brand-primary dark:hover:text-brand-light'
-            }`}
-        >
-            Net Worth Over Time
-        </button>
-        <button
-            onClick={() => setChartView('creditScores')}
-            className={`text-lg font-semibold pb-1 border-b-2 transition-colors focus:outline-none ${
-            chartView === 'creditScores'
-                ? 'text-brand-primary dark:text-brand-light border-brand-primary'
-                : 'text-gray-500 border-transparent hover:text-brand-primary dark:hover:text-brand-light'
-            }`}
-        >
-            Credit Scores Over Time
-        </button>
+        {['netWorth', 'creditScores'].map((view) => (
+          <button
+            key={view}
+            onClick={() => setChartView(view as any)}
+            className={`text-lg font-semibold pb-1 border-b-2 transition-colors ${chartView === view ? 'text-brand-primary border-brand-primary' : 'text-gray-500 border-transparent hover:text-brand-primary'}`}
+          >
+            {view === 'netWorth' ? 'Net Worth Over Time' : 'Credit Scores Over Time'}
+          </button>
+        ))}
     </div>
   );
 
@@ -92,53 +64,26 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
             <Metric label="Net Worth" value={formatCurrency(netWorth)} change={netWorth > 0 ? 'positive' : 'negative'} />
             <Metric label="Total Assets" value={formatCurrency(totalAssets)} />
-            <Metric 
-                label="Total Debt" 
-                value={formatCurrency(totalDebt)} 
-                change="negative" 
-                tooltipText="Monthly debt payments are any payments you make to pay back a creditor or lender for money you borrowed. Rent is also considered a monthly debt payment."
-            />
-            <Metric 
-                label="Monthly Income" 
-                value={formatCurrency(totalIncome)} 
-                change="positive"
-                tooltipText="Include any pre-tax and non-taxable income that you want considered in the results."
-            />
-            <Metric 
-                label="DTI Ratio"
-                value={`${dti.toFixed(2)}%`}
-                change={dtiStatus}
-                tooltipText="Debt-to-income (DTI) ratio is your total monthly debt payments divided by your gross monthly income, shown as a percentage. Lenders prefer a DTI of 43% or less."
-            />
+            <Metric label="Total Debt" value={formatCurrency(totalDebt)} change="negative" />
+            <Metric label="Monthly Income" value={formatCurrency(totalIncome)} change="positive" />
+            <Metric label="DTI Ratio" value={`${dti.toFixed(2)}%`} change={dti <= 36 ? 'positive' : dti > 43 ? 'negative' : undefined} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
                 <Card title={ChartSwitcher}>
                     <div className="h-80">
-                        {chartView === 'netWorth' && <NetWorthChart data={allData} />}
-                        {chartView === 'creditScores' && <CreditScoreChart data={allData} />}
+                        {chartView === 'netWorth' ? <NetWorthChart data={allData} /> : <CreditScoreChart data={allData} />}
                     </div>
                 </Card>
             </div>
             <div>
-                 <Card title={
-                    <button
-                        onClick={() => setChartView('creditScores')}
-                        className="text-lg font-semibold text-brand-primary dark:text-brand-light hover:underline focus:outline-none w-full text-left"
-                        aria-label="Show credit scores over time chart"
-                    >
-                        Credit Scores
-                    </button>
-                 }>
+                 <Card title={<h3 className="text-lg font-semibold text-brand-primary">Credit Scores</h3>}>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <Metric label="Experian FICO 8" value={data.creditScores.experian.score8} size="small" />
                         <Metric label="Equifax FICO 8" value={data.creditScores.equifax.score8} size="small" />
                         <Metric label="TransUnion FICO 8" value={data.creditScores.transunion.score8} size="small" />
                         <Metric label="Mr. Cooper FICO 4" value={data.creditScores.mrCooper} size="small" />
-                        <Metric label="Lending Tree" value={data.creditScores.lendingTree} size="small" />
-                        <Metric label="Credit Karma" value={data.creditScores.creditKarma} size="small" />
-                        <Metric label="Credit Sesame" value={data.creditScores.creditSesame} size="small" />
                     </div>
                 </Card>
             </div>
@@ -149,11 +94,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                 title={
                     <div className="flex justify-between items-center w-full">
                         <span>Credit Cards</span>
-                        <button 
-                            onClick={() => setIsSimulationOpen(true)}
-                            className="text-[10px] font-bold text-brand-primary hover:text-brand-secondary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md animate-pulse hover:animate-none"
-                        >
-                            <SimulationIcon /> RUN SIMULATION
+                        <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-primary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all animate-pulse">
+                            <SimulationIcon /> RUN SIMULATION*
                         </button>
                     </div>
                 } 
@@ -167,7 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                             <div className="flex justify-between items-center mb-1 text-sm">
                                 <span className="font-semibold">{card.name}</span>
                                 <div className="flex items-center gap-2">
-                                     <span className="text-gray-500 dark:text-gray-400">{formatCurrency(card.balance)} / {formatCurrency(card.limit)}</span>
+                                     <span className="text-gray-500">{formatCurrency(card.balance)} / {formatCurrency(card.limit)}</span>
                                     <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
                                 </div>
                             </div>
@@ -181,11 +123,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                 title={
                     <div className="flex justify-between items-center w-full">
                         <span>Mortgages & Loans</span>
-                        <button 
-                            onClick={() => setIsSimulationOpen(true)}
-                            className="text-[10px] font-bold text-brand-secondary hover:text-brand-primary bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all"
-                        >
-                            <SimulationIcon /> PREDICT SCORE
+                        <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-secondary bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all">
+                            <SimulationIcon /> PREDICT SCORE*
                         </button>
                     </div>
                 } 
@@ -199,7 +138,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                                 <div className="flex justify-between items-center mb-1 text-sm">
                                     <span className="font-semibold">{loan.name}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-gray-500 dark:text-gray-400">{formatCurrency(loan.balance)} / {formatCurrency(loan.limit)}</span>
+                                        <span className="text-gray-500">{formatCurrency(loan.balance)} / {formatCurrency(loan.limit)}</span>
                                         <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
                                     </div>
                                 </div>
@@ -211,65 +150,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
             </Card>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card title="Assets">
-                <ul className="space-y-2 text-sm">
-                    {data.assets.map(asset => (
-                        <li key={asset.id} className="flex justify-between">
-                            <span>{asset.name}</span>
-                            <span className="font-semibold">{formatCurrency(asset.value)}</span>
-                        </li>
-                    ))}
-                     <li className="flex justify-between border-t pt-2 mt-2 font-bold text-base">
-                        <span>Total Assets</span>
-                        <span>{formatCurrency(totalAssets)}</span>
-                    </li>
-                </ul>
-            </Card>
-            <Card title="Income">
-                <div className="space-y-2 text-sm">
-                    <div className="grid grid-cols-3 gap-4 font-semibold text-gray-500 dark:text-gray-400 pb-2 border-b">
-                        <span className="col-span-1">Source</span>
-                        <span className="text-center">Frequency</span>
-                        <span className="text-right">Amount</span>
-                    </div>
-                    <ul className="space-y-2">
-                        {data.income.jobs.map(job => (
-                            <li key={job.id} className="grid grid-cols-3 gap-4 items-center">
-                                <span className="col-span-1 truncate">{job.name}</span>
-                                <span className="text-center capitalize">{job.frequency.replace('-', ' ')}</span>
-                                <span className="font-semibold text-right">{formatCurrency(job.amount)}</span>
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="flex justify-between border-t pt-2 mt-2 font-bold text-base">
-                        <span>Total Monthly Income</span>
-                        <span>{formatCurrency(totalIncome)}</span>
-                    </div>
-                </div>
-            </Card>
-            <Card title="Monthly Bills">
-                <ul className="space-y-2 text-sm">
-                    {data.monthlyBills.map(bill => (
-                        <li key={bill.id} className="flex justify-between">
-                            <span>{bill.name}</span>
-                            <span className="font-semibold">{formatCurrency(bill.amount)}</span>
-                        </li>
-                    ))}
-                    <li className="flex justify-between border-t pt-2 mt-2 font-bold text-base">
-                        <span>Total Bills</span>
-                        <span>{formatCurrency(totalBills)}</span>
-                    </li>
-                </ul>
-            </Card>
-        </div>
-
-        <SimulationModal 
-            isOpen={isSimulationOpen}
-            onClose={() => setIsSimulationOpen(false)}
-            data={data}
-            monthYear={monthYear}
-        />
+        <SimulationModal isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)} data={data} monthYear={monthYear} />
+        <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />
     </div>
   );
 };
