@@ -90,7 +90,8 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
             <Dashboard 
               key={`dashboard-${refreshCounter}-${currentMonthYear}`} 
               data={currentMonthData} 
-              allData={financialData} 
+              allData={financialData}
+              monthYear={currentMonthYear}
             />
           )}
           {view === 'reports' && (

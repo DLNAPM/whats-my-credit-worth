@@ -6,10 +6,13 @@ import Card from './ui/Card';
 import Metric from './ui/Metric';
 import NetWorthChart from './charts/NetWorthChart';
 import CreditScoreChart from './charts/CreditScoreChart';
+import SimulationModal from './SimulationModal';
+import { SimulationIcon } from './ui/Icons';
 
 interface DashboardProps {
   data?: MonthlyData;
   allData: FinancialData;
+  monthYear: string;
 }
 
 const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
@@ -24,8 +27,9 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
 };
 
 
-const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
+const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
   const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
+  const [isSimulationOpen, setIsSimulationOpen] = useState(false);
 
   if (!data) {
     return (
@@ -141,7 +145,20 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card title="Credit Cards" footerText={`Total Utilization: ${totalCardUtilization.toFixed(2)}%`}>
+            <Card 
+                title={
+                    <div className="flex justify-between items-center w-full">
+                        <span>Credit Cards</span>
+                        <button 
+                            onClick={() => setIsSimulationOpen(true)}
+                            className="text-[10px] font-bold text-brand-primary hover:text-brand-secondary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md animate-pulse hover:animate-none"
+                        >
+                            <SimulationIcon /> RUN SIMULATION
+                        </button>
+                    </div>
+                } 
+                footerText={`Total Utilization: ${totalCardUtilization.toFixed(2)}%`}
+            >
                 <div className="space-y-4">
                 {data.creditCards.map(card => {
                     const utilization = calculateUtilization(card.balance, card.limit);
@@ -160,7 +177,20 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
                 })}
                 </div>
             </Card>
-            <Card title="Mortgages & Loans" footerText={`Total Utilization: ${totalLoanUtilization.toFixed(2)}%`}>
+            <Card 
+                title={
+                    <div className="flex justify-between items-center w-full">
+                        <span>Mortgages & Loans</span>
+                        <button 
+                            onClick={() => setIsSimulationOpen(true)}
+                            className="text-[10px] font-bold text-brand-secondary hover:text-brand-primary bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all"
+                        >
+                            <SimulationIcon /> PREDICT SCORE
+                        </button>
+                    </div>
+                } 
+                footerText={`Total Utilization: ${totalLoanUtilization.toFixed(2)}%`}
+            >
                 <div className="space-y-4">
                     {data.loans.map(loan => {
                         const utilization = calculateUtilization(loan.balance, loan.limit);
@@ -233,6 +263,13 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData }) => {
                 </ul>
             </Card>
         </div>
+
+        <SimulationModal 
+            isOpen={isSimulationOpen}
+            onClose={() => setIsSimulationOpen(false)}
+            data={data}
+            monthYear={monthYear}
+        />
     </div>
   );
 };
