@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
 import { auth } from '../firebase';
 import type { AppUser } from '../types';
 
@@ -19,32 +19,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle the result of the sign-in redirect when the page loads
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          console.log("Redirect sign-in successful");
-        }
-      } catch (error: any) {
-        console.error("Error handling redirect result:", error);
-      }
-    };
-
-    handleRedirectResult();
-
+    // Standard listener for authentication state changes
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log("Firebase Auth State Changed:", firebaseUser ? "User exists" : "No user");
+      
       if (firebaseUser) {
         setUser(firebaseUser);
-        setLoading(false);
       } else if (user?.isMock) {
-        // Keep mock user if it exists to maintain session across re-renders
-        setLoading(false);
+        // Maintain mock guest session if it already exists
+        // (This prevents accidental logout of guest sessions on minor network blips)
       } else {
         setUser(null);
-        setLoading(false);
       }
+      
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -56,12 +44,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       setLoading(true);
-      // signInWithRedirect is more robust for mobile browsers than signInWithPopup
-      await signInWithRedirect(auth, provider);
+      // signInWithPopup is more reliable in iframe/sandboxed environments than redirect
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        console.log("Popup sign-in successful:", result.user.displayName);
+        setUser(result.user);
+      }
     } catch (error: any) {
-      console.error("Google redirect sign-in error", error);
+      console.error("Google popup sign-in error", error);
+      // Handle cases where popups are blocked
+      if (error.code === 'auth/popup-blocked') {
+        alert("Sign-in popup was blocked by your browser. Please allow popups for this site.");
+      } else {
+        alert(error.message || "Failed to sign in with Google.");
+      }
+    } finally {
       setLoading(false);
-      throw new Error(error.message || "Failed to initiate Google sign-in.");
     }
   };
 
@@ -93,7 +91,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Immediately set the mock user to unblock the UI
       setUser(mockUser);
     } finally {
-      // Ensure loading is cleared so the app renders the dashboard
       setLoading(false);
     }
   };
