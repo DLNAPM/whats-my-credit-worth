@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon, SparklesIcon, FeatureShieldIcon } from './ui/Icons';
+import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon, SparklesIcon, FeatureShieldIcon, GoldAsterisk } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipModal from './MembershipModal';
 
@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
               onClick={() => handlePremiumAction(onRecommendations)} 
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold shadow-md hover:shadow-lg transition-all"
             >
-              <SparklesIcon /> AI ADVISOR*
+              <SparklesIcon /> AI ADVISOR<GoldAsterisk className="text-white drop-shadow-none" />
             </button>
             <SaveStatusIndicator />
           </div>
@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
             )}
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit</Button>
-            <Button onClick={() => handlePremiumAction(onShare)} variant="secondary" size="small"><ShareIcon />*</Button>
+            <Button onClick={() => handlePremiumAction(onShare)} variant="secondary" size="small"><ShareIcon /> <GoldAsterisk /></Button>
             <Button onClick={onImportExport} variant="secondary" size="small"><ImportIcon /></Button>
         </div>
       </div>

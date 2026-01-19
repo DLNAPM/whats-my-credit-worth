@@ -8,7 +8,7 @@ import NetWorthChart from './charts/NetWorthChart';
 import CreditScoreChart from './charts/CreditScoreChart';
 import SimulationModal from './SimulationModal';
 import MembershipModal from './MembershipModal';
-import { SimulationIcon } from './ui/Icons';
+import { SimulationIcon, GoldAsterisk } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardProps {
@@ -95,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                     <div className="flex justify-between items-center w-full">
                         <span>Credit Cards</span>
                         <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-primary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all animate-pulse">
-                            <SimulationIcon /> RUN SIMULATION*
+                            <SimulationIcon /> RUN SIMULATION <GoldAsterisk />
                         </button>
                     </div>
                 } 
@@ -124,7 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                     <div className="flex justify-between items-center w-full">
                         <span>Mortgages & Loans</span>
                         <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-secondary bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all">
-                            <SimulationIcon /> PREDICT SCORE*
+                            <SimulationIcon /> PREDICT SCORE <GoldAsterisk />
                         </button>
                     </div>
                 } 

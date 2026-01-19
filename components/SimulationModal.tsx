@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 import type { MonthlyData, CreditCard, Loan } from '../types';
 import { formatCurrency, calculateUtilization, calculateTotalBalance, calculateTotalLimit, calculateNetWorth, formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { SparklesIcon, SimulationIcon, AlertTriangleIcon, InfoIcon, DownloadIcon } from './ui/Icons';
+import { SparklesIcon, SimulationIcon, AlertTriangleIcon, InfoIcon, DownloadIcon, GoldAsterisk } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipModal from './MembershipModal';
 
@@ -120,14 +120,14 @@ const SimulationModal: React.FC<SimulationModalProps> = ({ isOpen, onClose, data
                   <div className="grid grid-cols-3 gap-2 text-center">{['Experian', 'Equifax', 'TransUnion'].map((b, i) => <div key={b} className="bg-white/10 p-2 rounded-xl backdrop-blur-sm"><p className="text-[10px] opacity-70 uppercase">{b}</p><p className="text-2xl font-bold">{i === 0 ? prediction.experian : i === 1 ? prediction.equifax : prediction.transunion}</p></div>)}</div>
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={handleExportPdf} disabled={isExporting} variant="secondary" className="flex-1 py-3 text-sm"><DownloadIcon /> Export PDF Report*</Button>
-                  <Button onClick={handlePrint} variant="secondary" className="py-3 px-6 text-sm">Print*</Button>
+                  <Button onClick={handleExportPdf} disabled={isExporting} variant="secondary" className="flex-1 py-3 text-sm"><DownloadIcon /> Export PDF Report <GoldAsterisk /></Button>
+                  <Button onClick={handlePrint} variant="secondary" className="py-3 px-6 text-sm">Print <GoldAsterisk /></Button>
                 </div>
               </div>
             )}
           </div>
         </div>
-        <div className="p-6 bg-gray-50 dark:bg-gray-800/80 border-t flex items-center gap-3"><InfoIcon className="text-gray-400" /><p className="text-[10px] font-bold text-gray-500 uppercase">* Premium Feature - Requires Membership</p></div>
+        <div className="p-6 bg-gray-50 dark:bg-gray-800/80 border-t flex items-center gap-3"><InfoIcon className="text-gray-400" /><p className="text-[10px] font-bold text-gray-500 uppercase">Features with <GoldAsterisk /> Require Membership</p></div>
       </div>
       <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />
     </div>

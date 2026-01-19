@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 import type { MonthlyData, RecommendationItem } from '../types';
 import { getLocalRecommendations } from '../utils/recommendationEngine';
 import Button from './ui/Button';
-import { SparklesIcon, AlertTriangleIcon, CheckIcon, InfoIcon, DownloadIcon } from './ui/Icons';
+import { SparklesIcon, AlertTriangleIcon, CheckIcon, InfoIcon, DownloadIcon, GoldAsterisk } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipModal from './MembershipModal';
@@ -87,21 +87,21 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
           <div className="grid grid-cols-2 gap-4">
              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border flex items-center gap-2">
                <div className={`w-2.5 h-2.5 rounded-full ${advisorMode === 'ai' ? 'bg-purple-500 animate-pulse' : 'bg-green-500'}`}></div>
-               <span className="font-semibold">{advisorMode === 'ai' ? 'Gemini 3 Pro Deep Dive*' : 'Local Rule Engine'}</span>
+               <span className="font-semibold">{advisorMode === 'ai' ? 'Gemini 3 Pro Deep Dive' : 'Local Rule Engine'}</span>
              </div>
              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border flex items-center justify-between">
-               {!isAiLoading && advisorMode === 'local' && <Button onClick={handleAiDeepDive} size="small" className="bg-purple-600 text-white">Unlock AI Insights*</Button>}
+               {!isAiLoading && advisorMode === 'local' && <Button onClick={handleAiDeepDive} size="small" className="bg-purple-600 text-white">Unlock AI Insights <GoldAsterisk /></Button>}
              </div>
           </div>
           <div className="space-y-4">{recommendations?.map((rec, i) => <div key={i} className="p-5 rounded-2xl bg-white dark:bg-gray-800 border group"><h3 className="text-lg font-bold mb-2">{rec.title}</h3><p className="text-sm text-gray-600 mb-4">{rec.description}</p></div>)}</div>
         </div>
 
         <div className="p-6 border-t bg-gray-50 dark:bg-gray-900 flex justify-between items-center">
-            <div className="text-[10px] font-bold text-gray-400 uppercase">* Premium Feature</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase">Features with <GoldAsterisk /> Require Membership</div>
             <div className="flex gap-3">
                 <Button onClick={onClose} variant="secondary">Dismiss</Button>
-                <Button onClick={handleDownloadPdf} variant="secondary" disabled={isExporting}><DownloadIcon /> PDF Report*</Button>
-                {advisorMode === 'local' && <Button onClick={handleAiDeepDive} disabled={isAiLoading}><SparklesIcon /> AI Deep Dive*</Button>}
+                <Button onClick={handleDownloadPdf} variant="secondary" disabled={isExporting}><DownloadIcon /> PDF Report <GoldAsterisk /></Button>
+                {advisorMode === 'local' && <Button onClick={handleAiDeepDive} disabled={isAiLoading}><SparklesIcon /> AI Deep Dive <GoldAsterisk /></Button>}
             </div>
         </div>
       </div>
