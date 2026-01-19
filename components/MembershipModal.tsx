@@ -49,14 +49,14 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
             <p className="text-xs font-bold text-brand-primary uppercase tracking-widest mb-1">Limited Time Offer</p>
             <div className="flex items-baseline justify-center gap-1 mb-2">
               <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$11.11</span>
-              <span className="text-gray-500 font-medium">/month</span>
+              <span className="text-gray-500 font-medium">/quarterly</span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Includes a <strong>3-Day Free Trial</strong>. Cancel anytime.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Includes an <strong>11-Day Free Trial</strong>. Cancel anytime.</p>
           </div>
 
           <div className="flex flex-col gap-3">
             <Button onClick={handleSubscribe} className="py-4 text-lg bg-brand-primary hover:bg-brand-secondary shadow-lg">
-              Start Free Trial
+              Start 11-Day Free Trial
             </Button>
             <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
               Maybe later
