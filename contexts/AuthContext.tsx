@@ -1,6 +1,16 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  signOut, 
+  signInAnonymously,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth';
 import { auth } from '../firebase';
 import type { AppUser } from '../types';
 
@@ -29,14 +39,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
+  // Set persistence to LOCAL so it survives session clearing on mobile browsers
   useEffect(() => {
+    setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence error:", err));
+  }, []);
+
+  useEffect(() => {
+    // Check for redirect result on mount (crucial for mobile flow)
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        console.log("Redirect sign-in successful");
+      }
+    }).catch((error) => {
+      console.error("Redirect sign-in error:", error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         const appUser = firebaseUser as AppUser;
         setUser(appUser);
-        // Check local storage or admin status for premium
+        const isAdmin = SUPER_USER_EMAILS.includes(firebaseUser.email || '');
         const localPremium = localStorage.getItem(`premium_${firebaseUser.uid}`) === 'true';
-        setIsPremium(localPremium || SUPER_USER_EMAILS.includes(firebaseUser.email || ''));
+        setIsPremium(localPremium || isAdmin);
       } else {
         setUser(null);
         setIsPremium(false);
@@ -50,17 +74,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
+    
+    // Check if user is on mobile to use Redirect instead of Popup
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     try {
       setLoading(true);
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-        const appUser = result.user as AppUser;
-        setUser(appUser);
-        const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
-        setIsPremium(isAdmin);
+      if (isMobile) {
+        // Redirect is much more reliable on Android WebViews and mobile browsers
+        await signInWithRedirect(auth, provider);
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
+          setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
+        }
       }
+    } catch (err) {
+      console.error("Google login failed:", err);
+      throw err;
     } finally {
-      setLoading(false);
+      // Don't set loading false for mobile as it's redirecting away
+      if (!isMobile) setLoading(false);
     }
   };
 
