@@ -210,7 +210,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                                 </div>
                                 <div>
                                     <p className="font-bold text-sm text-red-900">How do I delete my account or data?</p>
-                                    <p className="text-xs text-gray-500 mt-1">To wipe your records: Login -> Click 'Manage Data' icon (top right) -> Danger Zone. You can choose to reset financial records or delete your account entirely.</p>
+                                    <p className="text-xs text-gray-500 mt-1">To wipe your records: Login &rarr; Click 'Manage Data' icon (top right) &rarr; Danger Zone. You can choose to reset financial records or delete your account entirely.</p>
                                 </div>
                             </div>
                             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform -rotate-1 hover:rotate-0 transition-transform">

@@ -101,7 +101,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
                 <li><strong>Self-Service Deletion:</strong> 
                    <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
                      <p className="text-xs font-bold text-brand-primary mb-1 uppercase tracking-tight">Location of controls:</p>
-                     <p className="text-sm">Logged-in Dashboard -> Header -> <ImportIcon className="w-4 h-4 inline mx-1" /> Manage Data -> Danger Zone</p>
+                     <p className="text-sm">Logged-in Dashboard &rarr; Header &rarr; <ImportIcon className="w-4 h-4 inline mx-1" /> Manage Data &rarr; Danger Zone</p>
                    </div>
                 </li>
                 <li><strong>Hard Deletion:</strong> Using "Delete All" in the Danger Zone permanently destructs your Auth record and Firestore document. This is immediate and irreversible.</li>
