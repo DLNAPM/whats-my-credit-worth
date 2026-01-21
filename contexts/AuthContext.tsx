@@ -9,7 +9,8 @@ import {
   signOut, 
   signInAnonymously,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  deleteUser
 } from 'firebase/auth';
 import { auth } from '../firebase';
 import type { AppUser } from '../types';
@@ -23,6 +24,7 @@ interface AuthContextType {
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   upgradeToPremium: () => void;
+  deleteUserAccount: () => Promise<void>;
 }
 
 const SUPER_USER_EMAILS = [
@@ -129,6 +131,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const deleteUserAccount = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    try {
+      await deleteUser(currentUser);
+    } catch (err: any) {
+      if (err.code === 'auth/requires-recent-login') {
+        alert("This operation is sensitive and requires a recent login. Please sign out and sign back in before deleting your account.");
+      }
+      throw err;
+    }
+  };
+
   const upgradeToPremium = () => {
     if (user) {
       localStorage.setItem(`premium_${user.uid}`, 'true');
@@ -144,7 +159,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loginWithGoogle, 
     loginAsGuest, 
     logout,
-    upgradeToPremium
+    upgradeToPremium,
+    deleteUserAccount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

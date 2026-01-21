@@ -4,7 +4,7 @@ import type { FinancialData, MonthlyData } from '../types';
 import { getInitialData, getDummyData } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 
 const LOCAL_STORAGE_KEY = 'wmcw_local_guest_data';
 
@@ -132,12 +132,31 @@ export function useFinancialData() {
     URL.revokeObjectURL(url);
   }, [financialData]);
 
+  const clearCloudData = useCallback(async () => {
+    if (!user) return;
+    try {
+      if (user.isMock) {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } else {
+        const docRef = doc(db, 'users', user.uid);
+        await deleteDoc(docRef);
+      }
+      setFinancialData({});
+      dataRef.current = {};
+      setRefreshCounter(prev => prev + 1);
+    } catch (err) {
+      console.error("Failed to clear data:", err);
+      throw err;
+    }
+  }, [user]);
+
   return { 
     financialData, 
     updateMonthData, 
     getMonthData, 
     importData, 
     exportData, 
+    clearCloudData,
     hasData: () => Object.keys(financialData).length > 0, 
     exportTemplateData: () => {}, 
     saveStatus,
