@@ -41,16 +41,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
-  // Set persistence to LOCAL so it survives session clearing on mobile browsers
   useEffect(() => {
+    // Set persistence to LOCAL so it survives session clearing on mobile browsers
     setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence error:", err));
-  }, []);
-
-  useEffect(() => {
+    
     // Check for redirect result on mount (crucial for mobile flow)
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
-        console.log("Redirect sign-in successful");
+        console.log("Redirect sign-in successful:", result.user.email);
+        // Explicitly update user here if needed, but onAuthStateChanged usually catches it
       }
     }).catch((error) => {
       console.error("Redirect sign-in error:", error);
@@ -77,32 +76,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    // Check if user is on mobile to use Redirect instead of Popup
+    // Detect mobile environment
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     try {
       setLoading(true);
-      if (isMobile) {
-        // Redirect is much more reliable on Android WebViews and mobile browsers
-        await signInWithRedirect(auth, provider);
-      } else {
+      
+      /**
+       * IMPROVED IPHONE FLOW:
+       * On iOS, Popups are often more reliable than Redirects for 3rd party apps
+       * because Safari's "Prevent Cross-Site Tracking" can break the redirect loop.
+       * We try Popup first, and only use Redirect as a true fallback or for known
+       * constrained environments like Android WebViews.
+       */
+      try {
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
           const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
           setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
         }
+      } catch (popupErr: any) {
+        // If popup is blocked or closed, try redirect for mobile
+        if (isMobile || popupErr.code === 'auth/popup-blocked') {
+          console.log("Popup failed/blocked, falling back to redirect...");
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
       }
     } catch (err) {
       console.error("Google login failed:", err);
+      setLoading(false);
       throw err;
-    } finally {
-      // Don't set loading false for mobile as it's redirecting away
-      if (!isMobile) setLoading(false);
     }
   };
 
   const loginAsGuest = async () => {
     setLoading(true);
+    // Ensure we reset any previous guest state
+    localStorage.removeItem('wmcw_local_guest_data');
+    
     const mockUser = {
       uid: 'guest-' + Math.random().toString(36).substr(2, 9),
       isAnonymous: true,
@@ -112,8 +125,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } as AppUser;
 
     try {
+      // We try to use Firebase's real anonymous auth if possible
       await signInAnonymously(auth);
     } catch (e) {
+      // Fallback to local mock user if Firebase fails
+      console.log("Using mock guest fallback");
       setUser(mockUser);
     } finally {
       setLoading(false);

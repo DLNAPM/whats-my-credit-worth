@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Button from './ui/Button';
-import { SupportIcon, EmailIcon, CheckIcon } from './ui/Icons';
+import { SupportIcon, EmailIcon, CheckIcon, AlertTriangleIcon } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -17,6 +17,7 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const SUPPORT_EMAIL = 'dlaniger.napm.consulting@gmail.com';
 
@@ -25,10 +26,10 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
     if (!subject || !message || isSending) return;
 
     setIsSending(true);
+    setErrorMessage(null);
+
     try {
-      // NOTE: We are storing the support request in Firestore. 
-      // This document can trigger a Cloud Function or a Firebase Extension (like Trigger Email) 
-      // to send the actual email to the developer.
+      // NOTE: This requires Firestore Security Rules to allow 'create' on 'support_requests'
       await addDoc(collection(db, 'support_requests'), {
         userId: user?.uid || 'anonymous',
         userEmail: user?.email || 'guest@wmcw.app',
@@ -47,9 +48,14 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
         setSubject('');
         setMessage('');
       }, 2500);
-    } catch (error) {
-      console.error("Failed to send support request:", error);
-      alert("Something went wrong. Please try again later.");
+    } catch (error: any) {
+      console.error("Support submission error:", error);
+      
+      if (error.code === 'permission-denied') {
+        setErrorMessage("Database Permission Denied. Please ensure Firestore Security Rules allow 'create' on the 'support_requests' collection.");
+      } else {
+        setErrorMessage("Failed to send message. Please check your internet connection and try again.");
+      }
     } finally {
       setIsSending(false);
     }
@@ -84,6 +90,13 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Found a bug or have a feature request? Let us know! Your request will be sent directly to our support desk.
               </p>
+
+              {errorMessage && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex gap-3 text-red-700 text-xs animate-fade-in">
+                  <AlertTriangleIcon className="shrink-0 w-4 h-4" />
+                  <p>{errorMessage}</p>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Subject</label>

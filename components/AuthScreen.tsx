@@ -81,10 +81,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                         <PlayCircleIcon />
                         Tour
                     </button>
+                    {/* FIXED: Removed hidden md:block so iPhone users can see it */}
                     <button 
                         onClick={handleGuestLogin}
                         disabled={isAuthenticating}
-                        className="hidden md:block text-sm font-medium text-gray-500 hover:text-brand-primary transition-colors disabled:opacity-50"
+                        className="text-sm font-medium text-gray-500 hover:text-brand-primary transition-colors disabled:opacity-50"
                     >
                         {isAuthenticating ? 'Connecting...' : 'Guest Mode'}
                     </button>
@@ -141,6 +142,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                         <PlayCircleIcon /> Watch Video
                     </button>
                 </div>
+
+                {/* Mobile Friendly Guest Option */}
+                <div className="mt-6 flex justify-center">
+                   <button 
+                      onClick={handleGuestLogin}
+                      className="text-sm font-bold text-gray-400 hover:text-brand-primary underline transition-colors"
+                   >
+                     Try Guest Mode (Instant Access)
+                   </button>
+                </div>
+
                 <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
                     <FeatureShieldIcon /> Secure & Private. Try Guest Mode with 4 months of sample data.
                 </div>
