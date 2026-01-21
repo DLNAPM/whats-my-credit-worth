@@ -29,16 +29,49 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({ isOpen, onClo
     setErrorMessage(null);
 
     try {
-      // NOTE: This requires Firestore Security Rules to allow 'create' on 'support_requests'
+      /**
+       * TRIGGER EMAIL EXTENSION SCHEMA:
+       * To actually receive these in your inbox, install the "Trigger Email" 
+       * extension in your Firebase Console and point it to the 'support_requests' collection.
+       */
+      const emailBody = `
+NEW SUPPORT REQUEST FROM WMCW APP
+---------------------------------
+User Name: ${user?.displayName || 'Guest'}
+User Email: ${user?.email || 'N/A'}
+User UID: ${user?.uid}
+Timestamp: ${new Date().toLocaleString()}
+
+MESSAGE:
+${message}
+      `.trim();
+
       await addDoc(collection(db, 'support_requests'), {
+        // These fields are specifically for the 'Trigger Email' Extension
+        to: SUPPORT_EMAIL,
+        message: {
+          subject: `[WMCW Support] ${subject}`,
+          text: emailBody,
+          html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                  <h2 style="color: #0D47A1;">WMCW Support Request</h2>
+                  <p><strong>Subject:</strong> ${subject}</p>
+                  <hr style="border: 0; border-top: 1px solid #eee;" />
+                  <p style="white-space: pre-wrap;">${message}</p>
+                  <hr style="border: 0; border-top: 1px solid #eee;" />
+                  <div style="font-size: 11px; color: #666;">
+                    <p><strong>User:</strong> ${user?.displayName || 'Guest'}</p>
+                    <p><strong>Email:</strong> ${user?.email || 'N/A'}</p>
+                    <p><strong>UID:</strong> ${user?.uid}</p>
+                  </div>
+                </div>`
+        },
+        // Audit metadata
         userId: user?.uid || 'anonymous',
-        userEmail: user?.email || 'guest@wmcw.app',
-        displayName: user?.displayName || 'Guest User',
-        subject,
-        message,
-        recipient: SUPPORT_EMAIL,
-        timestamp: serverTimestamp(),
-        status: 'new'
+        createdAt: serverTimestamp(),
+        status: {
+          state: 'PENDING',
+          updatedAt: serverTimestamp()
+        }
       });
 
       setIsSent(true);
