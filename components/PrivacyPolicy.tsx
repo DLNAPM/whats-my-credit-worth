@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ChevronLeftIcon, InfoIcon, CheckIcon, FeatureShieldIcon } from './ui/Icons';
+import { ChevronLeftIcon, InfoIcon, CheckIcon, FeatureShieldIcon, ImportIcon } from './ui/Icons';
 import Button from './ui/Button';
 
 interface PrivacyPolicyProps {
@@ -94,11 +94,17 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
             <section>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">4. Your Rights & Data Deletion</h2>
               <p className="mb-4">
-                You maintain complete authority over your information:
+                You maintain complete authority over your information. You can request a full account wipe or a data reset at any time through our self-service tools:
               </p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc pl-6 space-y-3">
                 <li><strong>Export:</strong> Use the "Manage Data" feature to download your entire history in JSON format.</li>
-                <li><strong>Deletion:</strong> You can request a full account and data wipe by contacting support or using the self-service "Reset Account" feature in your settings. Once deleted, data is purged from our production databases immediately.</li>
+                <li><strong>Self-Service Deletion:</strong> 
+                   <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+                     <p className="text-xs font-bold text-brand-primary mb-1 uppercase tracking-tight">Location of controls:</p>
+                     <p className="text-sm">Logged-in Dashboard -> Header -> <ImportIcon className="w-4 h-4 inline mx-1" /> Manage Data -> Danger Zone</p>
+                   </div>
+                </li>
+                <li><strong>Hard Deletion:</strong> Using "Delete All" in the Danger Zone permanently destructs your Auth record and Firestore document. This is immediate and irreversible.</li>
               </ul>
             </section>
 

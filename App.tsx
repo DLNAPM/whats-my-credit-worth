@@ -17,6 +17,8 @@ import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import DashboardHelpModal from './components/DashboardHelpModal';
+import { HelpCircleIcon } from './components/ui/Icons';
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
@@ -27,6 +29,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
+  const [isDashboardHelpOpen, setIsDashboardHelpOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentMonthData = useMemo(() => getMonthData(currentMonthYear), [getMonthData, currentMonthYear]);
@@ -68,7 +71,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   }
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans">
+    <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans relative">
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <Header 
           currentMonthYear={currentMonthYear}
@@ -150,6 +153,24 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           data={currentMonthData}
           monthYear={currentMonthYear}
         />
+
+        <DashboardHelpModal
+          isOpen={isDashboardHelpOpen}
+          onClose={() => setIsDashboardHelpOpen(false)}
+          onOpenManageData={() => setIsImportExportModalOpen(true)}
+        />
+
+        {/* Floating Help Button for Dashboard */}
+        <button 
+            onClick={() => setIsDashboardHelpOpen(true)}
+            className="fixed bottom-8 right-8 w-14 h-14 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-secondary transform hover:scale-110 transition-all z-40 group"
+            aria-label="Dashboard Help Center"
+        >
+            <HelpCircleIcon />
+            <span className="absolute right-full mr-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                Help & Data Control
+            </span>
+        </button>
 
         <input
             type="file"

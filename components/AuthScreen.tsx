@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { HelpCircleIcon, PlayCircleIcon, CheckIcon, SparklesIcon, InfoIcon, FeatureShieldIcon } from './ui/Icons';
+import { HelpCircleIcon, PlayCircleIcon, CheckIcon, SparklesIcon, InfoIcon, FeatureShieldIcon, DeleteIcon, AlertTriangleIcon } from './ui/Icons';
 import PromotionalVideo from './ui/PromotionalVideo';
 
 const GoogleIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -204,7 +204,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                                     <p className="text-xs text-gray-500 mt-1">Absolutely not. WMCW is a private tracker. We never sell data or connect to your bank accounts without permission.</p>
                                 </div>
                             </div>
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform rotate-1 hover:rotate-0 transition-transform translate-x-4">
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50 flex items-start gap-4 transform rotate-1 hover:rotate-0 transition-transform translate-x-4">
+                                <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                                    <DeleteIcon />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-red-900">How do I delete my account or data?</p>
+                                    <p className="text-xs text-gray-500 mt-1">To wipe your records: Login -> Click 'Manage Data' icon (top right) -> Danger Zone. You can choose to reset financial records or delete your account entirely.</p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform -rotate-1 hover:rotate-0 transition-transform">
                                 <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                                     <SparklesIcon />
                                 </div>
@@ -213,7 +222,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                                     <p className="text-xs text-gray-500 mt-1">It uses Google Gemini to analyze your debt-to-income and utilization ratios to suggest sophisticated wealth moves.</p>
                                 </div>
                             </div>
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform -rotate-1 hover:rotate-0 transition-transform">
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform rotate-1 hover:rotate-0 transition-transform translate-x-4">
                                 <div className="p-2 bg-green-50 text-green-600 rounded-lg">
                                     <CheckIcon />
                                 </div>
