@@ -110,6 +110,10 @@ export const SimulationIcon = () => (
   <svg {...iconProps}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
 );
 
+export const SupportIcon = () => (
+  <svg {...iconProps}><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+);
+
 export const GoldAsterisk = ({ className = "" }: { className?: string }) => (
   <span className={`text-amber-500 font-bold ml-0.5 select-none drop-shadow-[0_0_2px_rgba(245,158,11,0.5)] ${className}`} aria-hidden="true">*</span>
 );

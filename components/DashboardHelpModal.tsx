@@ -1,15 +1,16 @@
 
 import React from 'react';
 import Button from './ui/Button';
-import { HelpCircleIcon, InfoIcon, AlertTriangleIcon, ImportIcon, DeleteIcon } from './ui/Icons';
+import { HelpCircleIcon, InfoIcon, AlertTriangleIcon, ImportIcon, SupportIcon } from './ui/Icons';
 
 interface DashboardHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenManageData: () => void;
+  onOpenSupport: () => void;
 }
 
-const DashboardHelpModal: React.FC<DashboardHelpModalProps> = ({ isOpen, onClose, onOpenManageData }) => {
+const DashboardHelpModal: React.FC<DashboardHelpModalProps> = ({ isOpen, onClose, onOpenManageData, onOpenSupport }) => {
   if (!isOpen) return null;
 
   return (
@@ -55,6 +56,23 @@ const DashboardHelpModal: React.FC<DashboardHelpModalProps> = ({ isOpen, onClose
                   </div>
                 </li>
               </ol>
+            </div>
+          </section>
+
+          {/* Section: Contact Support */}
+          <section className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+             <h3 className="text-lg font-bold flex items-center gap-2 text-brand-primary">
+              <SupportIcon /> Need Human Help?
+            </h3>
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/20 flex flex-col md:flex-row items-center gap-6">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Having trouble with your account or found an issue? Our support team is ready to assist you directly.
+                  </p>
+                </div>
+                <Button onClick={() => { onClose(); onOpenSupport(); }} className="whitespace-nowrap">
+                   <SupportIcon /> Contact Support
+                </Button>
             </div>
           </section>
 

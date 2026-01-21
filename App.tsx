@@ -18,6 +18,7 @@ import AuthScreen from './components/AuthScreen';
 import { LoadingScreen } from './components/ui/Spinner';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import DashboardHelpModal from './components/DashboardHelpModal';
+import ContactSupportModal from './components/ContactSupportModal';
 import { HelpCircleIcon } from './components/ui/Icons';
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
@@ -30,6 +31,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [isDashboardHelpOpen, setIsDashboardHelpOpen] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentMonthData = useMemo(() => getMonthData(currentMonthYear), [getMonthData, currentMonthYear]);
@@ -158,6 +160,12 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           isOpen={isDashboardHelpOpen}
           onClose={() => setIsDashboardHelpOpen(false)}
           onOpenManageData={() => setIsImportExportModalOpen(true)}
+          onOpenSupport={() => setIsSupportOpen(true)}
+        />
+
+        <ContactSupportModal
+          isOpen={isSupportOpen}
+          onClose={() => setIsSupportOpen(false)}
         />
 
         {/* Floating Help Button for Dashboard */}
@@ -168,7 +176,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
         >
             <HelpCircleIcon />
             <span className="absolute right-full mr-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                Help & Data Control
+                Help & Support
             </span>
         </button>
 
