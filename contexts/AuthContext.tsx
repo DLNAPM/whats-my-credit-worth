@@ -4,6 +4,7 @@ import {
   onAuthStateChanged, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect, 
   getRedirectResult, 
   signOut, 
   signInAnonymously,
@@ -19,7 +20,6 @@ interface AuthContextType {
   loading: boolean;
   isPremium: boolean;
   isSuperUser: boolean;
-  isStandalone: boolean;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
@@ -38,33 +38,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
   useEffect(() => {
-    // Detect if app is running in standalone mode (installed PWA)
-    const checkStandalone = () => {
-        const isStandaloneMatch = window.matchMedia('(display-mode: standalone)').matches || 
-                                 (window.navigator as any).standalone || 
-                                 document.referrer.includes('android-app://');
-        setIsStandalone(!!isStandaloneMatch);
-    };
-    
-    checkStandalone();
-
-    // Ensure persistence is set to LOCAL
+    // Set persistence to LOCAL so it survives session clearing on mobile browsers
     setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence error:", err));
     
-    // Check for redirect result on mount (important if popup failed and reverted to redirect)
+    // Check for redirect result on mount (crucial for mobile flow)
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
-        console.log("Auth result found from redirect:", result.user.email);
+        console.log("Redirect sign-in successful:", result.user.email);
+        // Explicitly update user here if needed, but onAuthStateChanged usually catches it
       }
     }).catch((error) => {
-      if (error.code === 'auth/missing-initial-state') {
-        console.warn("Storage partitioning detected. State lost during auth redirect.");
-      }
+      console.error("Redirect sign-in error:", error);
     });
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -88,35 +76,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
+    // Detect mobile environment
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     try {
       setLoading(true);
       
-      // Attempt popup first
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-        const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
-        setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
+      /**
+       * IMPROVED IPHONE FLOW:
+       * On iOS, Popups are often more reliable than Redirects for 3rd party apps
+       * because Safari's "Prevent Cross-Site Tracking" can break the redirect loop.
+       * We try Popup first, and only use Redirect as a true fallback or for known
+       * constrained environments like Android WebViews.
+       */
+      try {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
+          setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
+        }
+      } catch (popupErr: any) {
+        // If popup is blocked or closed, try redirect for mobile
+        if (isMobile || popupErr.code === 'auth/popup-blocked') {
+          console.log("Popup failed/blocked, falling back to redirect...");
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
       }
-    } catch (err: any) {
-      console.error("Google login attempt failed:", err.code, err.message);
-      
+    } catch (err) {
+      console.error("Google login failed:", err);
       setLoading(false);
-
-      // SPECIFIC FIX FOR ANDROID STORAGE PARTITIONING
-      if (err.code === 'auth/missing-initial-state') {
-        throw new Error("ANDROID_AUTH_STATE_ERROR");
-      } else if (err.code === 'auth/popup-blocked') {
-        throw new Error("The login popup was blocked. Please enable popups in your browser settings and try again.");
-      } else if (err.code === 'auth/cancelled-by-user') {
-        return;
-      }
-      
       throw err;
     }
   };
 
   const loginAsGuest = async () => {
     setLoading(true);
+    // Ensure we reset any previous guest state
     localStorage.removeItem('wmcw_local_guest_data');
     
     const mockUser = {
@@ -128,8 +125,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } as AppUser;
 
     try {
+      // We try to use Firebase's real anonymous auth if possible
       await signInAnonymously(auth);
     } catch (e) {
+      // Fallback to local mock user if Firebase fails
+      console.log("Using mock guest fallback");
       setUser(mockUser);
     } finally {
       setLoading(false);
@@ -172,7 +172,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading, 
     isPremium: isPremium || isSuperUser, 
     isSuperUser,
-    isStandalone,
     loginWithGoogle, 
     loginAsGuest, 
     logout,
