@@ -1,25 +1,109 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import DataEditor from './components/DataEditor';
 import { useFinancialData } from './hooks/useFinancialData';
 import { getCurrentMonthYear, getNextMonthYear, getPreviousMonthYear } from './utils/helpers';
-import type { View } from './types';
+import type { View, MonthlyData } from './types';
 import Reports from './components/Reports';
 import UploadHelpModal from './components/UploadHelpModal';
 import ShareModal from './components/ShareModal';
 import Snapshot from './components/Snapshot';
-import type { MonthlyData } from './types';
 import ImportExportModal from './components/ImportExportModal';
 import RecommendationsModal from './components/RecommendationsModal';
 import { useAuth } from './contexts/AuthContext';
 import AuthScreen from './components/AuthScreen';
-import { LoadingScreen } from './components/ui/Spinner';
+import Spinner, { LoadingScreen } from './components/ui/Spinner';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import DashboardHelpModal from './components/DashboardHelpModal';
 import ContactSupportModal from './components/ContactSupportModal';
 import { HelpCircleIcon } from './components/ui/Icons';
+import { db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
+/**
+ * NEW: Async Snapshot Loader
+ * This fetches the snapshot data from Firestore using the Short ID.
+ */
+const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
+  const [snapshot, setSnapshot] = useState<{ monthYear: string; data: MonthlyData } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSnapshot = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 1. Try treating as Firestore ID (Short URL)
+        const docRef = doc(db, 'shared_snapshots', snapshotId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setSnapshot(docSnap.data() as any);
+        } else {
+          // 2. Fallback: Try decoding as Legacy Base64 (to support old links)
+          try {
+            const urlSafeBase64ToStr = (base64Url: string): string => {
+                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const padding = '='.repeat((4 - base64.length % 4) % 4);
+                base64 += padding;
+                const binaryStr = atob(base64);
+                const uint8Array = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                    uint8Array[i] = binaryStr.charCodeAt(i);
+                }
+                return new TextDecoder().decode(uint8Array);
+            };
+            const decodedJson = urlSafeBase64ToStr(snapshotId);
+            const legacyData = JSON.parse(decodedJson);
+            if (legacyData?.monthYear && legacyData?.data) {
+                setSnapshot(legacyData);
+            } else {
+                throw new Error("Invalid structure");
+            }
+          } catch (e) {
+             setError("This snapshot link is invalid or has expired.");
+          }
+        }
+      } catch (err) {
+        console.error("Snapshot fetch error:", err);
+        setError("Failed to load snapshot. Please check your connection.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSnapshot();
+  }, [snapshotId]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <Spinner />
+        <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest text-xs animate-pulse">Fetching Published Snapshot...</p>
+      </div>
+    );
+  }
+
+  if (error || !snapshot) {
+    return (
+       <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md mx-4 border border-red-100">
+            <h1 className="text-2xl font-bold text-negative mb-4">Link Expired or Invalid</h1>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">{error || "The snapshot you are looking for could not be found."}</p>
+             <a href="/" className="inline-block bg-brand-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-brand-secondary transition-all shadow-lg">
+              Go to Homepage
+            </a>
+          </div>
+        </div>
+    );
+  }
+
+  return <Snapshot snapshotData={snapshot} />;
+};
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
@@ -197,50 +281,17 @@ function App() {
   const [view, setView] = useState<View>('dashboard');
   const path = window.location.pathname;
 
+  // HANDLE SNAPSHOT VIEWING
   if (path.startsWith('/snapshot/')) {
-    const encodedData = path.substring('/snapshot/'.length);
-    const ErrorDisplay = ({ message }: { message: string }) => (
-       <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md mx-4">
-            <h1 className="text-2xl font-bold text-negative mb-4">Invalid Snapshot Link</h1>
-            <p className="text-gray-600 dark:text-gray-300">{message}</p>
-             <a href="/" className="mt-6 inline-block bg-brand-primary text-white font-bold py-2 px-4 rounded hover:bg-brand-secondary transition-colors">
-              Go to Main App
-            </a>
-          </div>
-        </div>
-    );
-    
-    if (!encodedData) {
-      return <ErrorDisplay message="The link you followed is incomplete." />;
+    const snapshotId = path.substring('/snapshot/'.length);
+    if (!snapshotId) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+                <p>Missing Snapshot ID</p>
+            </div>
+        );
     }
-    
-    try {
-      const urlSafeBase64ToStr = (base64Url: string): string => {
-        let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const padding = '='.repeat((4 - base64.length % 4) % 4);
-        base64 += padding;
-        
-        const binaryStr = atob(base64);
-        const uint8Array = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-            uint8Array[i] = binaryStr.charCodeAt(i);
-        }
-        return new TextDecoder().decode(uint8Array);
-      };
-
-      const decodedJson = urlSafeBase64ToStr(encodedData);
-      const snapshotPayload: { monthYear: string; data: MonthlyData } = JSON.parse(decodedJson);
-      
-      if (snapshotPayload && snapshotPayload.monthYear && snapshotPayload.data) {
-        return <Snapshot snapshotData={snapshotPayload} />;
-      } else {
-        throw new Error("Invalid data structure");
-      }
-    } catch (error) {
-      console.error("Failed to decode snapshot data:", error);
-      return <ErrorDisplay message="The link you followed appears to be corrupted or invalid." />;
-    }
+    return <SnapshotLoader snapshotId={snapshotId} />;
   }
 
   const { user, loading } = useAuth();
