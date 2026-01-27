@@ -114,6 +114,14 @@ export const SupportIcon = () => (
   <svg {...iconProps}><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
 );
 
+export const SmsIcon = () => (
+  <svg {...iconProps}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-7.6 8.38 8.38 0 0 1 3.8.9L22 4l-2.5 7.5z"></path></svg>
+);
+
+export const NativeShareIcon = () => (
+  <svg {...iconProps}><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+);
+
 export const GoldAsterisk = ({ className = "" }: { className?: string }) => (
   <span className={`text-amber-500 font-bold ml-0.5 select-none drop-shadow-[0_0_2px_rgba(245,158,11,0.5)] ${className}`} aria-hidden="true">*</span>
 );

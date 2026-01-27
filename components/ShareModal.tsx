@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
 import type { MonthlyData } from '../types';
 import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon, InfoIcon, CheckIcon } from './ui/Icons';
+import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon, InfoIcon, CheckIcon, SmsIcon, NativeShareIcon } from './ui/Icons';
 import Card from './ui/Card';
 import Snapshot from './Snapshot';
 
@@ -77,6 +77,30 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
       setTimeout(() => setCopiedLink(false), 2000);
   }
 
+  const handleNativeShare = async () => {
+    if (!shareableLink) return;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `WMCW Snapshot - ${formatMonthYear(monthYear)}`,
+          text: `Check out my financial snapshot for ${formatMonthYear(monthYear)}. Net Worth: ${formatCurrency(netWorth)}`,
+          url: shareableLink,
+        });
+      } catch (err) {
+        console.log('Share cancelled or failed', err);
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleSmsShare = () => {
+    if (!shareableLink) return;
+    const smsBody = `Check out my WMCW Financial Snapshot for ${formatMonthYear(monthYear)}: ${shareableLink}`;
+    window.location.href = `sms:?body=${encodeURIComponent(smsBody)}`;
+  };
+
   const handleDownloadImage = async () => {
     if (!data) return;
     setIsGeneratingImage(true);
@@ -122,6 +146,8 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     ? `mailto:?subject=${encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`
     : '#';
 
+  const canShareNative = !!navigator.share;
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col animate-fade-in border border-gray-100 dark:border-gray-800">
@@ -148,7 +174,7 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
               </div>
               
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Publishing creates a unique, read-only URL containing your financial status. Anyone with this link can view your results without needing your password.
+                Publishing creates a unique, read-only URL containing your financial status. Send this to any Google account user, or share via text/email.
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 flex gap-3">
@@ -156,13 +182,13 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                 <div>
                    <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-tighter">Privacy Guarantee</p>
                    <p className="text-[11px] text-blue-600/80 dark:text-blue-400/80 mt-1 leading-relaxed">
-                     Publishing <span className="font-bold">does NOT</span> share your account numbers, passwords, or personal job identifiers. It only shares the high-level balances and scores shown on your dashboard.
+                     Sharing <span className="font-bold">does NOT</span> expose passwords or account numbers. It only displays the summary data you see in the snapshot.
                    </p>
                 </div>
               </div>
 
               {shareableLink ? (
-                <div className="space-y-3 animate-fade-in">
+                <div className="space-y-4 animate-fade-in">
                   <div className="relative">
                     <input 
                       type="text" 
@@ -175,16 +201,35 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                        <CheckIcon />
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleCopyLink} className="bg-brand-primary hover:bg-brand-secondary text-white border-none">
-                      <CopyIcon /> {copiedLink ? 'Copied Link!' : 'Copy Published URL'}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button onClick={handleCopyLink} className="bg-brand-primary hover:bg-brand-secondary text-white border-none flex-1">
+                      <CopyIcon /> {copiedLink ? 'Link Copied!' : 'Copy URL'}
                     </Button>
+                    
+                    {canShareNative ? (
+                      <Button onClick={handleNativeShare} className="bg-brand-accent hover:bg-brand-secondary text-white border-none flex-1">
+                        <NativeShareIcon /> Send to App
+                      </Button>
+                    ) : (
+                      <Button onClick={handleSmsShare} className="bg-green-600 hover:bg-green-700 text-white border-none flex-1">
+                        <SmsIcon /> Send via Text
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
                     <a 
                       href={mailtoLink}
-                      className="font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
+                      className="flex-1 font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
                     >
                         <EmailIcon /> Email Snapshot
                     </a>
+                    {canShareNative && (
+                      <Button onClick={handleSmsShare} className="bg-green-500 hover:bg-green-600 text-white border-none px-4" title="Send via SMS">
+                        <SmsIcon />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
