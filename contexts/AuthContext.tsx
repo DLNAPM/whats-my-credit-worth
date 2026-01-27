@@ -4,7 +4,6 @@ import {
   onAuthStateChanged, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signInWithRedirect, 
   getRedirectResult, 
   signOut, 
   signInAnonymously,
@@ -20,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   isPremium: boolean;
   isSuperUser: boolean;
+  isStandalone: boolean;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
@@ -38,24 +38,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
   useEffect(() => {
-    // Set persistence to LOCAL so it survives session clearing on mobile browsers
+    // Detect if app is running in standalone mode (installed PWA)
+    const checkStandalone = () => {
+        const isStandaloneMatch = window.matchMedia('(display-mode: standalone)').matches || 
+                                 (window.navigator as any).standalone || 
+                                 document.referrer.includes('android-app://');
+        setIsStandalone(!!isStandaloneMatch);
+    };
+    
+    checkStandalone();
+
+    // Ensure persistence is set to LOCAL
     setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence error:", err));
     
-    // Check for redirect result on mount
+    // Check for redirect result on mount (important if popup failed and reverted to redirect)
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
-        console.log("Redirect sign-in successful:", result.user.email);
+        console.log("Auth result found from redirect:", result.user.email);
       }
     }).catch((error) => {
-      // Catch specific redirect error common on mobile
       if (error.code === 'auth/missing-initial-state') {
-        console.error("Redirect state lost. This usually happens in in-app browsers or constrained mobile environments.");
-      } else {
-        console.error("Redirect sign-in error:", error);
+        console.warn("Storage partitioning detected. State lost during auth redirect.");
       }
     });
 
@@ -83,32 +91,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       
-      /**
-       * MOBILE FIX:
-       * We now exclusively use signInWithPopup first. Redirects (signInWithRedirect) 
-       * are the primary cause of 'auth/missing-initial-state' errors on Android/Render 
-       * because the state is lost during the jump between domains in partitioned browsers.
-       */
+      // Attempt popup first
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
         const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
         setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
       }
     } catch (err: any) {
-      console.error("Google login failed:", err);
+      console.error("Google login attempt failed:", err.code, err.message);
       
-      // Handle the specific error mentioned by the user
+      setLoading(false);
+
+      // SPECIFIC FIX FOR ANDROID STORAGE PARTITIONING
       if (err.code === 'auth/missing-initial-state') {
-        throw new Error("Your browser cleared the login state. Please try using Chrome or Safari directly instead of an in-app browser.");
+        throw new Error("ANDROID_AUTH_STATE_ERROR");
       } else if (err.code === 'auth/popup-blocked') {
-        throw new Error("Login popup was blocked. Please enable popups for this site and try again.");
+        throw new Error("The login popup was blocked. Please enable popups in your browser settings and try again.");
       } else if (err.code === 'auth/cancelled-by-user') {
-        // Silently handle user cancellation
-        setLoading(false);
         return;
       }
       
-      setLoading(false);
       throw err;
     }
   };
@@ -128,7 +130,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await signInAnonymously(auth);
     } catch (e) {
-      console.log("Using mock guest fallback");
       setUser(mockUser);
     } finally {
       setLoading(false);
@@ -171,6 +172,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading, 
     isPremium: isPremium || isSuperUser, 
     isSuperUser,
+    isStandalone,
     loginWithGoogle, 
     loginAsGuest, 
     logout,
