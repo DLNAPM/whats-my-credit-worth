@@ -52,7 +52,7 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
       /**
        * SHORT URL LOGIC:
        * We store the snapshot in Firestore and use the Document ID as the link token.
-       * This ensures the link is short (~40 chars total) and doesn't break on mobile.
+       * This ensures the link is short (~40 chars total) and doesn't break on mobile or PC.
        */
       const docRef = await addDoc(collection(db, 'shared_snapshots'), {
         monthYear,
@@ -97,6 +97,20 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     } else {
       handleCopyLink();
     }
+  };
+
+  const handleEmailShare = () => {
+    if (!shareableLink) return;
+    
+    const subject = encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`);
+    // Keep body concise to ensure compatibility with desktop clients like Outlook/Windows Mail
+    const body = encodeURIComponent(
+      `Check out my WMCW Financial Snapshot for ${formatMonthYear(monthYear)}:\n\n` +
+      `${summaryText}\n\n` +
+      `View the full interactive report here:\n${shareableLink}`
+    );
+    
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const handleSmsShare = () => {
@@ -145,10 +159,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
         setIsGeneratingImage(false);
     }
   };
-
-  const mailtoLink = shareableLink
-    ? `mailto:?subject=${encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`
-    : '#';
 
   const canShareNative = !!navigator.share;
 
@@ -223,12 +233,12 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                   </div>
                   
                   <div className="flex flex-wrap gap-2">
-                    <a 
-                      href={mailtoLink}
-                      className="flex-1 font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
+                    <Button 
+                      onClick={handleEmailShare}
+                      className="flex-1 font-bold rounded-md transition-colors bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
                     >
                         <EmailIcon /> Email Snapshot
-                    </a>
+                    </Button>
                     {canShareNative && (
                       <Button onClick={handleSmsShare} className="bg-green-500 hover:bg-green-600 text-white border-none px-4" title="Send via SMS">
                         <SmsIcon />

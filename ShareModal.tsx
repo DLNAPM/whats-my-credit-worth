@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import html2canvas from 'html2canvas';
-import { db } from '../firebase';
+import { db } from './firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import type { MonthlyData } from '../types';
-import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
-import Button from './ui/Button';
-import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon, InfoIcon, CheckIcon, SmsIcon, NativeShareIcon } from './ui/Icons';
-import Card from './ui/Card';
-import Snapshot from './Snapshot';
+import type { MonthlyData } from './types';
+import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from './utils/helpers';
+import Button from './components/ui/Button';
+import { CopyIcon, LinkIcon, EmailIcon, DownloadIcon, InfoIcon, CheckIcon, SmsIcon, NativeShareIcon } from './components/ui/Icons';
+import Card from './components/ui/Card';
+import Snapshot from './components/Snapshot';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -49,11 +49,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     setIsGenerating(true);
 
     try {
-      /**
-       * NEW SHORT URL LOGIC:
-       * Instead of encoding the data in the URL (which breaks on mobile),
-       * we store it in Firestore and get a unique Document ID.
-       */
       const docRef = await addDoc(collection(db, 'shared_snapshots'), {
         monthYear,
         data,
@@ -99,6 +94,19 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     }
   };
 
+  const handleEmailShare = () => {
+    if (!shareableLink) return;
+    
+    const subject = encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`);
+    const body = encodeURIComponent(
+      `Check out my WMCW Financial Snapshot for ${formatMonthYear(monthYear)}:\n\n` +
+      `${summaryText}\n\n` +
+      `View the full interactive report here:\n${shareableLink}`
+    );
+    
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
   const handleSmsShare = () => {
     if (!shareableLink) return;
     const smsBody = `Check out my WMCW Financial Snapshot for ${formatMonthYear(monthYear)}: ${shareableLink}`;
@@ -119,7 +127,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     const snapshotData = { monthYear, data };
     root.render(<Snapshot snapshotData={snapshotData} />);
 
-    // Wait for rendering and styles
     await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
@@ -146,10 +153,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     }
   };
 
-  const mailtoLink = shareableLink
-    ? `mailto:?subject=${encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`)}&body=${encodeURIComponent(`${summaryText}\n\nView the full snapshot here:\n${shareableLink}`)}`
-    : '#';
-
   const canShareNative = !!navigator.share;
 
   return (
@@ -164,7 +167,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
         </div>
 
         <div className="p-6 space-y-8 max-h-[75vh] overflow-y-auto">
-          {/* Publishing Section */}
            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold flex items-center gap-2 text-purple-600 dark:text-purple-400">
@@ -223,12 +225,12 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                   </div>
                   
                   <div className="flex flex-wrap gap-2">
-                    <a 
-                      href={mailtoLink}
-                      className="flex-1 font-bold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
+                    <Button 
+                      onClick={handleEmailShare}
+                      className="flex-1 font-bold rounded-md transition-colors bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 border border-gray-200 dark:border-gray-700 py-2.5 px-6 text-sm"
                     >
                         <EmailIcon /> Email Snapshot
-                    </a>
+                    </Button>
                     {canShareNative && (
                       <Button onClick={handleSmsShare} className="bg-green-500 hover:bg-green-600 text-white border-none px-4" title="Send via SMS">
                         <SmsIcon />
