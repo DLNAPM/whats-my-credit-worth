@@ -63,7 +63,9 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
         }
       });
 
-      const link = `${window.location.origin}/snapshot/${docRef.id}`;
+      // UPDATED: Added /#/ to make it a hash-based route. 
+      // This is crucial for static hosting (Render.com) to prevent 404s on direct navigation.
+      const link = `${window.location.origin}/#/snapshot/${docRef.id}`;
       setShareableLink(link);
     } catch (error: any) {
         console.error("CRITICAL: Error generating share link:", error);

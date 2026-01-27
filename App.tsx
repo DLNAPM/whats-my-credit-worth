@@ -23,8 +23,8 @@ import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 /**
- * NEW: Async Snapshot Loader
- * This fetches the snapshot data from Firestore using the Short ID.
+ * Async Snapshot Loader
+ * Fetches snapshot data from Firestore.
  */
 const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
   const [snapshot, setSnapshot] = useState<{ monthYear: string; data: MonthlyData } | null>(null);
@@ -38,7 +38,6 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
       
       try {
         // 1. Try treating as Firestore ID (Short URL)
-        // We wrap this in its own try/catch to ensure the legacy fallback runs if Firestore fails
         let foundInFirestore = false;
         try {
           const docRef = doc(db, 'shared_snapshots', snapshotId);
@@ -49,7 +48,7 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
             foundInFirestore = true;
           }
         } catch (dbErr) {
-          console.warn("Firestore lookup failed, attempting Base64 fallback:", dbErr);
+          console.warn("Firestore lookup failed:", dbErr);
         }
 
         if (!foundInFirestore) {
@@ -71,10 +70,10 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
             if (legacyData?.monthYear && legacyData?.data) {
                 setSnapshot(legacyData);
             } else {
-                throw new Error("Invalid snapshot data structure");
+                throw new Error("Invalid structure");
             }
           } catch (e) {
-             setError("This snapshot link is invalid or has expired.");
+             setError("This snapshot link is invalid, expired, or the database record was moved.");
           }
         }
       } catch (err) {
@@ -101,7 +100,7 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
     return (
        <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
           <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md mx-4 border border-red-100">
-            <h1 className="text-2xl font-bold text-negative mb-4">Link Expired or Invalid</h1>
+            <h1 className="text-2xl font-bold text-negative mb-4">Link Unavailable</h1>
             <p className="text-gray-600 dark:text-gray-300 mb-6">{error || "The snapshot you are looking for could not be found."}</p>
              <a href="/" className="inline-block bg-brand-primary text-white font-bold py-3 px-8 rounded-xl hover:bg-brand-secondary transition-all shadow-lg">
               Go to Homepage
@@ -147,10 +146,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
       };
       reader.readAsText(file);
     }
-    // Reset file input
-    if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const triggerFileUpload = () => {
@@ -261,7 +257,6 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           onClose={() => setIsSupportOpen(false)}
         />
 
-        {/* Floating Help Button for Dashboard */}
         <button 
             onClick={() => setIsDashboardHelpOpen(true)}
             className="fixed bottom-8 right-8 w-14 h-14 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-secondary transform hover:scale-110 transition-all z-40 group"
@@ -288,24 +283,26 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
 
 function App() {
   const [view, setView] = useState<View>('dashboard');
-  const path = window.location.pathname;
+  
+  // ROBUST SNAPSHOT ROUTING: Supports both traditional path and hash-based path
+  const getSnapshotId = () => {
+    const path = window.location.pathname;
+    if (path.startsWith('/snapshot/')) return path.substring('/snapshot/'.length);
+    
+    const hash = window.location.hash;
+    if (hash.startsWith('#/snapshot/')) return hash.substring('#/snapshot/'.length);
+    
+    return null;
+  };
 
-  // HANDLE SNAPSHOT VIEWING
-  if (path.startsWith('/snapshot/')) {
-    const snapshotId = path.substring('/snapshot/'.length);
-    if (!snapshotId) {
-        return (
-            <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-                <p>Missing Snapshot ID</p>
-            </div>
-        );
-    }
+  const snapshotId = getSnapshotId();
+
+  if (snapshotId) {
     return <SnapshotLoader snapshotId={snapshotId} />;
   }
 
   const { user, loading } = useAuth();
 
-  // Allow users to see the privacy policy without being logged in
   if (view === 'privacy') {
     return <PrivacyPolicy onBack={() => setView('dashboard')} />;
   }
