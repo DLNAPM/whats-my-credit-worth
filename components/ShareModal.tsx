@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import html2canvas from 'html2canvas';
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { MonthlyData } from '../types';
 import { calculateNetWorth, formatCurrency, calculateMonthlyIncome, formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
@@ -20,8 +22,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data, monthYea
   const [copiedText, setCopiedText] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-
 
   if (!isOpen || !data) return null;
 
@@ -42,31 +44,33 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     setTimeout(() => setCopiedText(false), 2000);
   };
   
-  const generateLink = () => {
-    if (!data) return;
-    const payload = {
-      monthYear,
-      data,
-    };
+  const generateLink = async () => {
+    if (!data || isGenerating) return;
+    setIsGenerating(true);
+
     try {
-      const jsonString = JSON.stringify(payload);
-      
-      const strToUrlSafeBase64 = (str: string): string => {
-        const uint8Array = new TextEncoder().encode(str);
-        let binaryString = '';
-        uint8Array.forEach((byte) => {
-            binaryString += String.fromCharCode(byte);
-        });
-        const base64String = btoa(binaryString);
-        return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-      };
-      
-      const encodedData = strToUrlSafeBase64(jsonString);
-      const link = `${window.location.origin}/snapshot/${encodedData}`;
+      /**
+       * SHORT URL LOGIC:
+       * We store the snapshot in Firestore and use the Document ID as the link token.
+       * This ensures the link is short (~40 chars total) and doesn't break on mobile.
+       */
+      const docRef = await addDoc(collection(db, 'shared_snapshots'), {
+        monthYear,
+        data,
+        createdAt: serverTimestamp(),
+        summary: {
+            netWorth,
+            monthlyIncome
+        }
+      });
+
+      const link = `${window.location.origin}/snapshot/${docRef.id}`;
       setShareableLink(link);
     } catch (error) {
         console.error("Error generating share link:", error);
-        alert("Could not generate share link. The data might be too large.");
+        alert("Failed to publish snapshot. Please check your internet connection.");
+    } finally {
+        setIsGenerating(false);
     }
   };
   
@@ -116,7 +120,7 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     root.render(<Snapshot snapshotData={snapshotData} />);
 
     // Wait for rendering and styles
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
         const canvas = await html2canvas(snapshotContainer, { 
@@ -174,7 +178,7 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
               </div>
               
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Publishing creates a unique, read-only URL containing your financial status. Send this to any Google account user, or share via text/email.
+                Publishing creates a unique, <span className="font-bold text-purple-600">Short URL</span> for your report. Send this link to anyone via text or email.
               </p>
 
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 flex gap-3">
@@ -204,7 +208,7 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Button onClick={handleCopyLink} className="bg-brand-primary hover:bg-brand-secondary text-white border-none flex-1">
-                      <CopyIcon /> {copiedLink ? 'Link Copied!' : 'Copy URL'}
+                      <CopyIcon /> {copiedLink ? 'Link Copied!' : 'Copy Short URL'}
                     </Button>
                     
                     {canShareNative ? (
@@ -233,8 +237,19 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                   </div>
                 </div>
               ) : (
-                <Button onClick={generateLink} className="w-full py-4 bg-gradient-to-r from-purple-600 to-brand-primary hover:from-purple-700 hover:to-brand-secondary text-white border-none shadow-lg">
-                  <LinkIcon /> Generate & Publish Snapshot
+                <Button 
+                    onClick={generateLink} 
+                    disabled={isGenerating}
+                    className="w-full py-4 bg-gradient-to-r from-purple-600 to-brand-primary hover:from-purple-700 hover:to-brand-secondary text-white border-none shadow-lg"
+                >
+                  {isGenerating ? (
+                    <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Publishing Snapshot...
+                    </div>
+                  ) : (
+                    <><LinkIcon /> Generate & Publish Snapshot</>
+                  )}
                 </Button>
               )}
             </div>
@@ -265,7 +280,7 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
                     {isGeneratingImage ? (
                       <span className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
-                        Generating...
+                        Generating Image...
                       </span>
                     ) : (
                       <><DownloadIcon /> Download JPEG Image</>
