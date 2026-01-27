@@ -45,14 +45,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Set persistence to LOCAL so it survives session clearing on mobile browsers
     setPersistence(auth, browserLocalPersistence).catch(err => console.error("Persistence error:", err));
     
-    // Check for redirect result on mount (crucial for mobile flow)
+    // Check for redirect result on mount
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
         console.log("Redirect sign-in successful:", result.user.email);
-        // Explicitly update user here if needed, but onAuthStateChanged usually catches it
       }
     }).catch((error) => {
-      console.error("Redirect sign-in error:", error);
+      // Catch specific redirect error common on mobile
+      if (error.code === 'auth/missing-initial-state') {
+        console.error("Redirect state lost. This usually happens in in-app browsers or constrained mobile environments.");
+      } else {
+        console.error("Redirect sign-in error:", error);
+      }
     });
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -76,36 +80,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    // Detect mobile environment
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
     try {
       setLoading(true);
       
       /**
-       * IMPROVED IPHONE FLOW:
-       * On iOS, Popups are often more reliable than Redirects for 3rd party apps
-       * because Safari's "Prevent Cross-Site Tracking" can break the redirect loop.
-       * We try Popup first, and only use Redirect as a true fallback or for known
-       * constrained environments like Android WebViews.
+       * MOBILE FIX:
+       * We now exclusively use signInWithPopup first. Redirects (signInWithRedirect) 
+       * are the primary cause of 'auth/missing-initial-state' errors on Android/Render 
+       * because the state is lost during the jump between domains in partitioned browsers.
        */
-      try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
-          setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
-        }
-      } catch (popupErr: any) {
-        // If popup is blocked or closed, try redirect for mobile
-        if (isMobile || popupErr.code === 'auth/popup-blocked') {
-          console.log("Popup failed/blocked, falling back to redirect...");
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw popupErr;
-        }
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
+        setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Google login failed:", err);
+      
+      // Handle the specific error mentioned by the user
+      if (err.code === 'auth/missing-initial-state') {
+        throw new Error("Your browser cleared the login state. Please try using Chrome or Safari directly instead of an in-app browser.");
+      } else if (err.code === 'auth/popup-blocked') {
+        throw new Error("Login popup was blocked. Please enable popups for this site and try again.");
+      } else if (err.code === 'auth/cancelled-by-user') {
+        // Silently handle user cancellation
+        setLoading(false);
+        return;
+      }
+      
       setLoading(false);
       throw err;
     }
@@ -113,7 +115,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginAsGuest = async () => {
     setLoading(true);
-    // Ensure we reset any previous guest state
     localStorage.removeItem('wmcw_local_guest_data');
     
     const mockUser = {
@@ -125,10 +126,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } as AppUser;
 
     try {
-      // We try to use Firebase's real anonymous auth if possible
       await signInAnonymously(auth);
     } catch (e) {
-      // Fallback to local mock user if Firebase fails
       console.log("Using mock guest fallback");
       setUser(mockUser);
     } finally {

@@ -81,7 +81,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                         <PlayCircleIcon />
                         Tour
                     </button>
-                    {/* FIXED: Removed hidden md:block so iPhone users can see it */}
                     <button 
                         onClick={handleGuestLogin}
                         disabled={isAuthenticating}
@@ -117,8 +116,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                 </p>
                 
                 {authError && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium animate-fade-in">
-                        {authError}
+                    <div className="mb-6 p-6 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-left max-w-md mx-auto animate-fade-in">
+                        <div className="flex gap-3 items-start">
+                            <AlertTriangleIcon className="shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-bold text-sm mb-1">Authentication Issue</p>
+                                <p className="text-xs leading-relaxed opacity-90">{authError}</p>
+                                <div className="mt-3 pt-3 border-t border-red-200">
+                                    <p className="text-[10px] font-bold uppercase tracking-tight">Pro Tip for Mobile:</p>
+                                    <p className="text-[10px] mt-1 opacity-80 italic">If you are inside an app like Facebook or LinkedIn, tap the three dots (⋮) and select "Open in Chrome" to allow the login popup to work correctly.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -143,7 +152,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                     </button>
                 </div>
 
-                {/* Mobile Friendly Guest Option */}
                 <div className="mt-6 flex justify-center">
                    <button 
                       onClick={handleGuestLogin}
@@ -154,12 +162,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                 </div>
 
                 <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-2">
-                    <FeatureShieldIcon /> Secure & Private. Try Guest Mode with 4 months of sample data.
+                    <FeatureShieldIcon /> Secure & Private. Data is never sold or shared.
                 </div>
             </div>
         </header>
 
-        {/* How It Works Section (The "?" Helpers) */}
+        {/* How It Works Section */}
         <section id="help-section" className="py-24 px-6 bg-white border-t border-gray-50">
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row items-center gap-12">
@@ -170,7 +178,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                         <h2 className="text-4xl font-bold text-gray-900">Four Simple Steps to Financial Freedom</h2>
                         <div className="space-y-6">
                             {[
-                                { step: 1, title: 'Secure Login', desc: 'Connect with Google or try Guest Mode. Your data is encrypted and private.' },
+                                { step: 1, title: 'Secure Login', desc: 'Connect with Google. We use popup authentication to prevent mobile state errors.' },
                                 { step: 2, title: 'Input Data', desc: 'Enter your income, scores, and debts. Our intuitive editor makes it easy.' },
                                 { step: 3, title: 'Analyze Trends', desc: 'Visualize your growth over time with interactive net worth and credit charts.' },
                                 { step: 4, title: 'AI Advisory', desc: 'Unlock personalized strategies from our Gemini-powered advisor to accelerate growth.' }
@@ -187,7 +195,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                             ))}
                         </div>
                         
-                        {/* Link to Promotional Video Tour */}
                         <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col sm:flex-row items-center gap-6 group">
                             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-brand-primary shadow-sm group-hover:scale-110 transition-transform">
                                 <PlayCircleIcon />
@@ -212,8 +219,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                                     <HelpCircleIcon />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-sm text-gray-900">Is my data shared with creditors?</p>
-                                    <p className="text-xs text-gray-500 mt-1">Absolutely not. WMCW is a private tracker. We never sell data or connect to your bank accounts without permission.</p>
+                                    <p className="font-bold text-sm text-gray-900">Trouble logging in on Android?</p>
+                                    <p className="text-xs text-gray-500 mt-1">If you get a "missing state" error, it means your browser is blocking cookies. Switch to standalone Chrome to fix it.</p>
                                 </div>
                             </div>
                             <div className="bg-white p-4 rounded-xl shadow-sm border border-red-50 flex items-start gap-4 transform rotate-1 hover:rotate-0 transition-transform translate-x-4">
@@ -221,8 +228,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                                     <DeleteIcon />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-sm text-red-900">How do I delete my account or data?</p>
-                                    <p className="text-xs text-gray-500 mt-1">To wipe your records: Login &rarr; Click 'Manage Data' icon (top right) &rarr; Danger Zone. You can choose to reset financial records or delete your account entirely.</p>
+                                    <p className="font-bold text-sm text-red-900">How do I delete my data?</p>
+                                    <p className="text-xs text-gray-500 mt-1">Login &rarr; Manage Data &rarr; Danger Zone. You can wipe records or delete your account entirely at any time.</p>
                                 </div>
                             </div>
                             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform -rotate-1 hover:rotate-0 transition-transform">
@@ -230,17 +237,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                                     <SparklesIcon />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-sm text-gray-900">How does the AI Advisor work?</p>
-                                    <p className="text-xs text-gray-500 mt-1">It uses Google Gemini to analyze your debt-to-income and utilization ratios to suggest sophisticated wealth moves.</p>
-                                </div>
-                            </div>
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start gap-4 transform rotate-1 hover:rotate-0 transition-transform translate-x-4">
-                                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                                    <CheckIcon />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-sm text-gray-900">Can I export my reports?</p>
-                                    <p className="text-xs text-gray-500 mt-1">Yes! You can download snapshots as JPEGs or PDF reports to share with your personal financial advisor.</p>
+                                    <p className="font-bold text-sm text-gray-900">Is the AI Advisor private?</p>
+                                    <p className="text-xs text-gray-500 mt-1">Yes. Only numeric values are shared with the Gemini API to generate insights. No PII is ever transmitted.</p>
                                 </div>
                             </div>
                         </div>
@@ -261,36 +259,33 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">
-                    {/* Feature 1 */}
                     <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-brand-primary group-hover:scale-110 transition-transform duration-300">
                            <ChartIcon />
                         </div>
                         <h3 className="text-xl font-bold mb-3 text-gray-900">Net Worth Tracking</h3>
                         <p className="text-gray-600 leading-relaxed">
-                            Automatically calculate your net worth by aggregating your investments, cash, loans, and credit cards in one beautiful dashboard.
+                            Automatically calculate your net worth by aggregating your investments, cash, loans, and credit cards.
                         </p>
                     </div>
 
-                    {/* Feature 2 */}
                     <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 text-green-600 group-hover:scale-110 transition-transform duration-300">
                             <FeatureShieldIcon />
                         </div>
                         <h3 className="text-xl font-bold mb-3 text-gray-900">Multi-Bureau Monitoring</h3>
                         <p className="text-gray-600 leading-relaxed">
-                            Log and visualize your FICO® scores from Experian, Equifax, and TransUnion. Spot trends and improvements instantly.
+                            Log and visualize your FICO® scores from Experian, Equifax, and TransUnion. Spot trends instantly.
                         </p>
                     </div>
 
-                    {/* Feature 3 */}
                     <div className="group bg-white p-8 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 text-purple-600 group-hover:scale-110 transition-transform duration-300">
                              <TrendIcon />
                         </div>
                         <h3 className="text-xl font-bold mb-3 text-gray-900">Growth Analytics</h3>
                         <p className="text-gray-600 leading-relaxed">
-                            Generate detailed monthly, quarterly, and annual reports. Analyze your debt-to-income ratio and track your financial velocity.
+                            Generate monthly, quarterly, and annual reports. Analyze your DTI ratio and track your velocity.
                         </p>
                     </div>
                 </div>
@@ -316,18 +311,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                 </div>
             </div>
         </footer>
-
-        {/* Floating Help Button */}
-        <button 
-            onClick={() => document.getElementById('help-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-secondary transform hover:scale-110 transition-all z-40 group"
-            aria-label="Help and FAQ"
-        >
-            <HelpCircleIcon />
-            <span className="absolute right-full mr-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                Need Help?
-            </span>
-        </button>
 
         {/* Video Modal */}
         <PromotionalVideo 
