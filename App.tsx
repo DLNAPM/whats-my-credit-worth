@@ -33,18 +33,27 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
 
   useEffect(() => {
     const fetchSnapshot = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
-        setLoading(true);
-        setError(null);
-
         // 1. Try treating as Firestore ID (Short URL)
-        const docRef = doc(db, 'shared_snapshots', snapshotId);
-        const docSnap = await getDoc(docRef);
+        // We wrap this in its own try/catch to ensure the legacy fallback runs if Firestore fails
+        let foundInFirestore = false;
+        try {
+          const docRef = doc(db, 'shared_snapshots', snapshotId);
+          const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          setSnapshot(docSnap.data() as any);
-        } else {
-          // 2. Fallback: Try decoding as Legacy Base64 (to support old links)
+          if (docSnap.exists()) {
+            setSnapshot(docSnap.data() as any);
+            foundInFirestore = true;
+          }
+        } catch (dbErr) {
+          console.warn("Firestore lookup failed, attempting Base64 fallback:", dbErr);
+        }
+
+        if (!foundInFirestore) {
+          // 2. Fallback: Try decoding as Legacy Base64
           try {
             const urlSafeBase64ToStr = (base64Url: string): string => {
                 let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -62,14 +71,14 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
             if (legacyData?.monthYear && legacyData?.data) {
                 setSnapshot(legacyData);
             } else {
-                throw new Error("Invalid structure");
+                throw new Error("Invalid snapshot data structure");
             }
           } catch (e) {
              setError("This snapshot link is invalid or has expired.");
           }
         }
       } catch (err) {
-        console.error("Snapshot fetch error:", err);
+        console.error("Snapshot loader critical error:", err);
         setError("Failed to load snapshot. Please check your connection.");
       } finally {
         setLoading(false);

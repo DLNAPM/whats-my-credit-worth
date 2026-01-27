@@ -52,7 +52,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
       /**
        * SHORT URL LOGIC:
        * We store the snapshot in Firestore and use the Document ID as the link token.
-       * This ensures the link is short (~40 chars total) and doesn't break on mobile or PC.
        */
       const docRef = await addDoc(collection(db, 'shared_snapshots'), {
         monthYear,
@@ -66,9 +65,9 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
 
       const link = `${window.location.origin}/snapshot/${docRef.id}`;
       setShareableLink(link);
-    } catch (error) {
-        console.error("Error generating share link:", error);
-        alert("Failed to publish snapshot. Please check your internet connection.");
+    } catch (error: any) {
+        console.error("CRITICAL: Error generating share link:", error);
+        alert(`Failed to publish snapshot. Error: ${error.message || "Unknown connectivity issue"}`);
     } finally {
         setIsGenerating(false);
     }
@@ -103,7 +102,6 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
     if (!shareableLink) return;
     
     const subject = encodeURIComponent(`Financial Snapshot for ${formatMonthYear(monthYear)}`);
-    // Keep body concise to ensure compatibility with desktop clients like Outlook/Windows Mail
     const body = encodeURIComponent(
       `Check out my WMCW Financial Snapshot for ${formatMonthYear(monthYear)}:\n\n` +
       `${summaryText}\n\n` +

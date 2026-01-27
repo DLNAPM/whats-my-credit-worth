@@ -1,6 +1,7 @@
+
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxCLulyq4HDYFZCUkMmtoIUwmM9Sn81BY",
@@ -12,8 +13,15 @@ const firebaseConfig = {
   measurementId: "G-Y52XV704K6"
 };
 
-// Fix: Use direct initializeApp function instead of namespace property access
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+/**
+ * We use initializeFirestore instead of getFirestore to enable 
+ * experimentalForceLongPolling. This often fixes "WebChannel transport errors" 
+ * which occur when WebSockets/gRPC streams are blocked by proxies or environments.
+ */
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
