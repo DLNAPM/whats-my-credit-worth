@@ -67,7 +67,11 @@ My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
       setShareableLink(link);
     } catch (error: any) {
         console.error("CRITICAL: Error generating share link:", error);
-        alert(`Failed to publish snapshot. Error: ${error.message || "Unknown connectivity issue"}`);
+        if (error.code === 'permission-denied') {
+          alert("Snapshot failed to publish. Action Required: Please update your Firestore Security Rules in the Firebase Console to allow 'create' on the 'shared_snapshots' collection.");
+        } else {
+          alert(`Failed to publish snapshot. Error: ${error.message || "Unknown connectivity issue"}`);
+        }
     } finally {
         setIsGenerating(false);
     }
