@@ -25,6 +25,7 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
 
 const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
   const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
+  const [liabilityView, setLiabilityView] = useState<'cards' | 'loans'>('cards');
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
   const { isPremium } = useAuth();
@@ -41,8 +42,10 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
   const totalBills = calculateTotal(data.monthlyBills);
   const totalAssets = calculateTotal(data.assets);
   const totalDebt = calculateTotalBalance(data.creditCards) + calculateTotalBalance(data.loans);
+  
   const totalCardUtilization = calculateUtilization(calculateTotalBalance(data.creditCards), calculateTotalLimit(data.creditCards));
   const totalLoanUtilization = calculateUtilization(calculateTotalBalance(data.loans), calculateTotalLimit(data.loans));
+  
   const dti = calculateDTI(totalBills, totalIncome);
   
   const ChartSwitcher = (
@@ -93,59 +96,98 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
             <Card 
                 title={
                     <div className="flex justify-between items-center w-full">
-                        <span>Credit Cards</span>
+                        <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 gap-1">
+                             <button
+                               onClick={() => setLiabilityView('cards')}
+                               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${liabilityView === 'cards' ? 'bg-white dark:bg-gray-600 shadow text-brand-primary' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                               Credit Cards
+                            </button>
+                            <button
+                               onClick={() => setLiabilityView('loans')}
+                               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${liabilityView === 'loans' ? 'bg-white dark:bg-gray-600 shadow text-brand-secondary' : 'text-gray-500 dark:text-gray-400'}`}
+                            >
+                               Loans
+                            </button>
+                        </div>
+                        
                         <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-primary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all animate-pulse">
-                            <SimulationIcon /> RUN SIMULATION <GoldAsterisk />
+                            <SimulationIcon /> {liabilityView === 'cards' ? 'RUN SIMULATION' : 'PREDICT SCORE'} <GoldAsterisk />
                         </button>
                     </div>
                 } 
-                footerText={`Total Utilization: ${totalCardUtilization.toFixed(2)}%`}
+                footerText={`Total Utilization: ${liabilityView === 'cards' ? totalCardUtilization.toFixed(2) : totalLoanUtilization.toFixed(2)}%`}
             >
                 <div className="space-y-4">
-                {data.creditCards.map(card => {
-                    const utilization = calculateUtilization(card.balance, card.limit);
-                    return (
-                        <div key={card.id}>
-                            <div className="flex justify-between items-center mb-1 text-sm">
-                                <span className="font-semibold">{card.name}</span>
-                                <div className="flex items-center gap-2">
-                                     <span className="text-gray-500">{formatCurrency(card.balance)} / {formatCurrency(card.limit)}</span>
-                                    <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
+                {liabilityView === 'cards' ? (
+                    data.creditCards.length > 0 ? (
+                        data.creditCards.map(card => {
+                            const utilization = calculateUtilization(card.balance, card.limit);
+                            return (
+                                <div key={card.id}>
+                                    <div className="flex justify-between items-center mb-1 text-sm">
+                                        <span className="font-semibold">{card.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-gray-500">{formatCurrency(card.balance)} / {formatCurrency(card.limit)}</span>
+                                            <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
+                                        </div>
+                                    </div>
+                                    <ProgressBar value={utilization} />
                                 </div>
-                            </div>
-                            <ProgressBar value={utilization} />
-                        </div>
-                    );
-                })}
+                            );
+                        })
+                    ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">No credit cards added.</p>
+                    )
+                ) : (
+                    data.loans.length > 0 ? (
+                        data.loans.map(loan => {
+                            const utilization = calculateUtilization(loan.balance, loan.limit);
+                            return (
+                                <div key={loan.id}>
+                                    <div className="flex justify-between items-center mb-1 text-sm">
+                                        <span className="font-semibold">{loan.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-gray-500">{formatCurrency(loan.balance)} / {formatCurrency(loan.limit)}</span>
+                                            <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
+                                        </div>
+                                    </div>
+                                    <ProgressBar value={utilization} />
+                                </div>
+                            );
+                        })
+                    ) : (
+                         <p className="text-sm text-gray-500 text-center py-4">No loans added.</p>
+                    )
+                )}
                 </div>
             </Card>
+
             <Card 
-                title={
-                    <div className="flex justify-between items-center w-full">
-                        <span>Mortgages & Loans</span>
-                        <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-secondary bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all">
-                            <SimulationIcon /> PREDICT SCORE <GoldAsterisk />
-                        </button>
-                    </div>
-                } 
-                footerText={`Total Utilization: ${totalLoanUtilization.toFixed(2)}%`}
+                title={<h3 className="text-lg font-semibold text-brand-primary">Assets</h3>}
+                footerText={`Total Assets: ${formatCurrency(totalAssets)}`}
             >
-                <div className="space-y-4">
-                    {data.loans.map(loan => {
-                        const utilization = calculateUtilization(loan.balance, loan.limit);
-                        return (
-                            <div key={loan.id}>
+                 <div className="space-y-4">
+                    {data.assets.length > 0 ? (
+                        data.assets.map(asset => (
+                            <div key={asset.id} className="mb-2">
                                 <div className="flex justify-between items-center mb-1 text-sm">
-                                    <span className="font-semibold">{loan.name}</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-gray-500">{formatCurrency(loan.balance)} / {formatCurrency(loan.limit)}</span>
-                                        <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
-                                    </div>
+                                    <span className="font-semibold text-gray-800 dark:text-gray-200">{asset.name}</span>
+                                    <span className="font-bold text-positive">{formatCurrency(asset.value)}</span>
                                 </div>
-                                <ProgressBar value={utilization} />
+                                {totalAssets > 0 && (
+                                     <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                                        <div 
+                                            className="bg-brand-primary h-1.5 rounded-full opacity-70" 
+                                            style={{ width: `${Math.min((asset.value / totalAssets) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                )}
                             </div>
-                        );
-                    })}
+                        ))
+                    ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">No assets added.</p>
+                    )}
                 </div>
             </Card>
         </div>

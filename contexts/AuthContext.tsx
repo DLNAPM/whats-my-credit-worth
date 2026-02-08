@@ -78,16 +78,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Detect mobile environment
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
     
     try {
       setLoading(true);
       
       /**
-       * IMPROVED IPHONE FLOW:
-       * On iOS, Popups are often more reliable than Redirects for 3rd party apps
-       * because Safari's "Prevent Cross-Site Tracking" can break the redirect loop.
-       * We try Popup first, and only use Redirect as a true fallback or for known
-       * constrained environments like Android WebViews.
+       * ANDROID FIX: 
+       * We strictly use signInWithPopup. `signInWithRedirect` causes 'auth/missing-initial-state' 
+       * on Android Chrome/WebViews due to aggressive storage partitioning.
        */
       try {
         const result = await signInWithPopup(auth, provider);
@@ -96,12 +95,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
         }
       } catch (popupErr: any) {
-        // If popup is blocked or closed, try redirect for mobile
-        if (isMobile || popupErr.code === 'auth/popup-blocked') {
+        // Only fallback to redirect if NOT Android, or if we are sure it might help.
+        // For Android, redirect is the source of the bug, so we avoid it.
+        if ((isMobile && !isAndroid) || (popupErr.code === 'auth/popup-blocked' && !isAndroid)) {
           console.log("Popup failed/blocked, falling back to redirect...");
           await signInWithRedirect(auth, provider);
         } else {
-          throw popupErr;
+          // On Android, we prefer to fail with a clear message rather than triggering the broken redirect loop
+          if (popupErr.code === 'auth/popup-blocked') {
+            throw new Error("Login popup blocked. Please check your browser settings and allow popups for this site.");
+          } else if (popupErr.code === 'auth/cancelled-by-user') {
+             // User closed it, do nothing
+          } else {
+             throw popupErr;
+          }
         }
       }
     } catch (err) {
@@ -175,7 +182,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loginWithGoogle, 
     loginAsGuest, 
     logout,
-    upgradeToPremium,
+    upgradeToPremium, 
     deleteUserAccount
   };
 
