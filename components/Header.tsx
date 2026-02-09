@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import type { View } from '../types';
 import { formatMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
-import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon, SparklesIcon, FeatureShieldIcon, GoldAsterisk } from './ui/Icons';
+import { ChevronLeftIcon, ChevronRightIcon, EditIcon, ImportIcon, ShareIcon, CheckIcon, AlertTriangleIcon, SparklesIcon, FeatureShieldIcon, GoldAsterisk, SunIcon, MoonIcon } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import MembershipModal from './MembershipModal';
 
 interface HeaderProps {
@@ -37,6 +38,7 @@ const Header: React.FC<HeaderProps> = ({
   onSave
 }) => {
   const { user, isPremium, isSuperUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
 
   const handlePremiumAction = (action: () => void) => {
@@ -76,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-4">
                 <button onClick={onPreviousMonth} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"><ChevronLeftIcon /></button>
-                <span className="font-semibold text-lg w-32 text-center">{formatMonthYear(currentMonthYear)}</span>
+                <span className="font-semibold text-lg w-32 text-center text-gray-900 dark:text-gray-100">{formatMonthYear(currentMonthYear)}</span>
                 <button onClick={onNextMonth} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"><ChevronRightIcon /></button>
             </div>
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
@@ -87,13 +89,22 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3 flex-wrap justify-center lg:justify-end">
+             {/* Theme Toggle */}
+             <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+                title={theme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
+            >
+                {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+            </button>
+
             {user && (
                 <div className="flex items-center gap-3 border-r pr-4 border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs">
                             {user.displayName?.charAt(0) || 'U'}
                         </div>
-                        <span className="text-sm font-bold truncate max-w-[80px]">{user.displayName?.split(' ')[0] || 'User'}</span>
+                        <span className="text-sm font-bold truncate max-w-[80px] text-gray-900 dark:text-gray-100">{user.displayName?.split(' ')[0] || 'User'}</span>
                     </div>
                     <button onClick={onLogout} className="text-gray-500 hover:text-negative transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Logout">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
