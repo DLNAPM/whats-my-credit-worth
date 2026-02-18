@@ -69,6 +69,11 @@ export interface RecommendationItem {
 }
 
 export interface AppUser extends User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  isAnonymous: boolean;
+  photoURL?: string | null;
   isMock?: boolean;
   isPremium?: boolean;
   isSuperUser?: boolean;

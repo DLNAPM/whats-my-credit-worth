@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Button from './ui/Button';
-import { DownloadIcon, UploadIcon, InfoIcon, FeatureShieldIcon, DeleteIcon, AlertTriangleIcon } from './ui/Icons';
+import { DownloadIcon, UploadIcon, InfoIcon, FeatureShieldIcon, DeleteIcon, AlertTriangleIcon, SparklesIcon } from './ui/Icons';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -17,7 +17,7 @@ interface ImportExportModalProps {
 
 const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, onUpload, onDownload, onShowHelp, onViewPrivacy, hasData }) => {
   const { clearCloudData } = useFinancialData();
-  const { deleteUserAccount, logout, user } = useAuth();
+  const { deleteUserAccount, logout, user, isPremium, cancelSubscription, isSuperUser } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
 
   /**
@@ -66,6 +66,21 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if(!window.confirm("Are you sure you want to cancel your Premium Subscription? You will immediately lose access to AI Insights, Simulations, and PDF Reports.")) return;
+    
+    setIsDeleting(true);
+    try {
+        await cancelSubscription();
+        alert("Subscription cancelled. Your profile has been reverted to Basic.");
+        onClose();
+    } catch (err) {
+        alert("Failed to cancel subscription.");
+    } finally {
+        setIsDeleting(false);
+    }
+  }
+
   if (!isOpen) return null;
 
   return (
@@ -77,6 +92,24 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, 
         </div>
 
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          {/* Subscription Section */}
+          {isPremium && !isSuperUser && (
+             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-800/50">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-sm text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                        <SparklesIcon className="w-4 h-4" /> Subscription Status
+                    </h3>
+                    <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 text-[10px] font-bold rounded uppercase">Premium Active</span>
+                </div>
+                <p className="text-xs text-purple-600/80 dark:text-purple-300/80 mb-3">
+                    You have full access to advanced tools.
+                </p>
+                <Button onClick={handleCancelSubscription} variant="secondary" size="small" className="w-full text-xs" disabled={isDeleting}>
+                    Cancel Premium Subscription
+                </Button>
+             </div>
+          )}
+
           {/* Information Notice */}
           <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50 flex gap-3">
             <InfoIcon />

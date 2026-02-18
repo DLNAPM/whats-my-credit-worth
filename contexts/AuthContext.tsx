@@ -25,6 +25,7 @@ interface AuthContextType {
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   upgradeToPremium: () => Promise<void>;
+  cancelSubscription: () => Promise<void>;
   deleteUserAccount: () => Promise<void>;
 }
 
@@ -72,10 +73,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists() && userDocSnap.data().isPremium) {
-                    hasPremium = true;
-                    setIsPremium(true);
-                    localStorage.setItem(`premium_${firebaseUser.uid}`, 'true');
+                if (userDocSnap.exists()) {
+                    // Check specifically if isPremium is true. If false or undefined, they are basic.
+                    const data = userDocSnap.data();
+                    if (data.isPremium === true) {
+                        hasPremium = true;
+                        setIsPremium(true);
+                        localStorage.setItem(`premium_${firebaseUser.uid}`, 'true');
+                    } else {
+                        // Ensure local state matches cloud state (downgrade if cloud says false)
+                        setIsPremium(false);
+                        localStorage.removeItem(`premium_${firebaseUser.uid}`);
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching premium status:", err);
@@ -182,6 +191,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const cancelSubscription = async () => {
+    if (user) {
+        // 1. Update State immediately
+        setIsPremium(false);
+        // 2. Clear Local Storage
+        localStorage.removeItem(`premium_${user.uid}`);
+        // 3. Update Firestore to reflect basic status
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            await setDoc(userDocRef, { isPremium: false }, { merge: true });
+        } catch (err) {
+            console.error("Failed to persist subscription cancellation:", err);
+            // Revert UI if DB fails (optional, but good for data integrity)
+            alert("Failed to update subscription status on server. Please check connection.");
+        }
+    }
+  };
+
   const value = { 
     user, 
     loading, 
@@ -190,7 +217,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loginWithGoogle, 
     loginAsGuest, 
     logout,
-    upgradeToPremium, 
+    upgradeToPremium,
+    cancelSubscription,
     deleteUserAccount
   };
 
