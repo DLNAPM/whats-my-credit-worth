@@ -7,6 +7,8 @@ import { SparklesIcon, CheckIcon, FeatureShieldIcon, SimulationIcon, DownloadIco
 interface MembershipModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // Optional prop to pass the Stripe link dynamically, though typically hardcoded in file
+  stripeLink?: string;
 }
 
 const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) => {
@@ -14,9 +16,22 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
 
   if (!isOpen) return null;
 
+  // IMPORTANT: Replace this URL with your actual Stripe Payment Link (from Stripe Dashboard > Payment Links)
+  // Ensure the Payment Link is configured to redirect to: https://[your-app-url]/?payment_success=true
+  const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/test_dRm14pcx782vgIT42T3ZK00";
+
   const handleSubscribe = () => {
-    upgradeToPremium();
-    onClose();
+    // Check if the link is still the placeholder
+    if (STRIPE_PAYMENT_LINK.includes("REPLACE_WITH_YOUR_STRIPE_LINK")) {
+        // Fallback for development/demo: Simulate the payment flow
+        if(window.confirm("Developer Mode: The Stripe Link is not configured.\n\nClick OK to simulate a successful payment upgrade.")) {
+            upgradeToPremium();
+            onClose();
+        }
+    } else {
+        // Production: Redirect to Stripe
+        window.location.href = STRIPE_PAYMENT_LINK;
+    }
   };
 
   return (
@@ -56,7 +71,7 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
 
           <div className="flex flex-col gap-3">
             <Button onClick={handleSubscribe} className="py-4 text-lg bg-brand-primary hover:bg-brand-secondary shadow-lg">
-              Start 11-Day Free Trial
+              Subscribe Now
             </Button>
             <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
               Maybe later

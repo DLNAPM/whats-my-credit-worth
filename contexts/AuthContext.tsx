@@ -12,7 +12,8 @@ import {
   browserLocalPersistence,
   deleteUser
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import type { AppUser } from '../types';
 
 interface AuthContextType {
@@ -23,7 +24,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
-  upgradeToPremium: () => void;
+  upgradeToPremium: () => Promise<void>;
   deleteUserAccount: () => Promise<void>;
 }
 
@@ -49,19 +50,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
         console.log("Redirect sign-in successful:", result.user.email);
-        // Explicitly update user here if needed, but onAuthStateChanged usually catches it
       }
     }).catch((error) => {
       console.error("Redirect sign-in error:", error);
     });
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const appUser = firebaseUser as AppUser;
         setUser(appUser);
+        
+        // 1. Check Admin List
         const isAdmin = SUPER_USER_EMAILS.includes(firebaseUser.email || '');
-        const localPremium = localStorage.getItem(`premium_${firebaseUser.uid}`) === 'true';
-        setIsPremium(localPremium || isAdmin);
+        
+        // 2. Check Local Storage (Optimistic)
+        let hasPremium = isAdmin || localStorage.getItem(`premium_${firebaseUser.uid}`) === 'true';
+        setIsPremium(hasPremium);
+
+        // 3. Check Firestore (Source of Truth)
+        if (!isAdmin) {
+            try {
+                const userDocRef = doc(db, 'users', firebaseUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists() && userDocSnap.data().isPremium) {
+                    hasPremium = true;
+                    setIsPremium(true);
+                    localStorage.setItem(`premium_${firebaseUser.uid}`, 'true');
+                }
+            } catch (err) {
+                console.error("Error fetching premium status:", err);
+            }
+        }
       } else {
         setUser(null);
         setIsPremium(false);
@@ -76,37 +95,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    // Detect mobile environment
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
     
     try {
       setLoading(true);
-      
-      /**
-       * ANDROID FIX: 
-       * We strictly use signInWithPopup. `signInWithRedirect` causes 'auth/missing-initial-state' 
-       * on Android Chrome/WebViews due to aggressive storage partitioning.
-       */
       try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          const isAdmin = SUPER_USER_EMAILS.includes(result.user.email || '');
-          setIsPremium(isAdmin || localStorage.getItem(`premium_${result.user.uid}`) === 'true');
-        }
+        await signInWithPopup(auth, provider);
       } catch (popupErr: any) {
-        // Only fallback to redirect if NOT Android, or if we are sure it might help.
-        // For Android, redirect is the source of the bug, so we avoid it.
         if ((isMobile && !isAndroid) || (popupErr.code === 'auth/popup-blocked' && !isAndroid)) {
-          console.log("Popup failed/blocked, falling back to redirect...");
           await signInWithRedirect(auth, provider);
         } else {
-          // On Android, we prefer to fail with a clear message rather than triggering the broken redirect loop
           if (popupErr.code === 'auth/popup-blocked') {
             throw new Error("Login popup blocked. Please check your browser settings and allow popups for this site.");
-          } else if (popupErr.code === 'auth/cancelled-by-user') {
-             // User closed it, do nothing
-          } else {
+          } else if (popupErr.code !== 'auth/cancelled-by-user') {
              throw popupErr;
           }
         }
@@ -120,7 +122,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginAsGuest = async () => {
     setLoading(true);
-    // Ensure we reset any previous guest state
     localStorage.removeItem('wmcw_local_guest_data');
     
     const mockUser = {
@@ -132,10 +133,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } as AppUser;
 
     try {
-      // We try to use Firebase's real anonymous auth if possible
       await signInAnonymously(auth);
     } catch (e) {
-      // Fallback to local mock user if Firebase fails
       console.log("Using mock guest fallback");
       setUser(mockUser);
     } finally {
@@ -167,10 +166,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const upgradeToPremium = () => {
+  const upgradeToPremium = async () => {
     if (user) {
-      localStorage.setItem(`premium_${user.uid}`, 'true');
+      // 1. Update State
       setIsPremium(true);
+      // 2. Update Local Storage
+      localStorage.setItem(`premium_${user.uid}`, 'true');
+      // 3. Update Firestore (Persistence)
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { isPremium: true }, { merge: true });
+      } catch (err) {
+        console.error("Failed to persist premium upgrade:", err);
+      }
     }
   };
 

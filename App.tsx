@@ -115,7 +115,7 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
-  const { logout } = useAuth();
+  const { logout, upgradeToPremium } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
@@ -130,6 +130,19 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   
   const handlePreviousMonth = () => setCurrentMonthYear(prev => getPreviousMonthYear(prev));
   const handleNextMonth = () => setCurrentMonthYear(prev => getNextMonthYear(prev));
+
+  // Payment Success Handler
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('payment_success') === 'true') {
+        upgradeToPremium().then(() => {
+            // Remove the query param from URL so refresh doesn't trigger it again
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path:newUrl},'',newUrl);
+            alert("Payment Successful! Premium features unlocked.");
+        });
+    }
+  }, [upgradeToPremium]);
 
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
