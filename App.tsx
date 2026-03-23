@@ -22,6 +22,9 @@ import { HelpCircleIcon } from './components/ui/Icons';
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
+import FinancialChatbot from './components/FinancialChatbot';
+import MembershipModal from './components/MembershipModal';
+
 /**
  * Async Snapshot Loader
  * Fetches snapshot data from Firestore.
@@ -124,6 +127,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [isDashboardHelpOpen, setIsDashboardHelpOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [isChatbotMembershipOpen, setIsChatbotMembershipOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentMonthData = useMemo(() => getMonthData(currentMonthYear), [getMonthData, currentMonthYear]);
@@ -272,14 +276,24 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
 
         <button 
             onClick={() => setIsDashboardHelpOpen(true)}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-secondary transform hover:scale-110 transition-all z-40 group"
+            className="fixed bottom-8 left-8 w-14 h-14 bg-brand-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-brand-secondary transform hover:scale-110 transition-all z-40 group"
             aria-label="Dashboard Help Center"
         >
             <HelpCircleIcon />
-            <span className="absolute right-full mr-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            <span className="absolute left-full ml-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 Help & Support
             </span>
         </button>
+
+        <FinancialChatbot 
+          financialData={financialData} 
+          onOpenMembership={() => setIsChatbotMembershipOpen(true)} 
+        />
+
+        <MembershipModal 
+          isOpen={isChatbotMembershipOpen} 
+          onClose={() => setIsChatbotMembershipOpen(false)} 
+        />
 
         <input
             type="file"

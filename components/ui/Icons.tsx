@@ -137,3 +137,11 @@ export const SunIcon = ({ className }: IconProps = {}) => (
 export const MoonIcon = ({ className }: IconProps = {}) => (
   <svg {...iconProps} className={className || iconProps.className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
 );
+
+export const BotIcon = ({ className }: IconProps = {}) => (
+  <svg {...iconProps} className={className || iconProps.className}><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+);
+
+export const CloseIcon = ({ className }: IconProps = {}) => (
+  <svg {...iconProps} className={className || iconProps.className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+);
