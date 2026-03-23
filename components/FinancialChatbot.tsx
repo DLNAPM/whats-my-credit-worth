@@ -5,8 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import Button from './ui/Button';
 import Markdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 interface Message {
   role: 'user' | 'model';
   text: string;
@@ -36,19 +34,44 @@ const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOp
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && isPremium && !chatRef.current) {
-      chatRef.current = ai.chats.create({
-        model: 'gemini-3.1-pro-preview',
-        config: {
-          systemInstruction: `You are an expert financial advisor. You help the user understand their financial situation, run scenarios, and provide actionable advice.
+    const initChat = async () => {
+      if (isOpen && isPremium && !chatRef.current) {
+        if (window.aistudio) {
+          const hasKey = await window.aistudio.hasSelectedApiKey();
+          if (!hasKey) {
+            setMessages(prev => [...prev, { role: 'model', text: 'API Key must be selected. Please click the button below to configure your API key.' }]);
+            return;
+          }
+        }
+        const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          setMessages(prev => [...prev, { role: 'model', text: 'AI is not configured. Please set the GEMINI_API_KEY environment variable.' }]);
+          return;
+        }
+        const ai = new GoogleGenAI({ apiKey });
+        chatRef.current = ai.chats.create({
+          model: 'gemini-3.1-pro-preview',
+          config: {
+            systemInstruction: `You are an expert financial advisor. You help the user understand their financial situation, run scenarios, and provide actionable advice.
           Here is the user's current financial data (JSON format):
           ${JSON.stringify(financialData)}
           
           Base your answers on this data when relevant. Be concise, professional, and helpful. Format your responses using Markdown.`,
-        }
-      });
-    }
+          }
+        });
+      }
+    };
+    initChat();
   }, [isOpen, isPremium, financialData]);
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Re-trigger initialization by clearing messages and chatRef
+      chatRef.current = null;
+      setMessages([{ role: 'model', text: 'Hi! I am your AI Financial Advisor. Ask me anything about your financial data or scenarios.' }]);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || !isPremium) return;
@@ -60,15 +83,21 @@ const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOp
 
     try {
       if (!chatRef.current) {
-        throw new Error("Chat session not initialized");
+        if (window.aistudio) {
+          const hasKey = await window.aistudio.hasSelectedApiKey();
+          if (!hasKey) {
+            throw new Error("API Key must be selected. Please click the button below to configure your API key.");
+          }
+        }
+        throw new Error("Chat session not initialized. Please set the GEMINI_API_KEY environment variable.");
       }
       
       const response = await chatRef.current.sendMessage({ message: userText });
       
       setMessages(prev => [...prev, { role: 'model', text: response.text || '' }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chatbot error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: 'Sorry, I encountered an error processing your request. Please try again later.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: error.message || 'Sorry, I encountered an error processing your request. Please try again later.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -143,6 +172,17 @@ const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOp
                       ) : (
                         <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
                           <Markdown>{msg.text}</Markdown>
+                          {msg.text.includes("API Key must be selected") && window.aistudio && (
+                            <div className="mt-2 flex flex-col gap-2 items-start">
+                              <p className="text-xs text-gray-600 dark:text-gray-300">
+                                To use this feature, you need to select a paid API key from a Google Cloud project.
+                                For more information, see the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline font-semibold">billing documentation</a>.
+                              </p>
+                              <Button onClick={handleSelectKey} size="small" className="bg-brand-primary text-white">
+                                Select API Key
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

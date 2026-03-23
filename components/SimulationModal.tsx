@@ -55,7 +55,20 @@ const SimulationModal: React.FC<SimulationModalProps> = ({ isOpen, onClose, data
     setIsLoading(true);
     setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          setError("API Key must be selected. Please click the button below to configure your API key.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("AI is not configured. Please set the GEMINI_API_KEY environment variable.");
+      }
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `
         Act as a FICO 8 Credit Expert. Analyze this simulated scenario and predict the impact on the user's credit scores.
         Current Data: ${JSON.stringify(data)}
@@ -94,11 +107,18 @@ const SimulationModal: React.FC<SimulationModalProps> = ({ isOpen, onClose, data
 
       const parsed = JSON.parse(result.text || '{}');
       setPrediction(parsed);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Simulation failed. Try again.");
+      setError(err.message || "Simulation failed. Try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      runSimulation();
     }
   };
 
@@ -247,9 +267,22 @@ const SimulationModal: React.FC<SimulationModalProps> = ({ isOpen, onClose, data
             </div>
 
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-sm flex items-center gap-3 animate-fade-in">
-                <AlertTriangleIcon className="flex-shrink-0" />
-                {error}
+              <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-sm flex flex-col gap-3 animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <AlertTriangleIcon className="flex-shrink-0" />
+                  {error}
+                </div>
+                {error.includes("API Key must be selected") && window.aistudio && (
+                  <div className="mt-2 flex flex-col gap-2 items-start">
+                    <p className="text-sm">
+                      To use this feature, you need to select a paid API key from a Google Cloud project.
+                      For more information, see the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline font-semibold">billing documentation</a>.
+                    </p>
+                    <Button onClick={handleSelectKey} size="small" className="bg-red-600 text-white hover:bg-red-700">
+                      Select API Key
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

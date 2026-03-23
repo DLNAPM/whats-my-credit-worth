@@ -60,16 +60,37 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
     setIsAiLoading(true);
     setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        if (!hasKey) {
+          setError("API Key must be selected. Please click the button below to configure your API key.");
+          setIsAiLoading(false);
+          return;
+        }
+      }
+
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("AI is not configured. Please set the GEMINI_API_KEY environment variable.");
+      }
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `Perform personal wealth analysis for ${formatMonthYear(monthYear)}. Net Worth: ${formatCurrency(calculateNetWorth(data))}. Utilization: ${calculateUtilization(calculateTotalBalance(data.creditCards), calculateTotalLimit(data.creditCards)).toFixed(1)}%`;
       const schema = { type: Type.OBJECT, properties: { recommendations: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, category: { type: Type.STRING }, actionItem: { type: Type.STRING } }, required: ['title', 'description', 'category', 'actionItem'] } } }, required: ['recommendations'] };
-      const response = await ai.models.generateContent({ model: 'gemini-3-pro-preview', contents: prompt, config: { responseMimeType: "application/json", responseSchema: schema } });
+      const response = await ai.models.generateContent({ model: 'gemini-3.1-pro-preview', contents: prompt, config: { responseMimeType: "application/json", responseSchema: schema } });
       setRecommendations(JSON.parse(response.text || '{}').recommendations);
       setAdvisorMode('ai');
-    } catch (err) {
-      setError("AI Analysis failed. Please try again.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "AI Analysis failed. Please try again.");
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      fetchAiDeepDive();
     }
   };
 
@@ -84,6 +105,25 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-xl flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangleIcon className="w-5 h-5" />
+                <span>{error}</span>
+              </div>
+              {error.includes("API Key must be selected") && window.aistudio && (
+                <div className="mt-2 flex flex-col gap-2 items-start">
+                  <p className="text-sm">
+                    To use this feature, you need to select a paid API key from a Google Cloud project.
+                    For more information, see the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline font-semibold">billing documentation</a>.
+                  </p>
+                  <Button onClick={handleSelectKey} size="small" className="bg-red-600 text-white hover:bg-red-700">
+                    Select API Key
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border flex items-center gap-2">
                <div className={`w-2.5 h-2.5 rounded-full ${advisorMode === 'ai' ? 'bg-purple-500 animate-pulse' : 'bg-green-500'}`}></div>
