@@ -27,6 +27,15 @@ const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOp
   
   const chatRef = useRef<any>(null);
 
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -110,23 +119,33 @@ const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOp
     }
   };
 
+  if (!isVisible) return null;
+
   return (
     <>
       {/* Floating Action Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 p-4 rounded-full shadow-2xl text-white transition-all transform hover:scale-105 z-40 ${
-          isPremium ? 'bg-brand-primary hover:bg-brand-secondary' : 'bg-gray-800 hover:bg-gray-700'
-        }`}
-        aria-label="Open AI Financial Advisor"
-      >
-        <BotIcon className="w-6 h-6" />
-        {!isPremium && (
-          <span className="absolute -top-2 -right-2 bg-brand-accent text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-white">
-            PRO
-          </span>
+      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-4 animate-fade-in">
+        {!isOpen && (
+          <div className="bg-brand-primary text-white px-4 py-2 rounded-xl shadow-lg font-semibold animate-bounce relative">
+            Chat With Us
+            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-brand-primary"></div>
+          </div>
         )}
-      </button>
+        <button
+          onClick={() => setIsOpen(true)}
+          className={`p-4 rounded-full shadow-2xl text-white transition-all transform hover:scale-105 ${
+            isPremium ? 'bg-brand-primary hover:bg-brand-secondary' : 'bg-gray-800 hover:bg-gray-700'
+          }`}
+          aria-label="Open AI Financial Advisor"
+        >
+          <BotIcon className="w-6 h-6" />
+          {!isPremium && (
+            <span className="absolute -top-2 -right-2 bg-brand-accent text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-white">
+              PRO
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Chat Window */}
       {isOpen && (
