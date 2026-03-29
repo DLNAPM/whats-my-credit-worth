@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({
                 <button onClick={onNextMonth} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"><ChevronRightIcon /></button>
             </div>
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
-            {(['dashboard', 'reports'] as View[]).map(v => (
+            {(['dashboard', 'reports', ...(isSuperUser ? ['admin'] : [])] as View[]).map(v => (
                 <button key={v} onClick={() => setView(v)} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors capitalize ${view === v ? 'bg-brand-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:bg-brand-light'}`}>{v}</button>
             ))}
             </div>

@@ -1,7 +1,7 @@
 
 import type { User } from 'firebase/auth';
 
-export type View = 'dashboard' | 'reports' | 'privacy';
+export type View = 'dashboard' | 'reports' | 'privacy' | 'admin';
 
 export type PayFrequency = 'weekly' | 'bi-weekly' | 'twice-a-month' | 'monthly' | 'yearly';
 

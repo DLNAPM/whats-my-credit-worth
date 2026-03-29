@@ -24,6 +24,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 import FinancialChatbot from './components/FinancialChatbot';
 import MembershipModal from './components/MembershipModal';
+import { AdminDashboard } from './components/AdminDashboard';
 
 /**
  * Async Snapshot Loader
@@ -189,7 +190,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           onShare={() => setIsShareModalOpen(true)}
           onImportExport={() => setIsImportExportModalOpen(true)}
           onRecommendations={() => setIsRecommendationsOpen(true)}
-          view={view === 'dashboard' || view === 'reports' ? view : 'dashboard'}
+          view={view}
           setView={setView}
           onLogout={handleLogout}
           onSave={saveData}
@@ -210,6 +211,9 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
               key={`reports-${refreshCounter}`} 
               allData={financialData} 
             />
+          )}
+          {view === 'admin' && (
+            <AdminDashboard />
           )}
         </main>
 

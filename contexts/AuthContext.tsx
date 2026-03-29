@@ -85,9 +85,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setIsPremium(false);
                         localStorage.removeItem(`premium_${firebaseUser.uid}`);
                     }
+                    
+                    // Update last login
+                    await setDoc(userDocRef, { 
+                      lastLogin: new Date().toISOString(),
+                      email: firebaseUser.email,
+                      displayName: firebaseUser.displayName
+                    }, { merge: true });
+                } else {
+                    // Create new user document
+                    await setDoc(userDocRef, {
+                      email: firebaseUser.email,
+                      displayName: firebaseUser.displayName,
+                      isPremium: false,
+                      createdAt: new Date().toISOString(),
+                      lastLogin: new Date().toISOString()
+                    });
                 }
             } catch (err) {
                 console.error("Error fetching premium status:", err);
+            }
+        } else {
+            // Admin user, still save to users collection for visibility
+            try {
+                const userDocRef = doc(db, 'users', firebaseUser.uid);
+                await setDoc(userDocRef, {
+                    email: firebaseUser.email,
+                    displayName: firebaseUser.displayName,
+                    isPremium: true,
+                    isAdmin: true,
+                    lastLogin: new Date().toISOString()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Error saving admin user data:", err);
             }
         }
       } else {
