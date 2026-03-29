@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -116,10 +117,25 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  const filteredUsers = users.filter(user => 
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.email?.toLowerCase().includes(searchLower) ||
+      user.displayName?.toLowerCase().includes(searchLower) ||
+      user.id.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const chartData = useMemo(() => {
+    const premiumCount = users.filter(u => u.isPremium).length;
+    const basicCount = users.length - premiumCount;
+    
+    return [
+      { name: 'Basic', value: basicCount, color: '#9CA3AF' },
+      { name: 'Premium', value: premiumCount, color: '#10B981' }
+    ].filter(item => item.value > 0);
+  }, [users]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -149,6 +165,70 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-red-700">{error}</p>
         </div>
       )}
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center min-h-[300px] md:col-span-1">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">User Distribution</h3>
+          {users.length > 0 ? (
+            <div className="w-full h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36}/>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-gray-400 italic">No user data available</div>
+          )}
+        </div>
+
+        <div className="md:col-span-2 grid grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Users</p>
+            <p className="text-4xl font-bold text-gray-900 mt-1">{users.length}</p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Premium Users</p>
+            <p className="text-4xl font-bold text-green-600 mt-1">
+              {users.filter(u => u.isPremium).length}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              {users.length > 0 
+                ? `${Math.round((users.filter(u => u.isPremium).length / users.length) * 100)}% of total`
+                : '0% of total'}
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Basic Users</p>
+            <p className="text-4xl font-bold text-gray-400 mt-1">
+              {users.filter(u => !u.isPremium).length}
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Admins</p>
+            <p className="text-4xl font-bold text-purple-600 mt-1">
+              {users.filter(u => u.isAdmin).length}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
