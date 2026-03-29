@@ -21,6 +21,7 @@ interface AuthContextType {
   loading: boolean;
   isPremium: boolean;
   isSuperUser: boolean;
+  isFrozen: boolean;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [isFrozen, setIsFrozen] = useState(false);
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
@@ -76,6 +78,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (userDocSnap.exists()) {
                     // Check specifically if isPremium is true. If false or undefined, they are basic.
                     const data = userDocSnap.data();
+                    if (data.isFrozen === true) {
+                        setIsFrozen(true);
+                    } else {
+                        setIsFrozen(false);
+                    }
+
                     if (data.isPremium === true) {
                         hasPremium = true;
                         setIsPremium(true);
@@ -244,6 +252,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading, 
     isPremium: isPremium || isSuperUser, 
     isSuperUser,
+    isFrozen,
     loginWithGoogle, 
     loginAsGuest, 
     logout,

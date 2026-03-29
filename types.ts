@@ -77,4 +77,5 @@ export interface AppUser extends User {
   isMock?: boolean;
   isPremium?: boolean;
   isSuperUser?: boolean;
+  isFrozen?: boolean;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,11 +39,35 @@ const Search = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
+const Trash2 = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    <line x1="10" y1="11" x2="10" y2="17"></line>
+    <line x1="14" y1="11" x2="14" y2="17"></line>
+  </svg>
+);
+
+const Lock = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+);
+
+const Unlock = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+  </svg>
+);
+
 interface UserData {
   id: string;
   email: string;
   displayName: string;
   isPremium: boolean;
+  isFrozen?: boolean;
   isAdmin?: boolean;
   lastLogin?: string;
   createdAt?: string;
@@ -55,6 +79,7 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -102,6 +127,37 @@ export const AdminDashboard: React.FC = () => {
     } catch (err) {
       console.error("Error updating user status:", err);
       alert("Failed to update user status.");
+    }
+  };
+
+  const toggleFreezeStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        isFrozen: !currentStatus
+      });
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, isFrozen: !currentStatus } : user
+      ));
+    } catch (err) {
+      console.error("Error freezing user:", err);
+      alert("Failed to update freeze status.");
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      await deleteDoc(userRef);
+      
+      // Update local state
+      setUsers(users.filter(user => user.id !== userId));
+      setUserToDelete(null);
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      alert("Failed to delete user.");
     }
   };
 
@@ -277,6 +333,11 @@ export const AdminDashboard: React.FC = () => {
                           <Shield className="w-3.5 h-3.5" />
                           Admin
                         </span>
+                      ) : user.isFrozen ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          <Lock className="w-3.5 h-3.5" />
+                          Frozen
+                        </span>
                       ) : user.isPremium ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircle className="w-3.5 h-3.5" />
@@ -300,16 +361,38 @@ export const AdminDashboard: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       {!user.isAdmin && (
-                        <button
-                          onClick={() => togglePremiumStatus(user.id, user.isPremium)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            user.isPremium 
-                              ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                          }`}
-                        >
-                          {user.isPremium ? 'Downgrade to Basic' : 'Upgrade to Premium'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => togglePremiumStatus(user.id, user.isPremium)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              user.isPremium 
+                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            }`}
+                          >
+                            {user.isPremium ? 'Downgrade' : 'Upgrade'}
+                          </button>
+                          
+                          <button
+                            onClick={() => toggleFreezeStatus(user.id, !!user.isFrozen)}
+                            title={user.isFrozen ? 'Unfreeze Account' : 'Freeze Account'}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              user.isFrozen
+                                ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {user.isFrozen ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          </button>
+
+                          <button
+                            onClick={() => setUserToDelete(user)}
+                            title="Delete User"
+                            className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -319,6 +402,36 @@ export const AdminDashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 text-red-600 mb-4">
+              <Trash2 className="w-6 h-6" />
+              <h3 className="text-xl font-bold">Delete User?</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <strong>{userToDelete.displayName || userToDelete.email}</strong>? 
+              This action cannot be undone and will remove all their data from Firestore.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setUserToDelete(null)}
+                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteUser(userToDelete.id)}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
+              >
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

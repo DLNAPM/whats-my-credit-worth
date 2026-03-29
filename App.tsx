@@ -332,7 +332,7 @@ function App() {
     return <SnapshotLoader snapshotId={snapshotId} />;
   }
 
-  const { user, loading } = useAuth();
+  const { user, loading, isFrozen, logout } = useAuth();
 
   if (view === 'privacy') {
     return <PrivacyPolicy onBack={() => setView('dashboard')} />;
@@ -344,6 +344,32 @@ function App() {
 
   if (!user) {
     return <AuthScreen onViewPrivacy={() => setView('privacy')} />;
+  }
+
+  if (isFrozen) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 text-center border border-red-100">
+          <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Account Frozen</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            Your account has been temporarily suspended by an administrator. 
+            Please contact support if you believe this is an error.
+          </p>
+          <button 
+            onClick={() => logout()}
+            className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-xl hover:opacity-90 transition-all"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return <MainApp view={view} setView={setView} />;
