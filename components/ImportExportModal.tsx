@@ -191,7 +191,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, 
                   onClick={onViewPrivacy}
                   className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-brand-primary transition-colors"
                 >
-                  <FeatureShieldIcon /> Review Privacy & Security Policy
+                  <FeatureShieldIcon /> Privacy Policy
                 </button>
               </div>
             )}

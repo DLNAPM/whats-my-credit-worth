@@ -308,7 +308,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onViewPrivacy }) => {
                       onClick={onViewPrivacy}
                       className="text-gray-500 text-sm hover:text-brand-primary transition-colors flex items-center gap-1.5"
                    >
-                     <FeatureShieldIcon /> Privacy & Security
+                     <FeatureShieldIcon /> Privacy Policy
                    </button>
                    <p className="text-gray-500 text-sm">
                       &copy; {new Date().getFullYear()} What's My Credit Worth. All rights reserved.
