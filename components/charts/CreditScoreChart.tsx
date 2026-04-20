@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FinancialData } from '../../types';
-import { formatMonthYear } from '../../utils/helpers';
+import { formatMonthYear, getCurrentMonthYear } from '../../utils/helpers';
 
 interface CreditScoreChartProps {
   data: FinancialData;
@@ -44,7 +44,10 @@ const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
   });
 
   const chartData = useMemo(() => {
+    const currentMonth = getCurrentMonthYear();
+    
     return Object.keys(data)
+      .filter((monthYear) => monthYear.localeCompare(currentMonth) <= 0) // Filter out future dates
       .map((monthYear) => {
         const scores = data[monthYear]?.creditScores;
         return {
@@ -56,7 +59,9 @@ const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
         };
       })
       .filter(d => d.experian > 0 || d.equifax > 0 || d.transunion > 0 || d.mrCooper > 0) // Only show months with at least one score
-      .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+      .sort((a, b) => b.monthYear.localeCompare(a.monthYear)) // Sort descending to get most recent
+      .slice(0, 15) // Keep only the top 15 most recent months
+      .sort((a, b) => a.monthYear.localeCompare(b.monthYear)); // Sort ascending again for the chart timeline
   }, [data]);
 
   const toggleScore = (key: string) => {

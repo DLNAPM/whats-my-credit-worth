@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FinancialData } from '../../types';
-import { calculateNetWorth, formatCurrency, formatMonthYear } from '../../utils/helpers';
+import { calculateNetWorth, formatCurrency, formatMonthYear, getCurrentMonthYear } from '../../utils/helpers';
 
 interface NetWorthChartProps {
   data: FinancialData;
@@ -23,12 +23,17 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
   // FIX: Refactored to use `Object.keys` to ensure correct type inference for `monthlyData`.
   // `Object.entries` on an object with an index signature was inferring the value as `unknown`.
   const chartData = useMemo(() => {
+    const currentMonth = getCurrentMonthYear();
+    
     return Object.keys(data)
+      .filter((monthYear) => monthYear.localeCompare(currentMonth) <= 0) // Filter out future dates
       .map((monthYear) => ({
         monthYear,
         netWorth: calculateNetWorth(data[monthYear]),
       }))
-      .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
+      .sort((a, b) => b.monthYear.localeCompare(a.monthYear)) // Sort descending to get most recent
+      .slice(0, 15) // Keep only the top 15 most recent months
+      .sort((a, b) => a.monthYear.localeCompare(b.monthYear)); // Sort ascending again for the chart timeline
   }, [data]);
 
   if(chartData.length < 2) {
