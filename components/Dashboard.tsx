@@ -83,10 +83,10 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
             <div>
                  <Card title={<h3 className="text-lg font-semibold text-brand-primary">Credit Scores</h3>}>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                        <Metric label="Experian FICO 8" value={data.creditScores.experian.score8} size="small" />
-                        <Metric label="Equifax FICO 8" value={data.creditScores.equifax.score8} size="small" />
-                        <Metric label="TransUnion FICO 8" value={data.creditScores.transunion.score8} size="small" />
-                        <Metric label="Mr. Cooper FICO 4" value={data.creditScores.mrCooper} size="small" />
+                        <Metric label="Experian FICO 8" value={data?.creditScores?.experian?.score8 || 0} size="small" />
+                        <Metric label="Equifax FICO 8" value={data?.creditScores?.equifax?.score8 || 0} size="small" />
+                        <Metric label="TransUnion FICO 8" value={data?.creditScores?.transunion?.score8 || 0} size="small" />
+                        <Metric label="Mr. Cooper FICO 4" value={data?.creditScores?.mrCooper || 0} size="small" />
                     </div>
                 </Card>
             </div>

@@ -45,13 +45,16 @@ const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
 
   const chartData = useMemo(() => {
     return Object.keys(data)
-      .map((monthYear) => ({
-        monthYear,
-        experian: data[monthYear].creditScores.experian.score8,
-        equifax: data[monthYear].creditScores.equifax.score8,
-        transunion: data[monthYear].creditScores.transunion.score8,
-        mrCooper: data[monthYear].creditScores.mrCooper || 0,
-      }))
+      .map((monthYear) => {
+        const scores = data[monthYear]?.creditScores;
+        return {
+          monthYear,
+          experian: scores?.experian?.score8 || 0,
+          equifax: scores?.equifax?.score8 || 0,
+          transunion: scores?.transunion?.score8 || 0,
+          mrCooper: scores?.mrCooper || 0,
+        };
+      })
       .filter(d => d.experian > 0 || d.equifax > 0 || d.transunion > 0 || d.mrCooper > 0) // Only show months with at least one score
       .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
   }, [data]);

@@ -227,13 +227,13 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Credit Scores</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <InputField label="Experian FICO 8" name="score8" type="number" value={data.creditScores.experian.score8} onChange={e => handleSimpleChange(e, 'creditScores', 'experian')} />
-                    <InputField label="Equifax FICO 8" name="score8" type="number" value={data.creditScores.equifax.score8} onChange={e => handleSimpleChange(e, 'creditScores', 'equifax')} />
-                    <InputField label="TransUnion FICO 8" name="score8" type="number" value={data.creditScores.transunion.score8} onChange={e => handleSimpleChange(e, 'creditScores', 'transunion')} />
-                    <InputField label="Lending Tree" name="lendingTree" type="number" value={data.creditScores.lendingTree} onChange={e => handleSimpleChange(e, 'creditScores')} />
-                    <InputField label="Credit Karma" name="creditKarma" type="number" value={data.creditScores.creditKarma} onChange={e => handleSimpleChange(e, 'creditScores')} />
-                    <InputField label="Credit Sesame" name="creditSesame" type="number" value={data.creditScores.creditSesame} onChange={e => handleSimpleChange(e, 'creditScores')} />
-                    <InputField label="Mr. Cooper FICO 4" name="mrCooper" type="number" value={data.creditScores.mrCooper} onChange={e => handleSimpleChange(e, 'creditScores')} />
+                    <InputField label="Experian FICO 8" name="score8" type="number" value={data?.creditScores?.experian?.score8 || 0} onChange={e => handleSimpleChange(e, 'creditScores', 'experian')} />
+                    <InputField label="Equifax FICO 8" name="score8" type="number" value={data?.creditScores?.equifax?.score8 || 0} onChange={e => handleSimpleChange(e, 'creditScores', 'equifax')} />
+                    <InputField label="TransUnion FICO 8" name="score8" type="number" value={data?.creditScores?.transunion?.score8 || 0} onChange={e => handleSimpleChange(e, 'creditScores', 'transunion')} />
+                    <InputField label="Lending Tree" name="lendingTree" type="number" value={data?.creditScores?.lendingTree || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
+                    <InputField label="Credit Karma" name="creditKarma" type="number" value={data?.creditScores?.creditKarma || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
+                    <InputField label="Credit Sesame" name="creditSesame" type="number" value={data?.creditScores?.creditSesame || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
+                    <InputField label="Mr. Cooper FICO 4" name="mrCooper" type="number" value={data?.creditScores?.mrCooper || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
                 </div>
             </div>
 
