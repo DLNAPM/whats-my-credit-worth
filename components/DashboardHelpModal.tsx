@@ -78,7 +78,7 @@ const DashboardHelpModal: React.FC<DashboardHelpModalProps> = ({ isOpen, onClose
 
           {/* Section: Security */}
           <section className="p-6 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20 flex gap-4">
-            <AlertTriangleIcon className="text-red-500 shrink-0" />
+            <AlertTriangleIcon className="w-8 h-8 text-red-500 shrink-0" />
             <div>
               <h4 className="font-bold text-sm text-red-800 dark:text-red-400">Account Deletion Security</h4>
               <p className="text-xs text-red-700/80 dark:text-red-400/80 mt-1">
