@@ -16,6 +16,8 @@ export const getInitialData = (): MonthlyData => ({
     creditKarma: 0,
     creditSesame: 0,
     mrCooper: 0,
+    creditCardFico8: 0,
+    autoFico8: 0,
   },
   creditCards: [
     { id: generateId(), name: 'Primary Card', balance: 0, limit: 0 },
@@ -52,7 +54,9 @@ export const getDummyData = (): FinancialData => {
       lendingTree: 695 + (offset * 10),
       creditKarma: 690 + (offset * 10),
       creditSesame: 685 + (offset * 10),
-      mrCooper: 710 + (offset * 10)
+      mrCooper: 710 + (offset * 10),
+      creditCardFico8: 700 + (offset * 12),
+      autoFico8: 695 + (offset * 11)
     },
     creditCards: [
       { id: generateId(), name: 'Chase Sapphire Pref', balance: Math.max(0, 4200 - (offset * 1100)), limit: 15000 },

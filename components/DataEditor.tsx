@@ -166,10 +166,14 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     title: string, 
     listName: ItemType, 
     items: T[], 
-    fields: (keyof T)[]
+    fields: (keyof T)[],
+    extraHeaderElement?: React.ReactNode
   ) => (
     <div className="space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2">{title}</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 gap-2">
+            <h3 className="text-lg font-semibold">{title}</h3>
+            {extraHeaderElement}
+        </div>
         {items.map((item, index) => (
             <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end p-2 rounded-md bg-gray-50 dark:bg-gray-800">
                 {fields.map(field => (
@@ -230,6 +234,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                     <InputField label="Experian FICO 8" name="score8" type="number" value={data?.creditScores?.experian?.score8 || 0} onChange={e => handleSimpleChange(e, 'creditScores', 'experian')} />
                     <InputField label="Equifax FICO 8" name="score8" type="number" value={data?.creditScores?.equifax?.score8 || 0} onChange={e => handleSimpleChange(e, 'creditScores', 'equifax')} />
                     <InputField label="TransUnion FICO 8" name="score8" type="number" value={data?.creditScores?.transunion?.score8 || 0} onChange={e => handleSimpleChange(e, 'creditScores', 'transunion')} />
+                    <InputField label="Auto FICO 8" name="autoFico8" type="number" value={data?.creditScores?.autoFico8 || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
                     <InputField label="Lending Tree" name="lendingTree" type="number" value={data?.creditScores?.lendingTree || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
                     <InputField label="Credit Karma" name="creditKarma" type="number" value={data?.creditScores?.creditKarma || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
                     <InputField label="Credit Sesame" name="creditSesame" type="number" value={data?.creditScores?.creditSesame || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
@@ -276,7 +281,25 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                  <Button onClick={handleAddJob} size="small"><AddIcon /> Add Income Source</Button>
             </div>
 
-            {renderListEditor<CreditCard>('Credit Cards', 'creditCards', data.creditCards, ['name', 'balance', 'limit'])}
+            {renderListEditor<CreditCard>(
+                'Credit Cards', 
+                'creditCards', 
+                data.creditCards, 
+                ['name', 'balance', 'limit'],
+                <div className="flex items-center gap-2">
+                    <label htmlFor="credit-card-fico-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Credit Card FICO 8 Score:
+                    </label>
+                    <input 
+                        id="credit-card-fico-input"
+                        type="number" 
+                        name="creditCardFico8" 
+                        value={data?.creditScores?.creditCardFico8 || 0} 
+                        onChange={e => handleSimpleChange(e, 'creditScores')} 
+                        className="w-24 px-3 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
+                    />
+                </div>
+            )}
             {renderListEditor<Loan>('Mortgages and Loans', 'loans', data.loans, ['name', 'balance', 'limit'])}
             {renderListEditor<Asset>('Assets', 'assets', data.assets, ['name', 'value'])}
             {renderListEditor<NamedAmount>('Monthly Bills', 'monthlyBills', data.monthlyBills, ['name', 'amount'])}

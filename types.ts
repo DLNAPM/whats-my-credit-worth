@@ -50,6 +50,8 @@ export interface MonthlyData {
     creditKarma: number;
     creditSesame: number;
     mrCooper: number;
+    creditCardFico8?: number;
+    autoFico8?: number;
   };
   creditCards: CreditCard[];
   loans: Loan[];
