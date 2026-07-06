@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperUser() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email in [
+          'reach_dlaniger@hotmail.com',
+          'dlaniger.napm.consulting@gmail.com'
+        ];
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidUser(data) {
+      return data.email is string && data.email.size() <= 128;
+    }
+
+    function isValidSupportRequest(data) {
+      return data.to is string && data.to.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128;
+    }
+
+    function isValidSharedSnapshot(data) {
+      return data.monthYear is string && data.monthYear.size() <= 7 &&
+             data.data is map;
+    }
+
+    // Match rules for collections
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isSuperUser());
+      allow create: if isSignedIn() && (request.auth.uid == userId || isSuperUser()) && isValidUser(incoming());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperUser()) && isValidUser(incoming());
+      allow delete: if isSuperUser();
+    }
+
+    match /support_requests/{requestId} {
+      allow read: if isSuperUser();
+      allow create: if isValidId(requestId) && isValidSupportRequest(incoming());
+      allow update: if isSuperUser() && isValidSupportRequest(incoming());
+      allow delete: if isSuperUser();
+    }
+
+    match /shared_snapshots/{snapshotId} {
+      allow read: if true; // Public snapshots can be viewed by anyone
+      allow create: if isValidId(snapshotId) && isValidSharedSnapshot(incoming());
+      allow update: if isSuperUser() && isValidSharedSnapshot(incoming());
+      allow delete: if isSuperUser();
+    }
+  }
+}
