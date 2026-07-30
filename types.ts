@@ -81,3 +81,13 @@ export interface AppUser extends User {
   isSuperUser?: boolean;
   isFrozen?: boolean;
 }
+
+export interface SavedAdvisorRequest {
+  id: string;
+  userId?: string;
+  title: string;
+  prompt: string;
+  response: string;
+  createdAt: string;
+}
+
