@@ -10,6 +10,7 @@ import SimulationModal from './SimulationModal';
 import MembershipModal from './MembershipModal';
 import { SimulationIcon, GoldAsterisk } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
+import FinancialFreedomSteps from './FinancialFreedomSteps';
 
 interface DashboardProps {
   data?: MonthlyData;
@@ -93,6 +94,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                 </Card>
             </div>
         </div>
+
+        <FinancialFreedomSteps monthlyIncome={totalIncome} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card 
