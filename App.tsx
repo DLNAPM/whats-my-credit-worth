@@ -25,6 +25,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import FinancialChatbot from './components/FinancialChatbot';
 import MembershipModal from './components/MembershipModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import StockTickerBanner from './components/StockTickerBanner';
+import UserProfileModal from './components/UserProfileModal';
 
 /**
  * Async Snapshot Loader
@@ -122,6 +124,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   const { logout, upgradeToPremium } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isUploadHelpOpen, setIsUploadHelpOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
@@ -181,6 +184,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans relative">
+      <StockTickerBanner onOpenProfile={() => setIsProfileOpen(true)} />
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <Header 
           currentMonthYear={currentMonthYear}
@@ -195,6 +199,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           onLogout={handleLogout}
           onSave={saveData}
           saveStatus={saveStatus}
+          onOpenProfile={() => setIsProfileOpen(true)}
         />
         
         <main>
@@ -297,6 +302,12 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
         <MembershipModal 
           isOpen={isChatbotMembershipOpen} 
           onClose={() => setIsChatbotMembershipOpen(false)} 
+        />
+
+        <UserProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          onOpenMembership={() => setIsChatbotMembershipOpen(true)}
         />
 
         <input

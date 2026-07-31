@@ -80,6 +80,7 @@ export interface AppUser extends User {
   isPremium?: boolean;
   isSuperUser?: boolean;
   isFrozen?: boolean;
+  savedTickers?: string[];
 }
 
 export interface SavedAdvisorRequest {

@@ -21,6 +21,7 @@ interface HeaderProps {
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
   onSave?: () => Promise<void>;
+  onOpenProfile?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -35,7 +36,8 @@ const Header: React.FC<HeaderProps> = ({
   view,
   setView,
   onLogout,
-  onSave
+  onSave,
+  onOpenProfile
 }) => {
   const { user, isPremium, isSuperUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -100,13 +102,20 @@ const Header: React.FC<HeaderProps> = ({
 
             {user && (
                 <div className="flex items-center gap-3 border-r pr-4 border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs">
+                    <button 
+                      onClick={onOpenProfile}
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-left focus:outline-none"
+                      title="User Profile & Banner Tickers Settings"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs shadow-inner">
                             {user.displayName?.charAt(0) || 'U'}
                         </div>
-                        <span className="text-sm font-bold truncate max-w-[80px] text-gray-900 dark:text-gray-100">{user.displayName?.split(' ')[0] || 'User'}</span>
-                    </div>
-                    <button onClick={onLogout} className="text-gray-500 hover:text-negative transition-colors p-1.5 rounded-lg hover:bg-red-50" title="Logout">
+                        <div className="hidden sm:block">
+                          <span className="text-xs font-bold truncate max-w-[80px] text-gray-900 dark:text-gray-100 block">{user.displayName?.split(' ')[0] || 'User'}</span>
+                          <span className="text-[9px] font-semibold text-brand-primary dark:text-brand-light block">Profile & Tickers</span>
+                        </div>
+                    </button>
+                    <button onClick={onLogout} className="text-gray-500 hover:text-negative transition-colors p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30" title="Logout">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     </button>
                 </div>

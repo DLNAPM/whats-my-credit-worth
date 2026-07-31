@@ -22,18 +22,22 @@ interface AuthContextType {
   isPremium: boolean;
   isSuperUser: boolean;
   isFrozen: boolean;
+  savedTickers: string[];
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   upgradeToPremium: () => Promise<void>;
   cancelSubscription: () => Promise<void>;
   deleteUserAccount: () => Promise<void>;
+  updateSavedTickers: (tickers: string[]) => Promise<void>;
 }
 
 const SUPER_USER_EMAILS = [
   'reach_dlaniger@hotmail.com',
   'dlaniger.napm.consulting@gmail.com'
 ];
+
+const DEFAULT_TICKERS = ['AAPL', 'NVDA', 'MSFT', 'AMZN', 'TSLA'];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -42,6 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
+  const [savedTickers, setSavedTickers] = useState<string[]>(DEFAULT_TICKERS);
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
@@ -70,6 +75,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let hasPremium = isAdmin || localStorage.getItem(`premium_${firebaseUser.uid}`) === 'true';
         setIsPremium(hasPremium);
 
+        const localTickers = localStorage.getItem(`tickers_${firebaseUser.uid}`);
+        if (localTickers) {
+          try {
+            const parsed = JSON.parse(localTickers);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setSavedTickers(parsed.slice(0, 5));
+            }
+          } catch (e) {
+            console.error("Failed parsing local tickers", e);
+          }
+        }
+
         // 3. Check Firestore (Source of Truth)
         if (!isAdmin) {
             try {
@@ -93,6 +110,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setIsPremium(false);
                         localStorage.removeItem(`premium_${firebaseUser.uid}`);
                     }
+
+                    if (data.savedTickers && Array.isArray(data.savedTickers) && data.savedTickers.length > 0) {
+                      const cleanTickers = data.savedTickers.map((t: string) => t.trim().toUpperCase()).slice(0, 5);
+                      setSavedTickers(cleanTickers);
+                      localStorage.setItem(`tickers_${firebaseUser.uid}`, JSON.stringify(cleanTickers));
+                    }
                     
                     // Update last login
                     await setDoc(userDocRef, { 
@@ -106,6 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       email: firebaseUser.email,
                       displayName: firebaseUser.displayName,
                       isPremium: false,
+                      savedTickers: DEFAULT_TICKERS,
                       createdAt: new Date().toISOString(),
                       lastLogin: new Date().toISOString()
                     });
@@ -117,6 +141,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Admin user, still save to users collection for visibility
             try {
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists() && userDocSnap.data()?.savedTickers) {
+                  const cleanTickers = userDocSnap.data()?.savedTickers.map((t: string) => t.trim().toUpperCase()).slice(0, 5);
+                  setSavedTickers(cleanTickers);
+                }
                 await setDoc(userDocRef, {
                     email: firebaseUser.email,
                     displayName: firebaseUser.displayName,
@@ -247,18 +276,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateSavedTickers = async (newTickers: string[]) => {
+    const cleanTickers = newTickers
+      .map(t => t.trim().toUpperCase())
+      .filter(t => t.length > 0)
+      .slice(0, 5);
+
+    setSavedTickers(cleanTickers);
+    
+    if (user?.uid) {
+      localStorage.setItem(`tickers_${user.uid}`, JSON.stringify(cleanTickers));
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { savedTickers: cleanTickers }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save tickers to Firestore:", err);
+      }
+    } else {
+      localStorage.setItem('tickers_guest', JSON.stringify(cleanTickers));
+    }
+  };
+
   const value = { 
     user, 
     loading, 
     isPremium: isPremium || isSuperUser, 
     isSuperUser,
     isFrozen,
+    savedTickers,
     loginWithGoogle, 
     loginAsGuest, 
     logout,
     upgradeToPremium,
     cancelSubscription,
-    deleteUserAccount
+    deleteUserAccount,
+    updateSavedTickers
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
