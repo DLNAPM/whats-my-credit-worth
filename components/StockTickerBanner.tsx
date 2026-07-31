@@ -51,6 +51,14 @@ function generateFallbackQuote(symbol: string): QuoteData {
   return { symbol, name: `${symbol} Corp`, price: Number(price.toFixed(2)), change: Number(change.toFixed(2)), changePercent: Number(changePercent.toFixed(2)) };
 }
 
+function getMarketWatchUrl(symbol: string): string {
+  const clean = symbol.trim().toUpperCase();
+  if (clean === 'DOW') return 'https://www.marketwatch.com/investing/index/djia';
+  if (clean === 'S&P 500' || clean === 'SP500' || clean === 'S&P500') return 'https://www.marketwatch.com/investing/index/spx';
+  if (clean === 'NASDAQ') return 'https://www.marketwatch.com/investing/index/comp';
+  return `https://www.marketwatch.com/investing/stock/${clean.toLowerCase()}`;
+}
+
 const StockTickerBanner: React.FC<StockTickerBannerProps> = ({ onOpenProfile }) => {
   const { savedTickers } = useAuth();
   const [quotes, setQuotes] = useState<QuoteData[]>([]);
@@ -152,23 +160,29 @@ const StockTickerBanner: React.FC<StockTickerBannerProps> = ({ onOpenProfile }) 
           {marqueeItems.map((item, idx) => {
             const isPositive = item.change >= 0;
             const flash = !isHovered && flashStatus[item.symbol];
+            const marketWatchUrl = getMarketWatchUrl(item.symbol);
 
             return (
-              <div
+              <a
                 key={`${item.symbol}-${idx}`}
-                onClick={onOpenProfile}
+                href={marketWatchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg transition-all duration-300 cursor-pointer ${
                   flash === 'up'
                     ? 'bg-emerald-900/60 ring-2 ring-emerald-400 scale-105'
                     : flash === 'down'
                     ? 'bg-red-900/60 ring-2 ring-red-400 scale-105'
-                    : 'bg-gray-900/80 hover:bg-gray-800 border border-gray-800'
+                    : 'bg-gray-900/80 hover:bg-gray-800 border border-gray-800 hover:border-gray-600'
                 }`}
-                title={`Click to manage ticker preferences in User Profile`}
+                title={`View ${item.symbol} market details on MarketWatch (opens in new window)`}
               >
                 {/* Symbol Tag */}
-                <span className={`text-xs font-black tracking-tight ${item.isIndex ? 'text-amber-400' : 'text-blue-400'}`}>
+                <span className={`text-xs font-black tracking-tight flex items-center gap-1 ${item.isIndex ? 'text-amber-400' : 'text-blue-400'}`}>
                   {item.symbol}
+                  <svg className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
                 </span>
 
                 {/* Price */}
@@ -187,7 +201,7 @@ const StockTickerBanner: React.FC<StockTickerBannerProps> = ({ onOpenProfile }) 
                   {isPositive ? '▲ +' : '▼ '}
                   {Math.abs(item.changePercent).toFixed(2)}%
                 </span>
-              </div>
+              </a>
             );
           })}
         </div>
