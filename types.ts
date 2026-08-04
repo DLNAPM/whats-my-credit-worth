@@ -81,6 +81,7 @@ export interface AppUser extends User {
   isSuperUser?: boolean;
   isFrozen?: boolean;
   savedTickers?: string[];
+  showStockBanner?: boolean;
 }
 
 export interface SavedAdvisorRequest {

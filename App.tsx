@@ -121,7 +121,7 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
-  const { logout, upgradeToPremium } = useAuth();
+  const { logout, upgradeToPremium, showStockBanner } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -184,7 +184,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen font-sans relative">
-      <StockTickerBanner onOpenProfile={() => setIsProfileOpen(true)} />
+      {showStockBanner && <StockTickerBanner onOpenProfile={() => setIsProfileOpen(true)} />}
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
         <Header 
           currentMonthYear={currentMonthYear}

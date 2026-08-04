@@ -23,6 +23,7 @@ interface AuthContextType {
   isSuperUser: boolean;
   isFrozen: boolean;
   savedTickers: string[];
+  showStockBanner: boolean;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
@@ -30,6 +31,7 @@ interface AuthContextType {
   cancelSubscription: () => Promise<void>;
   deleteUserAccount: () => Promise<void>;
   updateSavedTickers: (tickers: string[]) => Promise<void>;
+  updateShowStockBanner: (enabled: boolean) => Promise<void>;
 }
 
 const SUPER_USER_EMAILS = [
@@ -47,6 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isPremium, setIsPremium] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
   const [savedTickers, setSavedTickers] = useState<string[]>(DEFAULT_TICKERS);
+  const [showStockBanner, setShowStockBanner] = useState<boolean>(true);
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
@@ -87,6 +90,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
+        const localBannerSetting = localStorage.getItem(`banner_visible_${firebaseUser.uid}`);
+        if (localBannerSetting !== null) {
+          setShowStockBanner(localBannerSetting === 'true');
+        }
+
         // 3. Check Firestore (Source of Truth)
         if (!isAdmin) {
             try {
@@ -116,6 +124,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       setSavedTickers(cleanTickers);
                       localStorage.setItem(`tickers_${firebaseUser.uid}`, JSON.stringify(cleanTickers));
                     }
+
+                    if (typeof data.showStockBanner === 'boolean') {
+                      setShowStockBanner(data.showStockBanner);
+                      localStorage.setItem(`banner_visible_${firebaseUser.uid}`, String(data.showStockBanner));
+                    }
                     
                     // Update last login
                     await setDoc(userDocRef, { 
@@ -130,6 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       displayName: firebaseUser.displayName,
                       isPremium: false,
                       savedTickers: DEFAULT_TICKERS,
+                      showStockBanner: true,
                       createdAt: new Date().toISOString(),
                       lastLogin: new Date().toISOString()
                     });
@@ -142,9 +156,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists() && userDocSnap.data()?.savedTickers) {
-                  const cleanTickers = userDocSnap.data()?.savedTickers.map((t: string) => t.trim().toUpperCase()).slice(0, 5);
-                  setSavedTickers(cleanTickers);
+                if (userDocSnap.exists()) {
+                  if (userDocSnap.data()?.savedTickers) {
+                    const cleanTickers = userDocSnap.data()?.savedTickers.map((t: string) => t.trim().toUpperCase()).slice(0, 5);
+                    setSavedTickers(cleanTickers);
+                  }
+                  if (typeof userDocSnap.data()?.showStockBanner === 'boolean') {
+                    setShowStockBanner(userDocSnap.data()?.showStockBanner);
+                  }
                 }
                 await setDoc(userDocRef, {
                     email: firebaseUser.email,
@@ -297,6 +316,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateShowStockBanner = async (enabled: boolean) => {
+    setShowStockBanner(enabled);
+
+    if (user?.uid) {
+      localStorage.setItem(`banner_visible_${user.uid}`, String(enabled));
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, { showStockBanner: enabled }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save banner visibility setting to Firestore:", err);
+      }
+    } else {
+      localStorage.setItem('banner_visible_guest', String(enabled));
+    }
+  };
+
   const value = { 
     user, 
     loading, 
@@ -304,13 +339,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isSuperUser,
     isFrozen,
     savedTickers,
+    showStockBanner,
     loginWithGoogle, 
     loginAsGuest, 
     logout,
     upgradeToPremium,
     cancelSubscription,
     deleteUserAccount,
-    updateSavedTickers
+    updateSavedTickers,
+    updateShowStockBanner
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

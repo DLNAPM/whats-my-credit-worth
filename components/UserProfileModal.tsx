@@ -12,8 +12,9 @@ interface UserProfileModalProps {
 const POPULAR_TICKERS = ['AAPL', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'AMD', 'SPY', 'QQQ', 'BTC', 'ETH'];
 
 const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, onOpenMembership }) => {
-  const { user, isPremium, isSuperUser, savedTickers, updateSavedTickers } = useAuth();
+  const { user, isPremium, isSuperUser, savedTickers, updateSavedTickers, showStockBanner, updateShowStockBanner } = useAuth();
   const [tickers, setTickers] = useState<string[]>([]);
+  const [bannerVisible, setBannerVisible] = useState<boolean>(true);
   const [inputTicker, setInputTicker] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,7 +24,10 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
     if (savedTickers) {
       setTickers(savedTickers);
     }
-  }, [savedTickers, isOpen]);
+    if (typeof showStockBanner === 'boolean') {
+      setBannerVisible(showStockBanner);
+    }
+  }, [savedTickers, showStockBanner, isOpen]);
 
   if (!isOpen) return null;
 
@@ -60,13 +64,14 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
     setError(null);
     try {
       await updateSavedTickers(tickers);
-      setSuccessMsg("Stock ticker preferences saved successfully!");
+      await updateShowStockBanner(bannerVisible);
+      setSuccessMsg("Profile & banner preferences saved successfully!");
       setTimeout(() => {
         setSuccessMsg(null);
       }, 3000);
     } catch (err) {
       console.error(err);
-      setError("Failed to save tickers. Please try again.");
+      setError("Failed to save preferences. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -120,6 +125,51 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
                 <SparklesIcon className="w-3.5 h-3.5 mr-1 inline" /> Upgrade
               </Button>
             )}
+          </div>
+
+          {/* Banner Visibility Settings Toggle */}
+          <div className="bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700/80 flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-brand-primary/10 text-brand-primary dark:text-blue-400 shrink-0 mt-0.5">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                  Stock Banner Display
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase ${
+                    bannerVisible 
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300' 
+                      : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
+                    {bannerVisible ? 'Enabled' : 'Disabled'}
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Show or hide the moving stock ticker banner at the top of your screen.
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive Toggle Switch */}
+            <button
+              type="button"
+              onClick={() => setBannerVisible(!bannerVisible)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 ${
+                bannerVisible ? 'bg-brand-primary' : 'bg-gray-300 dark:bg-gray-700'
+              }`}
+              role="switch"
+              aria-checked={bannerVisible}
+            >
+              <span className="sr-only">Toggle Stock Banner</span>
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  bannerVisible ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
           </div>
 
           {/* Saved Tickers Section */}
