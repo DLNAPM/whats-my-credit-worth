@@ -29,26 +29,93 @@ const KNOWN_STOCK_BASES: Record<string, { name: string; price: number; change: n
   GOOGL: { name: 'Alphabet Inc.', price: 172.30, change: 0.80, changePercent: 0.47 },
   META: { name: 'Meta Platforms', price: 512.40, change: 4.20, changePercent: 0.83 },
   AMD: { name: 'Adv. Micro Devices', price: 154.20, change: -0.90, changePercent: -0.58 },
+  BXBL: { name: 'Blink / BioXcel', price: 5.02, change: 0.14, changePercent: 2.87 },
   SPY: { name: 'SPDR S&P 500', price: 550.80, change: 2.40, changePercent: 0.44 },
   QQQ: { name: 'Invesco QQQ', price: 478.60, change: 3.10, changePercent: 0.65 },
   BTC: { name: 'Bitcoin', price: 64850.00, change: 1240.00, changePercent: 1.95 },
   ETH: { name: 'Ethereum', price: 3420.00, change: 52.00, changePercent: 1.54 },
 };
 
+// In-memory quote cache to avoid redundant API hits
+const quoteCache: Record<string, { quote: QuoteData; timestamp: number }> = {};
+const CACHE_TTL = 60 * 1000; // 1 minute cache
+
+async function fetchRealQuote(symbol: string): Promise<QuoteData> {
+  const cleanSymbol = symbol.trim().toUpperCase();
+
+  // Check cache first
+  if (quoteCache[cleanSymbol] && (Date.now() - quoteCache[cleanSymbol].timestamp < CACHE_TTL)) {
+    return quoteCache[cleanSymbol].quote;
+  }
+
+  // Map common symbols to Yahoo tickers if needed
+  let yahooTicker = cleanSymbol;
+  if (cleanSymbol === 'DOW') yahooTicker = '^DJI';
+  if (cleanSymbol === 'S&P 500' || cleanSymbol === 'SP500') yahooTicker = '^GSPC';
+  if (cleanSymbol === 'NASDAQ') yahooTicker = '^IXIC';
+
+  try {
+    const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooTicker)}?interval=1d&range=1d`;
+    let response = await fetch(targetUrl).catch(() => null);
+
+    // Fallback to CORS proxy if direct fetch fails
+    if (!response || !response.ok) {
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      response = await fetch(proxyUrl).catch(() => null);
+    }
+
+    if (response && response.ok) {
+      const data = await response.json();
+      const meta = data?.chart?.result?.[0]?.meta;
+      if (meta && typeof meta.regularMarketPrice === 'number') {
+        const price = meta.regularMarketPrice;
+        const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+        const change = price - prevClose;
+        const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+        const shortName = meta.shortName || meta.longName || `${cleanSymbol} Corp`;
+
+        const result: QuoteData = {
+          symbol: cleanSymbol,
+          name: shortName,
+          price: Number(price.toFixed(2)),
+          change: Number(change.toFixed(2)),
+          changePercent: Number(changePercent.toFixed(2)),
+          isIndex: ['DOW', 'S&P 500', 'NASDAQ', '^DJI', '^GSPC', '^IXIC'].includes(cleanSymbol)
+        };
+
+        quoteCache[cleanSymbol] = { quote: result, timestamp: Date.now() };
+        return result;
+      }
+    }
+  } catch (err) {
+    console.warn(`Live fetch for ${cleanSymbol} failed, using fallback base:`, err);
+  }
+
+  // Fallback generation if network/API is unavailable
+  return generateFallbackQuote(cleanSymbol);
+}
+
 function generateFallbackQuote(symbol: string): QuoteData {
-  if (KNOWN_STOCK_BASES[symbol]) {
-    const base = KNOWN_STOCK_BASES[symbol];
-    return { symbol, name: base.name, price: base.price, change: base.change, changePercent: base.changePercent };
+  const cleanSymbol = symbol.trim().toUpperCase();
+  if (KNOWN_STOCK_BASES[cleanSymbol]) {
+    const base = KNOWN_STOCK_BASES[cleanSymbol];
+    return { symbol: cleanSymbol, name: base.name, price: base.price, change: base.change, changePercent: base.changePercent };
   }
   // Deterministic seed from symbol string
   let hash = 0;
   for (let i = 0; i < symbol.length; i++) {
     hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const price = Math.abs(hash % 350) + 45 + 0.50;
-  const changePercent = ((hash % 300) / 100) - 1.0;
+  const price = Math.abs(hash % 120) + 4.50;
+  const changePercent = ((hash % 200) / 100) - 0.50;
   const change = (price * changePercent) / 100;
-  return { symbol, name: `${symbol} Corp`, price: Number(price.toFixed(2)), change: Number(change.toFixed(2)), changePercent: Number(changePercent.toFixed(2)) };
+  return { 
+    symbol: cleanSymbol, 
+    name: `${cleanSymbol} Corp`, 
+    price: Number(price.toFixed(2)), 
+    change: Number(change.toFixed(2)), 
+    changePercent: Number(changePercent.toFixed(2)) 
+  };
 }
 
 function getMarketWatchUrl(symbol: string): string {
@@ -76,10 +143,36 @@ const StockTickerBanner: React.FC<StockTickerBannerProps> = ({ onOpenProfile }) 
     isHoveredRef.current = false;
   };
 
-  // Build quotes array whenever savedTickers changes
+  // Fetch real quotes whenever savedTickers changes
   useEffect(() => {
-    const userQuotes = (savedTickers || ['AAPL', 'NVDA', 'MSFT', 'AMZN', 'TSLA']).map(generateFallbackQuote);
-    setQuotes([...DEFAULT_INDEX_QUOTES, ...userQuotes]);
+    let isMounted = true;
+
+    const loadQuotes = async () => {
+      // Set initial quotes immediately so UI is responsive
+      const tickerList = savedTickers && savedTickers.length > 0 
+        ? savedTickers 
+        : ['AAPL', 'NVDA', 'MSFT', 'AMZN', 'TSLA'];
+      
+      const initialUserQuotes = tickerList.map(generateFallbackQuote);
+      if (isMounted) {
+        setQuotes([...DEFAULT_INDEX_QUOTES, ...initialUserQuotes]);
+      }
+
+      // Fetch real prices asynchronously
+      const allSymbols = ['DOW', 'S&P 500', 'NASDAQ', ...tickerList];
+      const realQuotesPromises = allSymbols.map(sym => fetchRealQuote(sym));
+      const fetchedQuotes = await Promise.all(realQuotesPromises);
+
+      if (isMounted && fetchedQuotes.length > 0) {
+        setQuotes(fetchedQuotes);
+      }
+    };
+
+    loadQuotes();
+
+    return () => {
+      isMounted = false;
+    };
   }, [savedTickers]);
 
   // Periodic micro-updates to simulate live market price flashing
