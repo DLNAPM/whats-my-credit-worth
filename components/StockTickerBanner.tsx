@@ -17,10 +17,22 @@ interface StockTickerBannerProps {
 const DEFAULT_INDEX_QUOTES: QuoteData[] = [
   { symbol: 'DOW', name: 'Dow Jones', price: 40842.50, change: 142.10, changePercent: 0.35, isIndex: true },
   { symbol: 'S&P 500', name: 'S&P 500', price: 5522.30, change: 26.40, changePercent: 0.48, isIndex: true },
-  { symbol: 'NASDAQ', name: 'NASDAQ', price: 17599.40, change: 108.50, changePercent: 0.62, isIndex: true },
+  { symbol: 'NASDAQ', name: 'NASDAQ', price: 18150.20, change: 112.40, changePercent: 0.62, isIndex: true },
 ];
 
-const KNOWN_STOCK_BASES: Record<string, { name: string; price: number; change: number; changePercent: number }> = {
+const KNOWN_STOCK_BASES: Record<string, { name: string; price: number; change: number; changePercent: number; isIndex?: boolean }> = {
+  DOW: { name: 'Dow Jones Industrial', price: 40842.50, change: 142.10, changePercent: 0.35, isIndex: true },
+  DJIA: { name: 'Dow Jones Industrial', price: 40842.50, change: 142.10, changePercent: 0.35, isIndex: true },
+  '^DJI': { name: 'Dow Jones Industrial', price: 40842.50, change: 142.10, changePercent: 0.35, isIndex: true },
+  'S&P 500': { name: 'S&P 500 Index', price: 5522.30, change: 26.40, changePercent: 0.48, isIndex: true },
+  'S&P500': { name: 'S&P 500 Index', price: 5522.30, change: 26.40, changePercent: 0.48, isIndex: true },
+  SP500: { name: 'S&P 500 Index', price: 5522.30, change: 26.40, changePercent: 0.48, isIndex: true },
+  '^GSPC': { name: 'S&P 500 Index', price: 5522.30, change: 26.40, changePercent: 0.48, isIndex: true },
+  NASDAQ: { name: 'NASDAQ Composite', price: 18150.20, change: 112.40, changePercent: 0.62, isIndex: true },
+  COMP: { name: 'NASDAQ Composite', price: 18150.20, change: 112.40, changePercent: 0.62, isIndex: true },
+  '^IXIC': { name: 'NASDAQ Composite', price: 18150.20, change: 112.40, changePercent: 0.62, isIndex: true },
+  NDX: { name: 'NASDAQ 100', price: 19850.40, change: 145.20, changePercent: 0.74, isIndex: true },
+  NDAQ: { name: 'Nasdaq Inc.', price: 68.50, change: 0.45, changePercent: 0.66 },
   AAPL: { name: 'Apple Inc.', price: 224.50, change: 2.80, changePercent: 1.26 },
   NVDA: { name: 'NVIDIA Corp.', price: 118.40, change: 2.45, changePercent: 2.11 },
   MSFT: { name: 'Microsoft', price: 448.20, change: -1.30, changePercent: -0.29 },
@@ -50,9 +62,9 @@ async function fetchRealQuote(symbol: string): Promise<QuoteData> {
 
   // Map common symbols to Yahoo tickers if needed
   let yahooTicker = cleanSymbol;
-  if (cleanSymbol === 'DOW') yahooTicker = '^DJI';
-  if (cleanSymbol === 'S&P 500' || cleanSymbol === 'SP500') yahooTicker = '^GSPC';
-  if (cleanSymbol === 'NASDAQ') yahooTicker = '^IXIC';
+  if (cleanSymbol === 'DOW' || cleanSymbol === 'DJIA') yahooTicker = '^DJI';
+  if (cleanSymbol === 'S&P 500' || cleanSymbol === 'SP500' || cleanSymbol === 'S&P500') yahooTicker = '^GSPC';
+  if (cleanSymbol === 'NASDAQ' || cleanSymbol === 'COMP') yahooTicker = '^IXIC';
 
   try {
     const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooTicker)}?interval=1d&range=1d`;
@@ -67,7 +79,7 @@ async function fetchRealQuote(symbol: string): Promise<QuoteData> {
     if (response && response.ok) {
       const data = await response.json();
       const meta = data?.chart?.result?.[0]?.meta;
-      if (meta && typeof meta.regularMarketPrice === 'number') {
+      if (meta && typeof meta.regularMarketPrice === 'number' && meta.regularMarketPrice > 0) {
         const price = meta.regularMarketPrice;
         const prevClose = meta.chartPreviousClose || meta.previousClose || price;
         const change = price - prevClose;
@@ -80,7 +92,7 @@ async function fetchRealQuote(symbol: string): Promise<QuoteData> {
           price: Number(price.toFixed(2)),
           change: Number(change.toFixed(2)),
           changePercent: Number(changePercent.toFixed(2)),
-          isIndex: ['DOW', 'S&P 500', 'NASDAQ', '^DJI', '^GSPC', '^IXIC'].includes(cleanSymbol)
+          isIndex: ['DOW', 'S&P 500', 'NASDAQ', 'DJIA', 'COMP', 'SP500', 'S&P500', '^DJI', '^GSPC', '^IXIC'].includes(cleanSymbol)
         };
 
         quoteCache[cleanSymbol] = { quote: result, timestamp: Date.now() };
@@ -99,14 +111,32 @@ function generateFallbackQuote(symbol: string): QuoteData {
   const cleanSymbol = symbol.trim().toUpperCase();
   if (KNOWN_STOCK_BASES[cleanSymbol]) {
     const base = KNOWN_STOCK_BASES[cleanSymbol];
-    return { symbol: cleanSymbol, name: base.name, price: base.price, change: base.change, changePercent: base.changePercent };
+    return { 
+      symbol: cleanSymbol, 
+      name: base.name, 
+      price: base.price, 
+      change: base.change, 
+      changePercent: base.changePercent,
+      isIndex: base.isIndex || ['DOW', 'S&P 500', 'NASDAQ', 'DJIA', 'COMP', 'SP500', 'S&P500'].includes(cleanSymbol)
+    };
   }
-  // Deterministic seed from symbol string
+
+  if (cleanSymbol.includes('NASDAQ') || cleanSymbol.includes('COMP')) {
+    return { symbol: cleanSymbol, name: 'NASDAQ Composite', price: 18150.20, change: 112.40, changePercent: 0.62, isIndex: true };
+  }
+  if (cleanSymbol.includes('DOW') || cleanSymbol.includes('DJI')) {
+    return { symbol: cleanSymbol, name: 'Dow Jones Industrial', price: 40842.50, change: 142.10, changePercent: 0.35, isIndex: true };
+  }
+  if (cleanSymbol.includes('S&P') || cleanSymbol.includes('SP500')) {
+    return { symbol: cleanSymbol, name: 'S&P 500 Index', price: 5522.30, change: 26.40, changePercent: 0.48, isIndex: true };
+  }
+
+  // Deterministic seed from symbol string for individual equities
   let hash = 0;
-  for (let i = 0; i < symbol.length; i++) {
-    hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < cleanSymbol.length; i++) {
+    hash = cleanSymbol.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const price = Math.abs(hash % 120) + 4.50;
+  const price = Math.abs(hash % 120) + 15.50;
   const changePercent = ((hash % 200) / 100) - 0.50;
   const change = (price * changePercent) / 100;
   return { 
@@ -326,7 +356,7 @@ const StockTickerBanner: React.FC<StockTickerBannerProps> = ({ onOpenProfile }) 
         .animate-ticker {
           display: flex;
           width: max-content;
-          animation: ticker-scroll 32s linear infinite;
+          animation: ticker-scroll 52s linear infinite;
         }
         .group:hover .animate-ticker {
           animation-play-state: paused !important;
