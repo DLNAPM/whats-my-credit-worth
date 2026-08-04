@@ -25,6 +25,74 @@ const DashboardHelpModal: React.FC<DashboardHelpModalProps> = ({ isOpen, onClose
         </div>
 
         <div className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
+          {/* APP OVERVIEW SECTION */}
+          <section className="space-y-6">
+            <div className="bg-gradient-to-br from-brand-primary/10 via-blue-50/50 to-indigo-50/30 dark:from-gray-800 dark:via-gray-800/80 dark:to-gray-800/40 p-6 rounded-2xl border border-brand-primary/20 dark:border-gray-700">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2.5 py-1 bg-brand-primary text-white text-[11px] font-black uppercase rounded-lg tracking-wide">
+                  About WMCW
+                </span>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white">
+                  What's My Credit Worth
+                </h3>
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                <strong>What's My Credit Worth (WMCW)</strong> is an all-in-one personal financial intelligence platform designed to give you total clarity over your credit health, net worth, cash flow, and debt payoff strategies.
+              </p>
+            </div>
+
+            {/* 3 Core Overview Cards: What is, How to use, Who is it for */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1: What is it */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950 text-brand-primary dark:text-blue-400 flex items-center justify-center font-bold text-lg mb-3">
+                    💡
+                  </div>
+                  <h4 className="font-extrabold text-sm text-gray-900 dark:text-white mb-2">
+                    What is WMCW?
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                    A financial freedom manager combining debt tracking, credit simulation, cash flow auditing, and live market stock tickers into one intuitive dashboard.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 2: How to use it */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-lg mb-3">
+                    🚀
+                  </div>
+                  <h4 className="font-extrabold text-sm text-gray-900 dark:text-white mb-2">
+                    How to Use It?
+                  </h4>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1.5 list-disc list-inside">
+                    <li>Log monthly income & liabilities</li>
+                    <li>Follow Financial Freedom steps</li>
+                    <li>Simulate credit score payoff scenarios</li>
+                    <li>Customize top stock market tickers</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Card 3: Who is it for */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                <div>
+                  <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-lg mb-3">
+                    🎯
+                  </div>
+                  <h4 className="font-extrabold text-sm text-gray-900 dark:text-white mb-2">
+                    Who is it For?
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Anyone aiming to improve their credit rating, eliminate high-interest debt, build generational wealth, or monitor stock investments in real-time.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Section: Data Management */}
           <section className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2 text-brand-primary">
