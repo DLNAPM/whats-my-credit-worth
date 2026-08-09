@@ -8,13 +8,6 @@ interface CreditScoreChartProps {
   data: FinancialData;
 }
 
-const SCORES_CONFIG = [
-  { key: 'experian', name: 'Experian FICO 8', color: '#0D47A1' },
-  { key: 'equifax', name: 'Equifax FICO 8', color: '#C62828' },
-  { key: 'transunion', name: 'TransUnion FICO 8', color: '#2E7D32' },
-  { key: 'mrCooper', name: 'Mr. Cooper FICO 4', color: '#F59E0B', strokeDasharray: '4 4' },
-];
-
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -36,6 +29,23 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
+  const mortgageLabel = useMemo(() => {
+    const currentMonth = getCurrentMonthYear();
+    const sortedMonths = Object.keys(data).sort().reverse();
+    const latestMonth = sortedMonths.find(m => m <= currentMonth) || sortedMonths[0];
+    if (latestMonth && data[latestMonth]?.creditScores?.mrCooperLabel) {
+      return data[latestMonth].creditScores.mrCooperLabel!;
+    }
+    return 'Mr. Cooper FICO 4';
+  }, [data]);
+
+  const scoresConfig = useMemo(() => [
+    { key: 'experian', name: 'Experian FICO 8', color: '#0D47A1' },
+    { key: 'equifax', name: 'Equifax FICO 8', color: '#C62828' },
+    { key: 'transunion', name: 'TransUnion FICO 8', color: '#2E7D32' },
+    { key: 'mrCooper', name: mortgageLabel, color: '#F59E0B', strokeDasharray: '4 4' },
+  ], [mortgageLabel]);
+
   const [visibleScores, setVisibleScores] = useState<Record<string, boolean>>({
     experian: true,
     equifax: true,
@@ -75,7 +85,7 @@ const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex flex-wrap justify-center gap-2 mb-2 px-2">
-        {SCORES_CONFIG.map(score => (
+        {scoresConfig.map(score => (
           <button
             key={score.key}
             onClick={() => toggleScore(score.key)}
@@ -124,7 +134,7 @@ const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
               tickLine={false}
             />
             <Tooltip content={<CustomTooltip />} />
-            {SCORES_CONFIG.map(score => (
+            {scoresConfig.map(score => (
               visibleScores[score.key] && (
                 <Line
                   key={score.key}

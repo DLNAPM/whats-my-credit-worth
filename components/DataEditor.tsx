@@ -60,8 +60,8 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
   };
 
   const handleSimpleChange = (e: React.ChangeEvent<HTMLInputElement>, ...path: string[]) => {
-    const { name, value } = e.target;
-    const numValue = Number(value) || 0;
+    const { name, value, type } = e.target;
+    const val = type === 'number' ? (Number(value) || 0) : value;
     
     setData(prev => {
         if (path.length === 1) {
@@ -70,7 +70,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                 ...prev,
                 [section]: {
                     ...(prev[section] as any),
-                    [name]: numValue
+                    [name]: val
                 }
             };
         }
@@ -84,7 +84,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                     ...currentSection,
                     [subsection]: {
                         ...currentSection[subsection],
-                        [name]: numValue
+                        [name]: val
                     }
                 }
             };
@@ -238,7 +238,36 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                     <InputField label="Lending Tree" name="lendingTree" type="number" value={data?.creditScores?.lendingTree || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
                     <InputField label="Credit Karma" name="creditKarma" type="number" value={data?.creditScores?.creditKarma || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
                     <InputField label="Credit Sesame" name="creditSesame" type="number" value={data?.creditScores?.creditSesame || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
-                    <InputField label="Mr. Cooper FICO 4" name="mrCooper" type="number" value={data?.creditScores?.mrCooper || 0} onChange={e => handleSimpleChange(e, 'creditScores')} />
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/50 dark:from-gray-800 dark:to-gray-800/80 p-4 rounded-xl border border-blue-100 dark:border-gray-700/80 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div>
+                            <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                                🏠 Mortgage Score Customization
+                            </h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Edit the mortgage score label (e.g. "Rocket Mortgage FICO 2", "Mr. Cooper FICO 4") and record your score.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <InputField 
+                            label="Mortgage Provider / Label" 
+                            name="mrCooperLabel" 
+                            type="text" 
+                            placeholder="e.g. Rocket Mortgage FICO 2"
+                            value={data?.creditScores?.mrCooperLabel ?? "Mr. Cooper FICO 4"} 
+                            onChange={e => handleSimpleChange(e, 'creditScores')} 
+                        />
+                        <InputField 
+                            label="Mortgage Score Value" 
+                            name="mrCooper" 
+                            type="number" 
+                            value={data?.creditScores?.mrCooper || 0} 
+                            onChange={e => handleSimpleChange(e, 'creditScores')} 
+                        />
+                    </div>
                 </div>
             </div>
 

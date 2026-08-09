@@ -83,7 +83,7 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                         <Metric label="TransUnion FICO 8" value={data?.creditScores?.transunion?.score8 || 0} size="small" />
                         <Metric label="Auto FICO 8" value={data?.creditScores?.autoFico8 || 0} size="small" />
                         <Metric label="Credit Card FICO 8" value={data?.creditScores?.creditCardFico8 || 0} size="small" />
-                        <Metric label="Mr. Cooper FICO 4" value={data?.creditScores?.mrCooper || 0} size="small" />
+                        <Metric label={data?.creditScores?.mrCooperLabel || "Mr. Cooper FICO 4"} value={data?.creditScores?.mrCooper || 0} size="small" />
                         <Metric label="Lending Tree" value={data?.creditScores?.lendingTree || 0} size="small" />
                         <Metric label="Credit Karma" value={data?.creditScores?.creditKarma || 0} size="small" />
                         <Metric label="Credit Sesame" value={data?.creditScores?.creditSesame || 0} size="small" />

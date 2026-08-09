@@ -16,6 +16,7 @@ export const getInitialData = (): MonthlyData => ({
     creditKarma: 0,
     creditSesame: 0,
     mrCooper: 0,
+    mrCooperLabel: 'Mr. Cooper FICO 4',
     creditCardFico8: 0,
     autoFico8: 0,
   },
@@ -55,6 +56,7 @@ export const getDummyData = (): FinancialData => {
       creditKarma: 690 + (offset * 10),
       creditSesame: 685 + (offset * 10),
       mrCooper: 710 + (offset * 10),
+      mrCooperLabel: 'Mr. Cooper FICO 4',
       creditCardFico8: 700 + (offset * 12),
       autoFico8: 695 + (offset * 11)
     },

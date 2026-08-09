@@ -50,6 +50,7 @@ export interface MonthlyData {
     creditKarma: number;
     creditSesame: number;
     mrCooper: number;
+    mrCooperLabel?: string;
     creditCardFico8?: number;
     autoFico8?: number;
   };
