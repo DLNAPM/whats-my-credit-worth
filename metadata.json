@@ -1,5 +1,8 @@
 {
   "name": "What's my Credit Worth",
-  "description": "A personal finance dashboard to track income, credit scores, assets, liabilities, and net worth. It allows users to view monthly snapshots and run comparison reports to monitor their financial growth over time.",
-  "requestFramePermissions": []
+  "description": "A personal and business finance dashboard to track income, credit scores, assets, liabilities, and net worth. It allows users to view monthly snapshots, configure Personal vs. Business account profiles, and receive AI Advisor recommendations tailored to Personal or Business underwriting standards and policies.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

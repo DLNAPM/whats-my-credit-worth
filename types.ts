@@ -71,6 +71,8 @@ export interface RecommendationItem {
   actionItem: string;
 }
 
+export type AccountType = 'personal' | 'business';
+
 export interface AppUser extends User {
   uid: string;
   email: string | null;
@@ -83,6 +85,9 @@ export interface AppUser extends User {
   isFrozen?: boolean;
   savedTickers?: string[];
   showStockBanner?: boolean;
+  accountType?: AccountType;
+  businessName?: string;
+  businessType?: string;
 }
 
 export interface SavedAdvisorRequest {

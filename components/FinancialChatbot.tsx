@@ -24,19 +24,43 @@ interface FinancialChatbotProps {
 }
 
 const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOpenMembership }) => {
-  const { isPremium, user } = useAuth();
+  const { isPremium, user, accountType, businessName, businessType } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'saved'>('chat');
   const [isExpanded, setIsExpanded] = useState(false);
   
+  const getInitialWelcomeMessage = (): string => {
+    if (accountType === 'business') {
+      const name = businessName ? ` for ${businessName}` : '';
+      return `Hi! I am your **AI Commercial & Business Financial Advisor**${name}. I analyze your financial health according to **Commercial Underwriting Standards & Business Policies** (such as DSCR >= 1.25x, OPEX cash runway, commercial revolving lines of credit, corporate credit building without personal guarantees, and tax strategies). How can I assist your business today?`;
+    }
+    return 'Hi! I am your **AI Financial Advisor**. I evaluate your finances using **Consumer FICO & Personal Wealth Standards** (including FICO 8/4/2 models, Qualified Mortgage DTI <43%, emergency reserve planning, and personal credit optimization). What would you like to explore?';
+  };
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome-msg',
       role: 'model',
-      text: 'Hi! I am your AI Financial Advisor. Ask me anything about your financial data, debt strategy, or investment scenarios.',
+      text: getInitialWelcomeMessage(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
+
+  // Update welcome message if account type changes
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev.length === 1 && prev[0].id === 'welcome-msg') {
+        return [{
+          id: 'welcome-msg',
+          role: 'model',
+          text: getInitialWelcomeMessage(),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }];
+      }
+      return prev;
+    });
+    chatRef.current = null;
+  }, [accountType, businessName, businessType]);
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -136,20 +160,51 @@ const FinancialChatbot: React.FC<FinancialChatbotProps> = ({ financialData, onOp
           return;
         }
         const ai = new GoogleGenAI({ apiKey });
-        chatRef.current = ai.chats.create({
-          model: 'gemini-3.1-pro-preview',
-          config: {
-            systemInstruction: `You are an expert financial advisor. You help the user understand their financial situation, run scenarios, and provide actionable advice.
-Here is the user's current financial data (JSON format):
+
+        let systemInstruction = '';
+        if (accountType === 'business') {
+          const entityDetails = businessName ? `for "${businessName}" (${businessType || 'LLC'})` : 'for the user\'s commercial enterprise';
+          systemInstruction = `You are a Senior Commercial Underwriting & Corporate Financial Advisor ${entityDetails}.
+You evaluate and advise according to Commercial Banking Standards, SBA Guidelines, and Corporate Financial Policies.
+
+Key Business Standards & Frameworks to apply:
+1. Debt Service Coverage Ratio (DSCR): Benchmark minimum 1.25x (Net Operating Income / Debt Service).
+2. Operating Runway & Working Capital: Recommend 3-6 months OPEX buffer in liquid treasury assets.
+3. Commercial Credit Lines & Revolving Utilization: Recommend revolving credit facilities under 25% utilization.
+4. Corporate Veil & Liability Mitigation: Separation of business entities, building corporate credit (D&B Paydex, Experian Commercial) to reduce personal guarantee exposure.
+5. Tax Planning: Section 179 depreciation for eligible business property/software, OPEX deduction strategies.
+
+User's Financial Data (JSON format):
 ${JSON.stringify(financialData)}
 
-Base your answers on this data when relevant. Be concise, professional, and helpful. Format your responses using Markdown.`,
+Base your advice strictly on these commercial standards and the user's data. Be authoritative, professional, and concise. Format with Markdown.`;
+        } else {
+          systemInstruction = `You are a Senior Wealth Management & Consumer Credit Advisor.
+You evaluate and advise according to Consumer Credit Underwriting Standards, FICO Guidelines, and Personal Wealth Frameworks.
+
+Key Personal Standards & Frameworks to apply:
+1. Consumer FICO Models: FICO 8/9, Mortgage FICO 4/2/5, and Auto FICO standards.
+2. Qualified Mortgage Standards: Benchmark maximum 43% Debt-to-Income (DTI) ratio.
+3. Revolving Credit Utilization: Target under 30% (ideally under 10%) on credit cards.
+4. Emergency Reserves: 3-6 months of household monthly living expenses in liquid high-yield savings.
+5. Wealth & Protection: Maximize retirement accounts (401k, Roth IRA, HSA), Term Life insurance coverage, and credit monitoring.
+
+User's Financial Data (JSON format):
+${JSON.stringify(financialData)}
+
+Base your advice strictly on these personal wealth standards and the user's data. Be supportive, analytical, and concise. Format with Markdown.`;
+        }
+
+        chatRef.current = ai.chats.create({
+          model: 'gemini-2.5-flash',
+          config: {
+            systemInstruction
           }
         });
       }
     };
     initChat();
-  }, [isOpen, isPremium, financialData]);
+  }, [isOpen, isPremium, financialData, accountType, businessName, businessType]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -390,8 +445,15 @@ Base your answers on this data when relevant. Be concise, professional, and help
               <div className="flex items-center gap-2">
                 <BotIcon className="w-5 h-5" />
                 <h3 className="font-bold text-base">AI Financial Advisor</h3>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  accountType === 'business'
+                    ? 'bg-indigo-900/60 text-indigo-100 border border-indigo-300/40'
+                    : 'bg-white/20 text-white'
+                }`}>
+                  {accountType === 'business' ? '🏢 Business' : '👤 Personal'}
+                </span>
                 {isPremium && (
-                  <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="bg-amber-400 text-gray-900 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                     PRO
                   </span>
                 )}
@@ -706,13 +768,60 @@ Base your answers on this data when relevant. Be concise, professional, and help
               </div>
 
               {/* Chat Input */}
-              <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+              <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                {/* Suggested Prompts based on Personal vs Business */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
+                  {accountType === 'business' ? (
+                    <>
+                      <button
+                        onClick={() => setInput("Analyze our Debt Service Coverage Ratio (DSCR) & commercial expansion capacity.")}
+                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 rounded-lg whitespace-nowrap font-medium transition-colors border border-indigo-200 dark:border-indigo-800"
+                      >
+                        📊 DSCR & Loan Capacity
+                      </button>
+                      <button
+                        onClick={() => setInput("What strategies can we use to build commercial credit without personal guarantees?")}
+                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 rounded-lg whitespace-nowrap font-medium transition-colors border border-indigo-200 dark:border-indigo-800"
+                      >
+                        🏢 Corporate Credit (Paydex)
+                      </button>
+                      <button
+                        onClick={() => setInput("Calculate our operating cash runway and working capital liquidity buffer.")}
+                        className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 rounded-lg whitespace-nowrap font-medium transition-colors border border-indigo-200 dark:border-indigo-800"
+                      >
+                        💵 OPEX Cash Runway
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setInput("How can I optimize my credit card utilization to boost my consumer FICO score?")}
+                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 rounded-lg whitespace-nowrap font-medium transition-colors border border-blue-200 dark:border-blue-800"
+                      >
+                        💳 Lower Credit Utilization
+                      </button>
+                      <button
+                        onClick={() => setInput("What is my household DTI ratio and Qualified Mortgage readiness?")}
+                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 rounded-lg whitespace-nowrap font-medium transition-colors border border-blue-200 dark:border-blue-800"
+                      >
+                        🏠 Mortgage DTI Check
+                      </button>
+                      <button
+                        onClick={() => setInput("Provide an avalanche vs snowball debt payoff roadmap.")}
+                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 rounded-lg whitespace-nowrap font-medium transition-colors border border-blue-200 dark:border-blue-800"
+                      >
+                        📉 Debt Payoff Roadmap
+                      </button>
+                    </>
+                  )}
+                </div>
+
                 <div className="flex items-end gap-2 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask about your finances, debt, savings..."
+                    placeholder={accountType === 'business' ? "Ask about DSCR, OPEX runway, commercial credit..." : "Ask about your finances, debt, savings..."}
                     className="flex-1 max-h-32 min-h-[40px] bg-transparent border-none focus:ring-0 resize-none px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-gray-100 outline-none"
                     rows={1}
                   />

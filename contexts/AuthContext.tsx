@@ -14,7 +14,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import type { AppUser } from '../types';
+import type { AppUser, AccountType } from '../types';
 
 interface AuthContextType {
   user: AppUser | null;
@@ -24,6 +24,9 @@ interface AuthContextType {
   isFrozen: boolean;
   savedTickers: string[];
   showStockBanner: boolean;
+  accountType: AccountType;
+  businessName: string;
+  businessType: string;
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
@@ -32,6 +35,7 @@ interface AuthContextType {
   deleteUserAccount: () => Promise<void>;
   updateSavedTickers: (tickers: string[]) => Promise<void>;
   updateShowStockBanner: (enabled: boolean) => Promise<void>;
+  updateAccountType: (type: AccountType, details?: { businessName?: string; businessType?: string }) => Promise<void>;
 }
 
 const SUPER_USER_EMAILS = [
@@ -50,6 +54,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isFrozen, setIsFrozen] = useState(false);
   const [savedTickers, setSavedTickers] = useState<string[]>(DEFAULT_TICKERS);
   const [showStockBanner, setShowStockBanner] = useState<boolean>(true);
+  const [accountType, setAccountType] = useState<AccountType>('personal');
+  const [businessName, setBusinessName] = useState<string>('');
+  const [businessType, setBusinessType] = useState<string>('LLC');
 
   const isSuperUser = user?.email ? SUPER_USER_EMAILS.includes(user.email) : false;
 
@@ -95,6 +102,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setShowStockBanner(localBannerSetting === 'true');
         }
 
+        const localAccountType = localStorage.getItem(`account_type_${firebaseUser.uid}`) as AccountType;
+        if (localAccountType === 'personal' || localAccountType === 'business') {
+          setAccountType(localAccountType);
+        }
+
+        const localBizName = localStorage.getItem(`biz_name_${firebaseUser.uid}`);
+        if (localBizName) setBusinessName(localBizName);
+
+        const localBizType = localStorage.getItem(`biz_type_${firebaseUser.uid}`);
+        if (localBizType) setBusinessType(localBizType);
+
         // 3. Check Firestore (Source of Truth)
         if (!isAdmin) {
             try {
@@ -129,6 +147,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       setShowStockBanner(data.showStockBanner);
                       localStorage.setItem(`banner_visible_${firebaseUser.uid}`, String(data.showStockBanner));
                     }
+
+                    if (data.accountType === 'personal' || data.accountType === 'business') {
+                      setAccountType(data.accountType);
+                      localStorage.setItem(`account_type_${firebaseUser.uid}`, data.accountType);
+                    }
+
+                    if (data.businessName) {
+                      setBusinessName(data.businessName);
+                      localStorage.setItem(`biz_name_${firebaseUser.uid}`, data.businessName);
+                    }
+
+                    if (data.businessType) {
+                      setBusinessType(data.businessType);
+                      localStorage.setItem(`biz_type_${firebaseUser.uid}`, data.businessType);
+                    }
                     
                     // Update last login
                     await setDoc(userDocRef, { 
@@ -144,6 +177,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       isPremium: false,
                       savedTickers: DEFAULT_TICKERS,
                       showStockBanner: true,
+                      accountType: 'personal',
                       createdAt: new Date().toISOString(),
                       lastLogin: new Date().toISOString()
                     });
@@ -157,13 +191,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
-                  if (userDocSnap.data()?.savedTickers) {
-                    const cleanTickers = userDocSnap.data()?.savedTickers.map((t: string) => t.trim().toUpperCase()).slice(0, 5);
+                  const data = userDocSnap.data();
+                  if (data?.savedTickers) {
+                    const cleanTickers = data.savedTickers.map((t: string) => t.trim().toUpperCase()).slice(0, 5);
                     setSavedTickers(cleanTickers);
                   }
-                  if (typeof userDocSnap.data()?.showStockBanner === 'boolean') {
-                    setShowStockBanner(userDocSnap.data()?.showStockBanner);
+                  if (typeof data?.showStockBanner === 'boolean') {
+                    setShowStockBanner(data.showStockBanner);
                   }
+                  if (data?.accountType === 'personal' || data?.accountType === 'business') {
+                    setAccountType(data.accountType);
+                  }
+                  if (data?.businessName) setBusinessName(data.businessName);
+                  if (data?.businessType) setBusinessType(data.businessType);
                 }
                 await setDoc(userDocRef, {
                     email: firebaseUser.email,
@@ -332,6 +372,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateAccountType = async (type: AccountType, details?: { businessName?: string; businessType?: string }) => {
+    setAccountType(type);
+    if (details?.businessName !== undefined) setBusinessName(details.businessName);
+    if (details?.businessType !== undefined) setBusinessType(details.businessType);
+
+    if (user?.uid) {
+      localStorage.setItem(`account_type_${user.uid}`, type);
+      if (details?.businessName !== undefined) localStorage.setItem(`biz_name_${user.uid}`, details.businessName);
+      if (details?.businessType !== undefined) localStorage.setItem(`biz_type_${user.uid}`, details.businessType);
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, {
+          accountType: type,
+          ...(details?.businessName !== undefined ? { businessName: details.businessName } : {}),
+          ...(details?.businessType !== undefined ? { businessType: details.businessType } : {})
+        }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save account type to Firestore:", err);
+      }
+    } else {
+      localStorage.setItem('account_type_guest', type);
+      if (details?.businessName !== undefined) localStorage.setItem('biz_name_guest', details.businessName);
+      if (details?.businessType !== undefined) localStorage.setItem('biz_type_guest', details.businessType);
+    }
+  };
+
   const value = { 
     user, 
     loading, 
@@ -340,6 +406,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isFrozen,
     savedTickers,
     showStockBanner,
+    accountType,
+    businessName,
+    businessType,
     loginWithGoogle, 
     loginAsGuest, 
     logout,
@@ -347,7 +416,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     cancelSubscription,
     deleteUserAccount,
     updateSavedTickers,
-    updateShowStockBanner
+    updateShowStockBanner,
+    updateAccountType
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

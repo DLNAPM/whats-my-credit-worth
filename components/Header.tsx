@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({
   onSave,
   onOpenProfile
 }) => {
-  const { user, isPremium, isSuperUser } = useAuth();
+  const { user, isPremium, isSuperUser, accountType, businessName } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
 
@@ -104,15 +104,26 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center gap-3 border-r pr-4 border-gray-200 dark:border-gray-700">
                     <button 
                       onClick={onOpenProfile}
-                      className="flex items-center gap-2 hover:opacity-80 transition-opacity p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-left focus:outline-none"
-                      title="User Profile & Banner Tickers Settings"
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-left focus:outline-none border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+                      title="User Profile, Account Type & Ticker Settings"
                     >
-                        <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-primary font-bold text-xs shadow-inner">
-                            {user.displayName?.charAt(0) || 'U'}
+                        <div className="w-8 h-8 rounded-full bg-brand-light dark:bg-gray-700 flex items-center justify-center text-brand-primary dark:text-blue-400 font-bold text-xs shadow-inner">
+                            {user.displayName?.charAt(0) || (accountType === 'business' ? 'B' : 'U')}
                         </div>
                         <div className="hidden sm:block">
-                          <span className="text-xs font-bold truncate max-w-[80px] text-gray-900 dark:text-gray-100 block">{user.displayName?.split(' ')[0] || 'User'}</span>
-                          <span className="text-[9px] font-semibold text-brand-primary dark:text-brand-light block">Profile & Tickers</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold truncate max-w-[80px] text-gray-900 dark:text-gray-100 block">
+                              {accountType === 'business' && businessName ? businessName.split(' ')[0] : (user.displayName?.split(' ')[0] || 'User')}
+                            </span>
+                            <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase ${
+                              accountType === 'business'
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                            }`}>
+                              {accountType === 'business' ? 'Biz' : 'Pers'}
+                            </span>
+                          </div>
+                          <span className="text-[9px] font-semibold text-brand-primary dark:text-brand-light block">Settings & Type</span>
                         </div>
                     </button>
                     <button onClick={onLogout} className="text-gray-500 hover:text-negative transition-colors p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30" title="Logout">

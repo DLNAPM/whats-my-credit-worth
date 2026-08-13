@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Button from './ui/Button';
 import { CloseIcon, CheckIcon, SparklesIcon, FeatureShieldIcon, DeleteIcon } from './ui/Icons';
+import type { AccountType } from '../types';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -11,10 +12,28 @@ interface UserProfileModalProps {
 
 const POPULAR_TICKERS = ['AAPL', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'AMD', 'SPY', 'QQQ', 'BTC', 'ETH'];
 
+const BUSINESS_ENTITY_TYPES = ['LLC', 'S-Corporation', 'C-Corporation', 'Sole Proprietorship', 'Partnership', 'Non-Profit'];
+
 const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, onOpenMembership }) => {
-  const { user, isPremium, isSuperUser, savedTickers, updateSavedTickers, showStockBanner, updateShowStockBanner } = useAuth();
+  const { 
+    user, 
+    isPremium, 
+    isSuperUser, 
+    savedTickers, 
+    updateSavedTickers, 
+    showStockBanner, 
+    updateShowStockBanner,
+    accountType: currentAccountType,
+    businessName: currentBusinessName,
+    businessType: currentBusinessType,
+    updateAccountType
+  } = useAuth();
+
   const [tickers, setTickers] = useState<string[]>([]);
   const [bannerVisible, setBannerVisible] = useState<boolean>(true);
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountType>('personal');
+  const [bizName, setBizName] = useState<string>('');
+  const [bizType, setBizType] = useState<string>('LLC');
   const [inputTicker, setInputTicker] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -27,7 +46,16 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
     if (typeof showStockBanner === 'boolean') {
       setBannerVisible(showStockBanner);
     }
-  }, [savedTickers, showStockBanner, isOpen]);
+    if (currentAccountType) {
+      setSelectedAccountType(currentAccountType);
+    }
+    if (currentBusinessName !== undefined) {
+      setBizName(currentBusinessName);
+    }
+    if (currentBusinessType) {
+      setBizType(currentBusinessType);
+    }
+  }, [savedTickers, showStockBanner, currentAccountType, currentBusinessName, currentBusinessType, isOpen]);
 
   if (!isOpen) return null;
 
@@ -65,7 +93,11 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
     try {
       await updateSavedTickers(tickers);
       await updateShowStockBanner(bannerVisible);
-      setSuccessMsg("Profile & banner preferences saved successfully!");
+      await updateAccountType(selectedAccountType, {
+        businessName: bizName.trim(),
+        businessType: bizType
+      });
+      setSuccessMsg("Profile, account type & banner preferences saved successfully!");
       setTimeout(() => {
         setSuccessMsg(null);
       }, 3000);
@@ -84,11 +116,16 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
         <div className="bg-gradient-to-r from-brand-primary to-brand-secondary p-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg text-white border border-white/30">
-              {user?.displayName?.charAt(0) || 'U'}
+              {user?.displayName?.charAt(0) || (selectedAccountType === 'business' ? 'B' : 'P')}
             </div>
             <div>
               <h3 className="text-lg font-bold">User Profile & Settings</h3>
-              <p className="text-xs text-white/80">{user?.email || 'Guest User'}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-white/80">{user?.email || 'Guest User'}</p>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30">
+                  {selectedAccountType === 'business' ? '🏢 Business' : '👤 Personal'}
+                </span>
+              </div>
             </div>
           </div>
           <button
@@ -124,6 +161,116 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
               >
                 <SparklesIcon className="w-3.5 h-3.5 mr-1 inline" /> Upgrade
               </Button>
+            )}
+          </div>
+
+          {/* Account Type Classification (Personal vs Business) */}
+          <div className="bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/40 dark:from-gray-800/80 dark:to-gray-800/40 p-5 rounded-2xl border border-indigo-100 dark:border-gray-700 space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-brand-primary text-white text-xs">
+                    {selectedAccountType === 'business' ? '🏢' : '👤'}
+                  </span>
+                  Account Type Classification
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Distinguish your account type to configure the <strong>AI Advisor</strong> and <strong>AI Deep Dive Insights</strong> with Personal vs. Business Underwriting Standards and Policies.
+                </p>
+              </div>
+            </div>
+
+            {/* Account Type Selection Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Personal Account Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedAccountType('personal')}
+                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                  selectedAccountType === 'personal'
+                    ? 'bg-white dark:bg-gray-800 border-brand-primary dark:border-blue-500 shadow-md ring-2 ring-brand-primary/20 dark:ring-blue-500/30'
+                    : 'bg-white/60 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 opacity-80 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👤</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">Personal Account</span>
+                  </div>
+                  {selectedAccountType === 'personal' && (
+                    <span className="w-5 h-5 rounded-full bg-brand-primary text-white flex items-center justify-center text-xs">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Tailored for household budgeting, personal FICO credit models (8/4/2), personal DTI ratios &lt;43%, family emergency funds & estate protection.
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 text-[10px] font-bold text-brand-primary dark:text-blue-400">
+                  Consumer Credit & Wealth Standards
+                </div>
+              </button>
+
+              {/* Business Account Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedAccountType('business')}
+                className={`p-3.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                  selectedAccountType === 'business'
+                    ? 'bg-white dark:bg-gray-800 border-indigo-600 dark:border-indigo-400 shadow-md ring-2 ring-indigo-500/20 dark:ring-indigo-400/30'
+                    : 'bg-white/60 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 opacity-80 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🏢</span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-white">Business Account</span>
+                  </div>
+                  {selectedAccountType === 'business' && (
+                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Tailored for commercial operations, Debt Service Coverage (DSCR &gt;1.25x), business lines of credit, OPEX runway, and corporate credit profiles.
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                  Commercial & Underwriting Policies
+                </div>
+              </button>
+            </div>
+
+            {/* Optional Business Details (shown when Business Account is selected) */}
+            {selectedAccountType === 'business' && (
+              <div className="pt-2 border-t border-indigo-100 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-in">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    Business / Entity Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Apex Enterprises LLC"
+                    value={bizName}
+                    onChange={e => setBizName(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    Entity Structure
+                  </label>
+                  <select
+                    value={bizType}
+                    onChange={e => setBizType(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-medium"
+                  >
+                    {BUSINESS_ENTITY_TYPES.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             )}
           </div>
 
