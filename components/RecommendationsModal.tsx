@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
-import jsPDF from 'jspdf';
 import type { MonthlyData, RecommendationItem } from '../types';
 import { getLocalRecommendations } from '../utils/recommendationEngine';
 import Button from './ui/Button';
 import { SparklesIcon, AlertTriangleIcon, CheckIcon, InfoIcon, DownloadIcon, GoldAsterisk } from './ui/Icons';
 import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateNetWorth, calculateDTI, calculateTotalLimit, calculateUtilization } from '../utils/helpers';
+import { exportRecommendationsReportToPDF } from '../utils/pdfGenerator';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipModal from './MembershipModal';
 
@@ -24,7 +24,7 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   const [error, setError] = useState<string | null>(null);
   const [advisorMode, setAdvisorMode] = useState<'local' | 'ai'>('local');
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
-  const { isPremium, accountType, businessName, businessType } = useAuth();
+  const { user, isPremium, accountType, businessName, businessType } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -45,15 +45,22 @@ const RecommendationsModal: React.FC<RecommendationsModalProps> = ({ isOpen, onC
   };
 
   const generatePdf = async () => {
+    if (!recommendations || recommendations.length === 0) return;
     setIsExporting(true);
     try {
-      const doc = new jsPDF();
-      doc.text(`WMCW Advisor Report (${accountType === 'business' ? 'Business Profile' : 'Personal Profile'}) - ${formatMonthYear(monthYear)}`, 10, 10);
-      if (accountType === 'business' && businessName) {
-        doc.text(`Entity: ${businessName} (${businessType || 'LLC'})`, 10, 16);
-      }
-      recommendations?.forEach((r, i) => doc.text(`${r.title}: ${r.description}`, 10, 26 + (i * 12)));
-      doc.save(`WMCW-Advisor-${accountType || 'personal'}-${monthYear}.pdf`);
+      await exportRecommendationsReportToPDF({
+        recommendations,
+        data,
+        monthYear,
+        accountType: accountType || 'personal',
+        businessName: businessName || '',
+        businessType: businessType || 'LLC',
+        advisorMode,
+        userEmail: user?.email || undefined,
+        displayName: user?.displayName || undefined
+      });
+    } catch (err) {
+      console.error("PDF export failed:", err);
     } finally {
       setIsExporting(false);
     }

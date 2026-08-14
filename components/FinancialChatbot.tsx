@@ -361,6 +361,8 @@ Base your advice strictly on these personal wealth standards and the user's data
       responseText: responseText,
       displayName: user?.displayName || undefined,
       userEmail: user?.email || undefined,
+      accountType: accountType || 'personal',
+      businessName: businessName || '',
       timestamp: new Date().toLocaleString()
     });
   };
@@ -377,6 +379,8 @@ Base your advice strictly on these personal wealth standards and the user's data
         responseText: responseText,
         displayName: user?.displayName || undefined,
         userEmail: user?.email || undefined,
+        accountType: accountType || 'personal',
+        businessName: businessName || '',
         timestamp: new Date().toLocaleString()
       });
       showToast("PDF report exported successfully!");
