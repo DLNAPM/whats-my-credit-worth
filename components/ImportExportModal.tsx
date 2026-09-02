@@ -4,6 +4,7 @@ import Button from './ui/Button';
 import { DownloadIcon, UploadIcon, InfoIcon, FeatureShieldIcon, DeleteIcon, AlertTriangleIcon, SparklesIcon } from './ui/Icons';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useAuth } from '../contexts/AuthContext';
+import { buildNextStepsSyncPayload, copyNextStepsPayloadToClipboard, downloadNextStepsPayloadFile } from '../utils/nextStepsSync';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -12,13 +13,56 @@ interface ImportExportModalProps {
   onDownload: () => void;
   onShowHelp: () => void;
   onViewPrivacy?: () => void;
+  onOpenNextStepsSync?: () => void;
   hasData: boolean;
+  currentMonthData?: any;
+  currentMonthYear?: string;
 }
 
-const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, onUpload, onDownload, onShowHelp, onViewPrivacy, hasData }) => {
+const ImportExportModal: React.FC<ImportExportModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onUpload, 
+  onDownload, 
+  onShowHelp, 
+  onViewPrivacy, 
+  onOpenNextStepsSync,
+  hasData,
+  currentMonthData,
+  currentMonthYear
+}) => {
   const { clearCloudData } = useFinancialData();
-  const { deleteUserAccount, logout, user, isPremium, cancelSubscription, isSuperUser } = useAuth();
+  const { deleteUserAccount, logout, user, isPremium, cancelSubscription, isSuperUser, accountType, businessName, businessType } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [copiedSync, setCopiedSync] = useState(false);
+
+  const handleQuickCopyNextSteps = async () => {
+    if (!currentMonthData) return;
+    const payload = buildNextStepsSyncPayload(currentMonthData, {
+      accountType: accountType || 'personal',
+      businessName: businessName || '',
+      businessType: businessType || 'LLC',
+      monthYear: currentMonthYear
+    });
+    const ok = await copyNextStepsPayloadToClipboard(payload);
+    if (ok) {
+      setCopiedSync(true);
+      setTimeout(() => setCopiedSync(false), 2500);
+    } else {
+      alert("Failed to copy payload to clipboard.");
+    }
+  };
+
+  const handleQuickDownloadNextSteps = () => {
+    if (!currentMonthData) return;
+    const payload = buildNextStepsSyncPayload(currentMonthData, {
+      accountType: accountType || 'personal',
+      businessName: businessName || '',
+      businessType: businessType || 'LLC',
+      monthYear: currentMonthYear
+    });
+    downloadNextStepsPayloadFile(payload, `NextSteps-Sync-${accountType || 'personal'}-${currentMonthYear || 'current'}`);
+  };
 
   /**
    * DATA DELETION ENDPOINT DOCUMENTATION:
@@ -116,6 +160,75 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose, 
             <p className="text-sm text-blue-700 dark:text-blue-300">
               Exporting your data creates a local backup. Use this to transfer your financial history between devices or if cloud sync is unavailable.
             </p>
+          </div>
+
+          {/* 1-Click Sync to Next Steps Section */}
+          <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/70 to-blue-50/80 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-blue-950/40 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/50 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+                    Next Steps 1-Click Sync
+                    <span className="px-1.5 py-0.2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 text-[9px] font-extrabold uppercase rounded">v2.0</span>
+                  </h3>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Instant debt transfer & diff matching for Next Steps
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <button
+                onClick={handleQuickCopyNextSteps}
+                className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 ${
+                  copiedSync
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+                }`}
+              >
+                {copiedSync ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Payload Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    Copy Sync Payload
+                  </>
+                )}
+              </button>
+
+              {onOpenNextStepsSync && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenNextStepsSync();
+                  }}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                >
+                  Review Diff
+                </button>
+              )}
+
+              <button
+                onClick={handleQuickDownloadNextSteps}
+                className="px-2.5 py-2 rounded-xl text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"
+                title="Download JSON File"
+              >
+                <DownloadIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Core Actions */}

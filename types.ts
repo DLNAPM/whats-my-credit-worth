@@ -23,6 +23,13 @@ export interface CreditCard {
   name: string;
   balance: number;
   limit: number;
+  accountNumber?: string;
+  last4?: string;
+  lenderName?: string;
+  apr?: string | number;
+  isBusiness?: boolean;
+  url?: string;
+  notes?: string;
 }
 
 export interface Loan {
@@ -30,6 +37,34 @@ export interface Loan {
   name: string;
   balance: number;
   limit: number;
+  accountNumber?: string;
+  last4?: string;
+  lenderName?: string;
+  apr?: string | number;
+  isBusiness?: boolean;
+  category?: 'loan' | 'mortgage' | 'credit-card' | 'llc' | 'other';
+  url?: string;
+  notes?: string;
+}
+
+export interface NextStepsAccount {
+  name: string;
+  lenderName: string;
+  category: 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'other';
+  currentBalance: string;
+  creditLimit: string;
+  accountNumber: string;
+  apr: string;
+  isBusiness: boolean;
+  url: string;
+  notes: string;
+}
+
+export interface NextStepsSyncPayload {
+  app: 'WhatsMyCreditWorth';
+  version: '2.0';
+  exportedAt: string;
+  accounts: NextStepsAccount[];
 }
 
 export interface Asset {

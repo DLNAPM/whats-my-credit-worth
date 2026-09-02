@@ -16,6 +16,7 @@ interface DashboardProps {
   data?: MonthlyData;
   allData: FinancialData;
   monthYear: string;
+  onNextStepsSync?: () => void;
 }
 
 const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
@@ -24,7 +25,7 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
   return <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5"><div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${utilization}%` }}></div></div>;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
+const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextStepsSync }) => {
   const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
   const [liabilityView, setLiabilityView] = useState<'cards' | 'loans'>('cards');
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
@@ -116,9 +117,23 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear }) => {
                             </button>
                         </div>
                         
-                        <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-primary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all animate-pulse">
-                            <SimulationIcon /> {liabilityView === 'cards' ? 'RUN SIMULATION' : 'PREDICT SCORE'} <GoldAsterisk />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {onNextStepsSync && (
+                            <button 
+                              onClick={onNextStepsSync}
+                              className="text-[10px] font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all"
+                              title="Sync Cards & Loans to Next Steps App"
+                            >
+                              <svg className="w-3 h-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                              </svg>
+                              <span>Next Steps Sync</span>
+                            </button>
+                          )}
+                          <button onClick={handleSimulationClick} className="text-[10px] font-bold text-brand-primary bg-brand-light/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all animate-pulse">
+                              <SimulationIcon /> {liabilityView === 'cards' ? 'RUN SIMULATION' : 'PREDICT SCORE'} <GoldAsterisk />
+                          </button>
+                        </div>
                     </div>
                 } 
                 footerText={`Total Utilization: ${liabilityView === 'cards' ? totalCardUtilization.toFixed(2) : totalLoanUtilization.toFixed(2)}%`}

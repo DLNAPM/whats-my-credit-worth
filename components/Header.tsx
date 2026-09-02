@@ -17,6 +17,7 @@ interface HeaderProps {
   onShare: () => void;
   onImportExport: () => void;
   onRecommendations: () => void;
+  onNextStepsSync?: () => void;
   view: View;
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
@@ -33,6 +34,7 @@ const Header: React.FC<HeaderProps> = ({
   onShare,
   onImportExport,
   onRecommendations,
+  onNextStepsSync,
   view,
   setView,
   onLogout,
@@ -132,6 +134,18 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
             )}
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit</Button>
+            {onNextStepsSync && (
+              <button
+                onClick={onNextStepsSync}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow hover:shadow-md hover:opacity-95 transition-all"
+                title="1-Click Sync to Next Steps App"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span>Sync Next Steps</span>
+              </button>
+            )}
             <Button onClick={() => handlePremiumAction(onShare)} variant="secondary" size="small"><ShareIcon /> <GoldAsterisk /></Button>
             <Button onClick={onImportExport} variant="secondary" size="small"><ImportIcon /></Button>
         </div>

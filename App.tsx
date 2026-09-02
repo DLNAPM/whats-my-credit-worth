@@ -27,6 +27,7 @@ import MembershipModal from './components/MembershipModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import StockTickerBanner from './components/StockTickerBanner';
 import UserProfileModal from './components/UserProfileModal';
+import NextStepsSyncModal from './components/NextStepsSyncModal';
 
 /**
  * Async Snapshot Loader
@@ -121,7 +122,7 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
-  const { logout, upgradeToPremium, showStockBanner } = useAuth();
+  const { logout, upgradeToPremium, showStockBanner, accountType, businessName, businessType } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -129,6 +130,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
+  const [isNextStepsSyncOpen, setIsNextStepsSyncOpen] = useState(false);
   const [isDashboardHelpOpen, setIsDashboardHelpOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isChatbotMembershipOpen, setIsChatbotMembershipOpen] = useState(false);
@@ -194,6 +196,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           onShare={() => setIsShareModalOpen(true)}
           onImportExport={() => setIsImportExportModalOpen(true)}
           onRecommendations={() => setIsRecommendationsOpen(true)}
+          onNextStepsSync={() => setIsNextStepsSyncOpen(true)}
           view={view}
           setView={setView}
           onLogout={handleLogout}
@@ -209,6 +212,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
               data={currentMonthData} 
               allData={financialData}
               monthYear={currentMonthYear}
+              onNextStepsSync={() => setIsNextStepsSyncOpen(true)}
             />
           )}
           {view === 'reports' && (
@@ -261,7 +265,20 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
               setIsImportExportModalOpen(false);
               setView('privacy');
             }}
+            onOpenNextStepsSync={() => setIsNextStepsSyncOpen(true)}
             hasData={hasData()}
+            currentMonthData={currentMonthData}
+            currentMonthYear={currentMonthYear}
+        />
+
+        <NextStepsSyncModal
+          isOpen={isNextStepsSyncOpen}
+          onClose={() => setIsNextStepsSyncOpen(false)}
+          data={currentMonthData}
+          monthYear={currentMonthYear}
+          accountType={accountType}
+          businessName={businessName}
+          businessType={businessType}
         />
 
         <RecommendationsModal

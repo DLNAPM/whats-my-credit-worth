@@ -122,13 +122,23 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
       })
   }
 
-  const handleListChange = (index: number, e: React.ChangeEvent<HTMLInputElement>, list: ItemType) => {
-    const { name, value } = e.target;
+  const handleListChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, list: ItemType) => {
+    const { name, value, type } = e.target as any;
     setData(prev => {
         const items = [...prev[list]];
+        let formattedValue: any = value;
+
+        if (type === 'checkbox') {
+            formattedValue = (e.target as HTMLInputElement).checked;
+        } else if (['name', 'accountNumber', 'last4', 'lenderName', 'apr', 'url', 'notes', 'category'].includes(name)) {
+            formattedValue = value;
+        } else {
+            formattedValue = Number(value) || 0;
+        }
+
         items[index] = { 
             ...items[index], 
-            [name]: name === 'name' ? value : Number(value) || 0 
+            [name]: formattedValue
         };
         return { ...prev, [list]: items as any };
     });
@@ -161,6 +171,229 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
         setIsSaving(false);
     }
   };
+
+  const renderCreditCardEditor = () => (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 gap-2">
+        <div>
+          <h3 className="text-lg font-semibold">Credit Cards</h3>
+          <p className="text-xs text-gray-500">Includes Last 4 digits & APR for 1-Click Sync to Next Steps</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label htmlFor="credit-card-fico-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Credit Card FICO 8 Score:
+          </label>
+          <input 
+            id="credit-card-fico-input"
+            type="number" 
+            name="creditCardFico8" 
+            value={data?.creditScores?.creditCardFico8 || 0} 
+            onChange={e => handleSimpleChange(e, 'creditScores')} 
+            className="w-24 px-3 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
+          />
+        </div>
+      </div>
+
+      {data.creditCards.map((card, index) => (
+        <div key={card.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/60 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div className="sm:col-span-4">
+              <InputField 
+                label="Card Name"
+                name="name"
+                type="text"
+                value={card.name}
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Balance ($)"
+                name="balance"
+                type="number"
+                value={card.balance}
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Limit ($)"
+                name="limit"
+                type="number"
+                value={card.limit}
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Last 4 #"
+                name="accountNumber"
+                type="text"
+                value={card.accountNumber || card.last4 || ''}
+                placeholder="e.g. 4819"
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <InputField 
+                label="APR %"
+                name="apr"
+                type="text"
+                value={card.apr || ''}
+                placeholder="21.49"
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+              />
+            </div>
+            <div className="sm:col-span-1 flex justify-end pb-1">
+              <Button onClick={() => handleRemoveItem(index, 'creditCards')} variant="danger" size="small"><DeleteIcon /></Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-gray-200/60 dark:border-gray-700/40 text-xs text-gray-500">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input 
+                type="checkbox"
+                name="isBusiness"
+                checked={!!card.isBusiness}
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+                className="rounded text-brand-primary focus:ring-brand-primary"
+              />
+              <span>Business / Commercial Card (syncs as LLC in Next Steps)</span>
+            </label>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-400">Lender:</span>
+              <input
+                type="text"
+                name="lenderName"
+                value={card.lenderName || ''}
+                placeholder="Auto-inferred from name"
+                onChange={(e) => handleListChange(index, e, 'creditCards')}
+                className="w-36 px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <Button onClick={() => {
+        const newItem: CreditCard = { 
+          id: crypto.randomUUID(), 
+          name: 'New Credit Card', 
+          balance: 0, 
+          limit: 1000,
+          accountNumber: '',
+          apr: '19.99',
+          isBusiness: false
+        };
+        handleAddItem<CreditCard>('creditCards', newItem);
+      }} size="small"><AddIcon /> Add Credit Card</Button>
+    </div>
+  );
+
+  const renderLoanEditor = () => (
+    <div className="space-y-4">
+      <div className="border-b pb-2">
+        <h3 className="text-lg font-semibold">Mortgages and Loans</h3>
+        <p className="text-xs text-gray-500">Fixed & installment accounts with last 4 digits matching</p>
+      </div>
+
+      {data.loans.map((loan, index) => (
+        <div key={loan.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/60 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div className="sm:col-span-4">
+              <InputField 
+                label="Loan / Mortgage Name"
+                name="name"
+                type="text"
+                value={loan.name}
+                onChange={(e) => handleListChange(index, e, 'loans')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Balance ($)"
+                name="balance"
+                type="number"
+                value={loan.balance}
+                onChange={(e) => handleListChange(index, e, 'loans')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Original / Limit ($)"
+                name="limit"
+                type="number"
+                value={loan.limit}
+                onChange={(e) => handleListChange(index, e, 'loans')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Last 4 #"
+                name="accountNumber"
+                type="text"
+                value={loan.accountNumber || loan.last4 || ''}
+                placeholder="e.g. 1024"
+                onChange={(e) => handleListChange(index, e, 'loans')}
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <InputField 
+                label="Rate %"
+                name="apr"
+                type="text"
+                value={loan.apr || ''}
+                placeholder="6.75"
+                onChange={(e) => handleListChange(index, e, 'loans')}
+              />
+            </div>
+            <div className="sm:col-span-1 flex justify-end pb-1">
+              <Button onClick={() => handleRemoveItem(index, 'loans')} variant="danger" size="small"><DeleteIcon /></Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-gray-200/60 dark:border-gray-700/40 text-xs text-gray-500">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input 
+                type="checkbox"
+                name="isBusiness"
+                checked={!!loan.isBusiness}
+                onChange={(e) => handleListChange(index, e, 'loans')}
+                className="rounded text-brand-primary focus:ring-brand-primary"
+              />
+              <span>Commercial / Business Loan</span>
+            </label>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-400">Lender:</span>
+              <input
+                type="text"
+                name="lenderName"
+                value={loan.lenderName || ''}
+                placeholder="Auto-inferred"
+                onChange={(e) => handleListChange(index, e, 'loans')}
+                className="w-36 px-2 py-0.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <Button onClick={() => {
+        const newItem: Loan = { 
+          id: crypto.randomUUID(), 
+          name: 'New Loan / Mortgage', 
+          balance: 0, 
+          limit: 10000,
+          accountNumber: '',
+          apr: '6.5',
+          isBusiness: false
+        };
+        handleAddItem<Loan>('loans', newItem);
+      }} size="small"><AddIcon /> Add Loan / Mortgage</Button>
+    </div>
+  );
 
   const renderListEditor = <T extends {id: string, name: string}>(
     title: string, 
@@ -310,26 +543,8 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                  <Button onClick={handleAddJob} size="small"><AddIcon /> Add Income Source</Button>
             </div>
 
-            {renderListEditor<CreditCard>(
-                'Credit Cards', 
-                'creditCards', 
-                data.creditCards, 
-                ['name', 'balance', 'limit'],
-                <div className="flex items-center gap-2">
-                    <label htmlFor="credit-card-fico-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Credit Card FICO 8 Score:
-                    </label>
-                    <input 
-                        id="credit-card-fico-input"
-                        type="number" 
-                        name="creditCardFico8" 
-                        value={data?.creditScores?.creditCardFico8 || 0} 
-                        onChange={e => handleSimpleChange(e, 'creditScores')} 
-                        className="w-24 px-3 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
-                    />
-                </div>
-            )}
-            {renderListEditor<Loan>('Mortgages and Loans', 'loans', data.loans, ['name', 'balance', 'limit'])}
+            {renderCreditCardEditor()}
+            {renderLoanEditor()}
             {renderListEditor<Asset>('Assets', 'assets', data.assets, ['name', 'value'])}
             {renderListEditor<NamedAmount>('Monthly Bills', 'monthlyBills', data.monthlyBills, ['name', 'amount'])}
         </div>
