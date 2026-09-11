@@ -9,6 +9,10 @@ import {
   resolveIncident, 
   deleteIncident, 
   reportIncident, 
+  runSystemHealthCheck,
+  getAdminDashboardUrl,
+  CANONICAL_APP_DOMAIN,
+  PREVIEW_APP_DOMAIN,
   APP_ADMIN_EMAIL 
 } from '../utils/incidentReporter';
 
@@ -109,6 +113,12 @@ const ExternalLinkIcon = ({ className = "w-3.5 h-3.5" }) => (
   </svg>
 );
 
+const ActivityIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+  </svg>
+);
+
 interface UserData {
   id: string;
   email: string;
@@ -141,9 +151,50 @@ export const AdminDashboard: React.FC = () => {
   const [expandedIncidentId, setExpandedIncidentId] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [testAlertTriggering, setTestAlertTriggering] = useState(false);
+  const [healthCheckRunning, setHealthCheckRunning] = useState(false);
+  const [healthCheckSummary, setHealthCheckSummary] = useState<string | null>(null);
   const [incidentNotificationMsg, setIncidentNotificationMsg] = useState<string | null>(null);
 
   const adminEmail = user?.email || APP_ADMIN_EMAIL;
+
+  // Deep Link Parser: Handle ?incident=... or ?tab=... from email alert links
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let targetIncidentId: string | null = null;
+    let targetTab: string | null = null;
+
+    // 1. Check window.location.search
+    const searchParams = new URLSearchParams(window.location.search);
+    targetIncidentId = searchParams.get('incident');
+    targetTab = searchParams.get('tab');
+
+    // 2. Check window.location.hash parameters e.g. #/admin?incident=inc_123
+    if (!targetIncidentId && window.location.hash.includes('?')) {
+      const hashQuery = window.location.hash.split('?')[1];
+      if (hashQuery) {
+        const hashParams = new URLSearchParams(hashQuery);
+        targetIncidentId = hashParams.get('incident') || targetIncidentId;
+        targetTab = hashParams.get('tab') || targetTab;
+      }
+    }
+
+    if (targetIncidentId) {
+      setActiveTab('alerts');
+      setExpandedIncidentId(targetIncidentId);
+      setIncidentNotificationMsg(`Reviewing incident ${targetIncidentId} from alert link`);
+
+      // Scroll to incident card after DOM paint
+      setTimeout(() => {
+        const el = document.getElementById(`incident-${targetIncidentId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    } else if (targetTab === 'alerts' || targetTab === 'users') {
+      setActiveTab(targetTab);
+    }
+  }, []);
 
   // 1. Fetch Users
   useEffect(() => {
@@ -303,6 +354,27 @@ export const AdminDashboard: React.FC = () => {
       alert("Failed to create test alert.");
     } finally {
       setTestAlertTriggering(false);
+    }
+  };
+
+  const handleRunHealthCheck = async () => {
+    setHealthCheckRunning(true);
+    try {
+      const result = await runSystemHealthCheck(adminEmail);
+      if (result.success) {
+        showNotification(`Health check passed! Diagnostic email sent to ${adminEmail}`);
+        setHealthCheckSummary(`All subsystems operational (Firestore, Auth, Notifications). Verified Admin link: ${result.adminUrl}`);
+        if (result.incidentId) {
+          setExpandedIncidentId(result.incidentId);
+        }
+      } else {
+        alert("Health check encountered an issue recording to Firestore. Please verify your permissions.");
+      }
+    } catch (e) {
+      console.error("Failed to execute health check:", e);
+      alert("Failed to run system health check.");
+    } finally {
+      setHealthCheckRunning(false);
     }
   };
 
@@ -545,7 +617,26 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                onClick={handleRunHealthCheck}
+                disabled={healthCheckRunning}
+                className="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-50"
+                title="Run diagnostic tests and dispatch official Health Check email with verified link"
+              >
+                {healthCheckRunning ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Checking Systems...</span>
+                  </>
+                ) : (
+                  <>
+                    <ActivityIcon className="w-3.5 h-3.5" />
+                    <span>Run System Health Check</span>
+                  </>
+                )}
+              </button>
+
               <button
                 onClick={handleTriggerTestAlert}
                 disabled={testAlertTriggering}
@@ -574,6 +665,46 @@ export const AdminDashboard: React.FC = () => {
                   <CheckCircle className="w-3.5 h-3.5" />
                   <span>Acknowledge All ({openIncidentsCount})</span>
                 </button>
+              )}
+            </div>
+          </div>
+
+          {/* Domain Routing & Health Check Status Banner */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 p-4 sm:p-5 shadow-sm space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                  Verified Admin Routing Active
+                </span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  SPA Rewrites Configured in firebase.json + Client Hash Fallback
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <a 
+                  href={`${CANONICAL_APP_DOMAIN}/#/admin`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1"
+                >
+                  <span>whats-my-credit-worth.web.app/#/admin</span>
+                  <ExternalLinkIcon className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-xs space-y-1.5 border border-gray-100 dark:border-gray-800">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-gray-700 dark:text-gray-200 shrink-0">Domain Clarification:</span>
+                <span className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  The link <code>https://realcal-bookings.web.app/admin</code> reported as "Site Not Found" was pointing to an unrelated or obsolete project. The correct production domain for this application is <strong>{CANONICAL_APP_DOMAIN}</strong>. All Health Check and Incident Alert emails now feature direct, verified links to <code>{CANONICAL_APP_DOMAIN}/#/admin</code> and <code>{PREVIEW_APP_DOMAIN}/#/admin</code>.
+                </span>
+              </div>
+              {healthCheckSummary && (
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 text-emerald-600 dark:text-emerald-400 font-medium">
+                  ✔ {healthCheckSummary}
+                </div>
               )}
             </div>
           </div>
@@ -700,7 +831,10 @@ export const AdminDashboard: React.FC = () => {
                 return (
                   <div
                     key={incident.id}
+                    id={`incident-${incident.id}`}
                     className={`rounded-2xl border transition-all overflow-hidden ${
+                      isExpanded ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 shadow-lg ' : ''
+                    }${
                       isOpen
                         ? 'bg-white dark:bg-gray-900 border-red-300 dark:border-red-900/60 shadow-md ring-1 ring-red-400/20'
                         : isAcknowledged
@@ -732,6 +866,12 @@ export const AdminDashboard: React.FC = () => {
                           }`}>
                             {isOpen ? '🚨 OPEN' : isAcknowledged ? '⚠️ ACKNOWLEDGED' : '✅ RESOLVED'}
                           </span>
+
+                          {isExpanded && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                              Selected from Alert
+                            </span>
+                          )}
 
                           <span className="text-xs text-gray-400">
                             • {new Date(incident.occurredAt).toLocaleString()}

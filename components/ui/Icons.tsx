@@ -145,3 +145,11 @@ export const BotIcon = ({ className }: IconProps = {}) => (
 export const CloseIcon = ({ className }: IconProps = {}) => (
   <svg {...iconProps} className={className || iconProps.className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 );
+
+export const ShieldAlertIcon = ({ className }: IconProps = {}) => (
+  <svg {...iconProps} className={className || iconProps.className}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+    <line x1="12" y1="8" x2="12" y2="12"></line>
+    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+  </svg>
+);

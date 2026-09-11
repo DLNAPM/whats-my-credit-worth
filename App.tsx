@@ -28,6 +28,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import StockTickerBanner from './components/StockTickerBanner';
 import UserProfileModal from './components/UserProfileModal';
 import NextStepsSyncModal from './components/NextStepsSyncModal';
+import { ShieldAlertIcon } from './components/ui/Icons';
 
 /**
  * Async Snapshot Loader
@@ -122,7 +123,7 @@ const SnapshotLoader: React.FC<{ snapshotId: string }> = ({ snapshotId }) => {
 
 const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, setView }) => {
   const { financialData, getMonthData, importData, exportData, hasData, exportTemplateData, saveData, saveStatus, refreshCounter } = useFinancialData();
-  const { logout, upgradeToPremium, showStockBanner, accountType, businessName, businessType } = useAuth();
+  const { user, isSuperUser, logout, upgradeToPremium, showStockBanner, accountType, businessName, businessType } = useAuth();
   const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear());
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -222,7 +223,34 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
             />
           )}
           {view === 'admin' && (
-            <AdminDashboard />
+            isSuperUser ? (
+              <AdminDashboard />
+            ) : (
+              <div className="max-w-md mx-auto my-16 p-8 bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-red-200 dark:border-red-900/50 text-center">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <ShieldAlertIcon className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Admin Authorization Required</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                  You are signed in as <strong>{user?.email || 'Guest'}</strong>, which does not have administrator privileges.
+                  Please sign in with an authorized administrator account to review system alarms and acknowledge alerts.
+                </p>
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => setView('dashboard')}
+                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all shadow-sm"
+                  >
+                    Return to Financial Dashboard
+                  </button>
+                  <button
+                    onClick={() => logout()}
+                    className="w-full py-2.5 px-4 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl text-sm transition-all"
+                  >
+                    Switch to Administrator Account
+                  </button>
+                </div>
+              </div>
+            )
           )}
         </main>
 
@@ -340,8 +368,71 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
 };
 
 
+// Robust helper to check if the incoming URL targets the Admin Dashboard
+const checkIsAdminRoute = () => {
+  if (typeof window === 'undefined') return false;
+  const path = (window.location.pathname || '').toLowerCase();
+  const hash = (window.location.hash || '').toLowerCase();
+  const search = (window.location.search || '').toLowerCase();
+  return (
+    path === '/admin' ||
+    path.startsWith('/admin/') ||
+    hash.startsWith('#/admin') ||
+    search.includes('view=admin')
+  );
+};
+
 function App() {
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>(() => {
+    if (checkIsAdminRoute()) return 'admin';
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.toLowerCase();
+      const path = window.location.pathname.toLowerCase();
+      if (hash.startsWith('#/reports') || path === '/reports') return 'reports';
+      if (hash.startsWith('#/privacy') || path === '/privacy') return 'privacy';
+    }
+    return 'dashboard';
+  });
+
+  // Sync view when the user uses browser back/forward or clicks direct links
+  useEffect(() => {
+    const handleLocationChange = () => {
+      if (checkIsAdminRoute()) {
+        setView('admin');
+      } else if (window.location.hash.startsWith('#/reports') || window.location.pathname === '/reports') {
+        setView('reports');
+      } else if (window.location.hash.startsWith('#/privacy') || window.location.pathname === '/privacy') {
+        setView('privacy');
+      } else if (window.location.hash.startsWith('#/dashboard') || window.location.pathname === '/') {
+        setView('dashboard');
+      }
+    };
+
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
+
+  const handleSetView = (nextView: View) => {
+    setView(nextView);
+    // Update hash cleanly without page reload
+    if (typeof window !== 'undefined') {
+      if (nextView === 'admin') {
+        // Keep existing query params if present (e.g. ?incident=...)
+        const currentSearch = window.location.search || '';
+        window.location.hash = `#/admin${currentSearch}`;
+      } else if (nextView === 'reports') {
+        window.location.hash = `#/reports`;
+      } else if (nextView === 'privacy') {
+        window.location.hash = `#/privacy`;
+      } else {
+        window.location.hash = `#/dashboard`;
+      }
+    }
+  };
   
   // ROBUST SNAPSHOT ROUTING: Supports both traditional path and hash-based path
   const getSnapshotId = () => {
@@ -363,7 +454,7 @@ function App() {
   const { user, loading, isFrozen, logout } = useAuth();
 
   if (view === 'privacy') {
-    return <PrivacyPolicy onBack={() => setView('dashboard')} />;
+    return <PrivacyPolicy onBack={() => handleSetView('dashboard')} />;
   }
 
   if (loading) {
@@ -371,7 +462,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthScreen onViewPrivacy={() => setView('privacy')} />;
+    return <AuthScreen onViewPrivacy={() => handleSetView('privacy')} />;
   }
 
   if (isFrozen) {
@@ -400,7 +491,7 @@ function App() {
     );
   }
 
-  return <MainApp view={view} setView={setView} />;
+  return <MainApp view={view} setView={handleSetView} />;
 }
 
 export default App;
