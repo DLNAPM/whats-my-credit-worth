@@ -10,6 +10,7 @@ import {
   deleteIncident, 
   reportIncident, 
   runSystemHealthCheck,
+  checkDocumentDeliveryStatus,
   getAdminDashboardUrl,
   type HealthCheckResult,
   RENDER_APP_DOMAIN,
@@ -160,6 +161,7 @@ export const AdminDashboard: React.FC = () => {
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [copiedReport, setCopiedReport] = useState(false);
   const [showSetupGuide, setShowSetupGuide] = useState(false);
+  const [recheckingDelivery, setRecheckingDelivery] = useState(false);
   const [incidentNotificationMsg, setIncidentNotificationMsg] = useState<string | null>(null);
 
   const adminEmail = user?.email || APP_ADMIN_EMAIL;
@@ -389,6 +391,34 @@ export const AdminDashboard: React.FC = () => {
       alert("Failed to run system health check.");
     } finally {
       setHealthCheckRunning(false);
+    }
+  };
+
+  const handleRecheckDelivery = async () => {
+    if (!healthCheckResult?.incidentId) return;
+    setRecheckingDelivery(true);
+    try {
+      const probe = await checkDocumentDeliveryStatus(healthCheckResult.incidentId);
+      setHealthCheckResult({
+        ...healthCheckResult,
+        emailReport: {
+          ...healthCheckResult.emailReport,
+          deliveryState: probe.deliveryState,
+          deliveryMessage: probe.deliveryMessage,
+          deliveryDetails: probe.deliveryDetails || healthCheckResult.emailReport.deliveryDetails
+        }
+      });
+      if (probe.deliveryState === 'DELIVERED') {
+        showNotification(`Delivery confirmed! Extension handed email to SMTP server.`);
+      } else if (probe.deliveryState === 'DELIVERY_ERROR') {
+        showNotification(`Trigger Email extension reported an error.`);
+      } else {
+        showNotification(`Document still pending delivery report in Firestore.`);
+      }
+    } catch (err) {
+      console.error("Failed to recheck delivery:", err);
+    } finally {
+      setRecheckingDelivery(false);
     }
   };
 
@@ -1348,30 +1378,85 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Email Delivery Pipeline Diagnosis Card */}
-            <div className={`p-4 rounded-2xl border text-xs space-y-2.5 ${
+            <div className={`p-4 rounded-2xl border text-xs space-y-3 ${
               healthCheckResult.emailReport.deliveryState === 'DELIVERED'
-                ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200'
-                : 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200'
+                ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100'
+                : healthCheckResult.emailReport.deliveryState === 'DELIVERY_ERROR'
+                ? 'bg-red-50/90 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100'
+                : 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100'
             }`}>
-              <div className="flex items-start gap-2.5">
-                <MailIcon className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                <div>
-                  <h4 className="font-bold text-sm">
-                    {healthCheckResult.emailReport.deliveryState === 'DELIVERED'
-                      ? 'Email Delivery Confirmed via Firebase Extension'
-                      : 'Why the Admin does not receive this email in Gmail automatically:'}
-                  </h4>
-                  <p className="mt-1 leading-relaxed text-gray-700 dark:text-gray-300">
-                    {healthCheckResult.emailReport.deliveryState === 'DELIVERED' ? (
-                      `Firebase Trigger Email extension verified successful dispatch to ${healthCheckResult.emailReport.recipient}.`
-                    ) : (
-                      <>
-                        The diagnostic report was successfully recorded in Google Cloud Firestore (collections <code>support_requests</code> and <code>mail</code>). However, Firestore is a database and cannot send SMTP emails by itself. Transmitting emails into your Gmail inbox (<strong>{healthCheckResult.emailReport.recipient}</strong>) requires the Firebase <strong>"Trigger Email from Firestore"</strong> extension configured with an SMTP service (SendGrid, Mailgun, Brevo, or a Gmail App Password).
-                      </>
-                    )}
-                  </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <MailIcon className={`w-4 h-4 mt-0.5 shrink-0 ${
+                    healthCheckResult.emailReport.deliveryState === 'DELIVERED'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : healthCheckResult.emailReport.deliveryState === 'DELIVERY_ERROR'
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  }`} />
+                  <div>
+                    <h4 className="font-bold text-sm flex items-center gap-2">
+                      {healthCheckResult.emailReport.deliveryState === 'DELIVERED' && (
+                        <span>✔ Verified: Email Dispatched via Firebase Extension</span>
+                      )}
+                      {healthCheckResult.emailReport.deliveryState === 'DELIVERY_ERROR' && (
+                        <span>✖ Trigger Email Extension Reported an SMTP Error</span>
+                      )}
+                      {healthCheckResult.emailReport.deliveryState === 'QUEUED_IN_FIRESTORE' && (
+                        <span>⚠️ Queued in Firestore — Pending Extension Trigger</span>
+                      )}
+                    </h4>
+                    <p className="mt-1 leading-relaxed text-gray-700 dark:text-gray-300">
+                      {healthCheckResult.emailReport.deliveryMessage}
+                    </p>
+                  </div>
                 </div>
+
+                <button
+                  onClick={handleRecheckDelivery}
+                  disabled={recheckingDelivery}
+                  className="shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-1.5"
+                  title="Re-query Firestore to check if the extension has finished sending"
+                >
+                  <RefreshIcon className={`w-3.5 h-3.5 ${recheckingDelivery ? 'animate-spin text-indigo-600' : 'text-gray-500'}`} />
+                  <span>{recheckingDelivery ? 'Checking...' : 'Re-probe Status'}</span>
+                </button>
               </div>
+
+              {/* Detailed Technical Payload from Extension if available */}
+              {healthCheckResult.emailReport.deliveryDetails && (
+                <div className="p-2.5 bg-black/5 dark:bg-black/40 rounded-xl font-mono text-[11px] overflow-x-auto border border-black/10 dark:border-white/10">
+                  <span className="font-bold uppercase tracking-wider block mb-1 text-[10px] text-gray-500">
+                    Extension Delivery Payload:
+                  </span>
+                  <pre className="whitespace-pre-wrap">
+                    {JSON.stringify(healthCheckResult.emailReport.deliveryDetails, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Actionable Diagnosis Checklist if Still Queued or in Error */}
+              {healthCheckResult.emailReport.deliveryState !== 'DELIVERED' && (
+                <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 space-y-1.5 text-[11.5px] leading-relaxed text-gray-700 dark:text-gray-300">
+                  <div className="font-bold text-gray-900 dark:text-white mb-1">
+                    Top Reasons Alert Emails Fail After Extension Configuration:
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 pl-1">
+                    <li>
+                      <strong>Google Account App Password:</strong> Normal Gmail passwords are <span className="text-red-600 dark:text-red-400 font-semibold">blocked by Google</span> for SMTP. You must create a 16-character App Password at <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline text-indigo-600 dark:text-indigo-400">myaccount.google.com/apppasswords</a>.
+                    </li>
+                    <li>
+                      <strong>Username Percent-Encoding:</strong> In <code>SMTP_CONNECTION_URI</code>, the <code>@</code> in <code>dlaniger.napm.consulting@gmail.com</code> must be encoded as <code>%40</code>: <code className="bg-black/10 dark:bg-black/50 px-1 py-0.5 rounded">smtps://dlaniger.napm.consulting%40gmail.com:app_password@smtp.gmail.com:465</code>.
+                    </li>
+                    <li>
+                      <strong>Collection Name Mismatch:</strong> In Firebase Extension settings, verify <em>"Email documents collection"</em> is set to <code>mail</code> (or <code>support_requests</code>) <u>without</u> a leading slash.
+                    </li>
+                    <li>
+                      <strong>Secret Manager IAM Permission:</strong> In GCP Console, the extension service account requires the <code className="bg-black/10 dark:bg-black/50 px-1 py-0.5 rounded">Secret Manager Secret Accessor</code> role to decrypt the SMTP password.
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Direct Actions */}
@@ -1403,7 +1488,7 @@ export const AdminDashboard: React.FC = () => {
                 onClick={() => setShowSetupGuide(!showSetupGuide)}
                 className="px-3 py-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                {showSetupGuide ? 'Hide Extension Guide' : 'How to configure automated SMTP emails'}
+                {showSetupGuide ? 'Hide Detailed Guide' : 'View Step-by-Step Extension Setup Guide'}
               </button>
             </div>
 

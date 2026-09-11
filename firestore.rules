@@ -74,7 +74,7 @@ service cloud.firestore {
 
     match /mail/{mailId} {
       allow read: if isSuperUser();
-      allow create: if isSuperUser() || isSignedIn();
+      allow create: if isSuperUser() || isSignedIn() || isValidId(mailId);
       allow update: if isSuperUser();
       allow delete: if isSuperUser();
     }

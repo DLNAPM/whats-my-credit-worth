@@ -345,7 +345,12 @@ Direct Verified Environment Links:
 
     await setDoc(doc(db, 'support_requests', `alert_${incidentId}`), {
       to: APP_ADMIN_EMAIL,
+      from: APP_ADMIN_EMAIL,
+      replyTo: APP_ADMIN_EMAIL,
       message: {
+        to: APP_ADMIN_EMAIL,
+        from: APP_ADMIN_EMAIL,
+        replyTo: APP_ADMIN_EMAIL,
         subject: emailSubject,
         text: emailText,
         html: emailHtml
@@ -361,7 +366,12 @@ Direct Verified Environment Links:
     try {
       await setDoc(doc(db, 'mail', `alert_${incidentId}`), {
         to: [APP_ADMIN_EMAIL],
+        from: APP_ADMIN_EMAIL,
+        replyTo: APP_ADMIN_EMAIL,
         message: {
+          to: [APP_ADMIN_EMAIL],
+          from: APP_ADMIN_EMAIL,
+          replyTo: APP_ADMIN_EMAIL,
           subject: emailSubject,
           text: emailText,
           html: emailHtml
@@ -397,7 +407,57 @@ export interface HealthCheckResult {
     mailtoUrl: string;
     deliveryState: 'DELIVERED' | 'QUEUED_IN_FIRESTORE' | 'DELIVERY_ERROR';
     deliveryMessage: string;
+    deliveryDetails?: any;
   };
+}
+
+/**
+ * Actively queries Firestore (mail & support_requests) to inspect if the
+ * Firebase Trigger Email extension has processed a document and attached delivery results.
+ */
+export async function checkDocumentDeliveryStatus(incidentId: string): Promise<{
+  deliveryState: 'DELIVERED' | 'QUEUED_IN_FIRESTORE' | 'DELIVERY_ERROR';
+  deliveryMessage: string;
+  deliveryDetails?: any;
+}> {
+  try {
+    const docIdWithPrefix = incidentId.startsWith('health_') || incidentId.startsWith('alert_') 
+      ? incidentId 
+      : `health_${incidentId}`;
+
+    const [mailDoc, supportDoc] = await Promise.all([
+      getDoc(doc(db, 'mail', docIdWithPrefix)).catch(() => null),
+      getDoc(doc(db, 'support_requests', docIdWithPrefix)).catch(() => null)
+    ]);
+
+    const delivery = mailDoc?.data()?.delivery || supportDoc?.data()?.delivery;
+    if (delivery) {
+      if (delivery.state === 'SUCCESS') {
+        return {
+          deliveryState: 'DELIVERED',
+          deliveryMessage: `Verified delivered to SMTP relay (${delivery.info?.accepted?.join(', ') || 'Accepted by mail server'}).`,
+          deliveryDetails: delivery
+        };
+      } else if (delivery.state === 'ERROR') {
+        return {
+          deliveryState: 'DELIVERY_ERROR',
+          deliveryMessage: `Trigger Email extension failed with error: ${delivery.error || 'SMTP delivery rejected'}`,
+          deliveryDetails: delivery
+        };
+      }
+    }
+    return {
+      deliveryState: 'QUEUED_IN_FIRESTORE',
+      deliveryMessage: 'Document exists in Firestore, but Trigger Email extension has not attached a delivery report yet.',
+      deliveryDetails: null
+    };
+  } catch (err: any) {
+    return {
+      deliveryState: 'QUEUED_IN_FIRESTORE',
+      deliveryMessage: `Unable to probe document: ${err.message || err}`,
+      deliveryDetails: null
+    };
+  }
 }
 
 /**
@@ -548,7 +608,12 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
     // 2a. Queue Health Check in support_requests collection
     await setDoc(doc(db, 'support_requests', `health_${incidentId}`), {
       to: recipient,
+      from: recipient,
+      replyTo: recipient,
       message: {
+        to: recipient,
+        from: recipient,
+        replyTo: recipient,
         subject: emailSubject,
         text: emailText,
         html: emailHtml
@@ -565,7 +630,12 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
     try {
       await setDoc(doc(db, 'mail', `health_${incidentId}`), {
         to: [recipient],
+        from: recipient,
+        replyTo: recipient,
         message: {
+          to: [recipient],
+          from: recipient,
+          replyTo: recipient,
           subject: emailSubject,
           text: emailText,
           html: emailHtml
@@ -578,29 +648,39 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
 
     checks.emailDispatch = true;
 
-    // 3. Fast probe to detect if the Firebase Trigger Email extension is active
+    // 3. Progressive probe (up to 4 attempts ~4.5s) to detect if the Firebase Trigger Email extension processed the doc
     let deliveryState: 'DELIVERED' | 'QUEUED_IN_FIRESTORE' | 'DELIVERY_ERROR' = 'QUEUED_IN_FIRESTORE';
-    let deliveryMessage = 'Queued in Firestore collections (support_requests & mail). Delivery to your Gmail inbox requires the Firebase "Trigger Email" extension with an active SMTP provider (SendGrid/Gmail).';
+    let deliveryMessage = 'Document queued in Firestore (mail & support_requests). Probing for Trigger Email extension...';
+    let deliveryDetails: any = null;
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const [mailDoc, supportDoc] = await Promise.all([
-        getDoc(doc(db, 'mail', `health_${incidentId}`)).catch(() => null),
-        getDoc(doc(db, 'support_requests', `health_${incidentId}`)).catch(() => null)
-      ]);
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      try {
+        const [mailDoc, supportDoc] = await Promise.all([
+          getDoc(doc(db, 'mail', `health_${incidentId}`)).catch(() => null),
+          getDoc(doc(db, 'support_requests', `health_${incidentId}`)).catch(() => null)
+        ]);
 
-      const delivery = mailDoc?.data()?.delivery || supportDoc?.data()?.delivery;
-      if (delivery) {
-        if (delivery.state === 'SUCCESS') {
-          deliveryState = 'DELIVERED';
-          deliveryMessage = 'Verified delivered to Gmail inbox via Firebase Trigger Email Extension.';
-        } else if (delivery.state === 'ERROR') {
-          deliveryState = 'DELIVERY_ERROR';
-          deliveryMessage = `Trigger Email extension reported error: ${delivery.error || 'SMTP delivery issue'}`;
+        const delivery = mailDoc?.data()?.delivery || supportDoc?.data()?.delivery;
+        if (delivery) {
+          deliveryDetails = delivery;
+          if (delivery.state === 'SUCCESS') {
+            deliveryState = 'DELIVERED';
+            deliveryMessage = `Verified delivered to SMTP relay (${delivery.info?.accepted?.join(', ') || 'Accepted by mail server'}).`;
+            break;
+          } else if (delivery.state === 'ERROR') {
+            deliveryState = 'DELIVERY_ERROR';
+            deliveryMessage = `Trigger Email extension reported error: ${delivery.error || 'SMTP delivery rejected'}`;
+            break;
+          }
         }
+      } catch {
+        // Continue next probe attempt
       }
-    } catch {
-      // Ignore probe read error
+    }
+
+    if (deliveryState === 'QUEUED_IN_FIRESTORE') {
+      deliveryMessage = 'Document created in Firestore (mail & support_requests), but Trigger Email extension did not attach a delivery confirmation within 4.5s. Extension may still be processing, paused, or missing Secret Manager permissions.';
     }
 
     const mailtoUrl = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`;
@@ -623,7 +703,8 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
         bodyText: emailText,
         mailtoUrl,
         deliveryState,
-        deliveryMessage
+        deliveryMessage,
+        deliveryDetails
       }
     };
   } catch (err) {
