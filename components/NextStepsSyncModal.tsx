@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import type { MonthlyData, AccountType, NextStepsAccount, NextStepsSyncPayload } from '../types';
-import { buildNextStepsSyncPayload, copyNextStepsPayloadToClipboard, downloadNextStepsPayloadFile } from '../utils/nextStepsSync';
+import type { MonthlyData, AccountType, NextStepsAccount, NextStepsSyncPayload, Asset } from '../types';
+import { buildNextStepsSyncPayload, copyNextStepsPayloadToClipboard, downloadNextStepsPayloadFile, inferAssetDetails } from '../utils/nextStepsSync';
+import { useFinancialData } from '../hooks/useFinancialData';
 import Button from './ui/Button';
 import { formatMonthYear } from '../utils/helpers';
 
@@ -23,10 +24,24 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
   businessName = '',
   businessType = 'LLC'
 }) => {
+  const { updateMonthData } = useFinancialData();
   const [copySuccess, setCopySuccess] = useState(false);
   const [customAccounts, setCustomAccounts] = useState<NextStepsAccount[] | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'raw_json'>('overview');
   const [filterType, setFilterType] = useState<'all' | 'cards' | 'loans' | 'assets'>('all');
+
+  // Add Asset form states
+  const [isAddingAsset, setIsAddingAsset] = useState(false);
+  const [newAssetName, setNewAssetName] = useState('');
+  const [newAssetLast4, setNewAssetLast4] = useState('');
+  const [newAssetBalance, setNewAssetBalance] = useState('');
+  const [newAssetInstitution, setNewAssetInstitution] = useState('');
+  const [newAssetCategory, setNewAssetCategory] = useState('Savings / HYSA');
+  const [newAssetApy, setNewAssetApy] = useState('');
+  const [newAssetIsBusiness, setNewAssetIsBusiness] = useState(accountType === 'business');
+  const [newAssetNotes, setNewAssetNotes] = useState('');
+  const [assetAddError, setAssetAddError] = useState<string | null>(null);
+  const [addSuccessNotice, setAddSuccessNotice] = useState<string | null>(null);
 
   const basePayload = useMemo(() => {
     return buildNextStepsSyncPayload(data, {
@@ -40,9 +55,26 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
   const activeAccounts = customAccounts || basePayload.accounts;
 
   const currentPayload: NextStepsSyncPayload = useMemo(() => {
+    const assetAccs = activeAccounts.filter(a => a.accountType === 'asset' || a.category === 'asset');
+    const debtsAccs = activeAccounts.filter(a => a.accountType !== 'asset' && a.category !== 'asset');
+    const totalDebts = debtsAccs.reduce((sum, a) => sum + (Number(a.currentBalance?.replace(/[^0-9.-]+/g, '')) || a.balanceNumeric || 0), 0);
+    const totalAssets = assetAccs.reduce((sum, a) => sum + (Number(a.currentBalance?.replace(/[^0-9.-]+/g, '')) || a.balanceNumeric || 0), 0);
+    const netWorth = totalAssets - totalDebts;
+
     return {
       ...basePayload,
-      accounts: activeAccounts
+      accounts: activeAccounts,
+      assetAccounts: assetAccs,
+      assets: assetAccs,
+      summary: {
+        totalDebts: `$${totalDebts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        totalAssets: `$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        netWorth: `$${netWorth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        totalAccounts: activeAccounts.length,
+        totalCards: activeAccounts.filter(a => a.category === 'credit-card' || (a.isBusiness && a.category === 'llc')).length,
+        totalLoans: activeAccounts.filter(a => a.category === 'loan' || a.category === 'mortgage').length,
+        totalAssetsCount: assetAccs.length,
+      }
     };
   }, [basePayload, activeAccounts]);
 
@@ -68,11 +100,118 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
 
   const handleAccountFieldChange = (index: number, field: keyof NextStepsAccount, value: any) => {
     const updated = [...activeAccounts];
+    let formattedVal = value;
+    if (field === 'accountNumber') {
+      formattedVal = String(value).replace(/\D/g, '').slice(0, 4);
+    }
+    const currentAcc = updated[index];
     updated[index] = {
-      ...updated[index],
-      [field]: value
+      ...currentAcc,
+      [field]: formattedVal,
+      info: field === 'accountNumber' && currentAcc.accountType === 'asset'
+        ? `Asset Account (${currentAcc.assetType || currentAcc.category}) | Institution: ${currentAcc.lenderName} | Account: ...${formattedVal} | Balance: ${currentAcc.currentBalance}`
+        : currentAcc.info
     };
     setCustomAccounts(updated);
+
+    // If Last 4 is updated on an asset account, propagate change to local data
+    if (field === 'accountNumber' && currentAcc.accountType === 'asset') {
+      const match = (data.assets || []).find(a => a.name.toLowerCase() === currentAcc.name.toLowerCase());
+      if (match) {
+        const updatedAssets = (data.assets || []).map(a => 
+          a.id === match.id ? { ...a, accountNumber: formattedVal, last4: formattedVal } : a
+        );
+        updateMonthData(monthYear, { ...data, assets: updatedAssets });
+      }
+    }
+  };
+
+  const handleNameChange = (val: string) => {
+    setNewAssetName(val);
+    if (!newAssetInstitution || newAssetInstitution === inferAssetDetails(newAssetName).institutionName) {
+      const inf = inferAssetDetails(val);
+      if (inf.institutionName && inf.institutionName !== 'Institution') {
+        setNewAssetInstitution(inf.institutionName);
+      }
+      if (inf.assetType && inf.assetType !== 'Asset Account') {
+        setNewAssetCategory(inf.assetType);
+      }
+    }
+  };
+
+  const handleAddAsset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAssetName.trim()) {
+      setAssetAddError('Please provide an asset account name.');
+      return;
+    }
+
+    const cleanedDigits = newAssetLast4.replace(/\D/g, '');
+    if (!cleanedDigits) {
+      setAssetAddError('Please enter the last 4 digits of the account so Next Steps can accurately match it.');
+      return;
+    }
+    const last4 = cleanedDigits.padStart(4, '0').slice(-4);
+    const balanceNum = parseFloat(newAssetBalance) || 0;
+    const formattedBalance = `$${balanceNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const inferred = inferAssetDetails(newAssetName, newAssetInstitution, undefined, newAssetCategory);
+    const institution = newAssetInstitution.trim() || inferred.institutionName;
+    const aprOrApy = newAssetApy ? newAssetApy.replace('%', '').trim() : '0.00';
+    const notes = newAssetNotes.trim() || `Asset account (...${last4}) synced from What's My Credit Worth`;
+
+    const newAccount: NextStepsAccount = {
+      name: newAssetName.trim(),
+      lenderName: institution,
+      category: 'asset',
+      currentBalance: formattedBalance,
+      creditLimit: formattedBalance,
+      accountNumber: last4,
+      apr: aprOrApy,
+      isBusiness: newAssetIsBusiness,
+      url: inferred.url,
+      notes: notes,
+      accountType: 'asset',
+      assetType: newAssetCategory,
+      info: `Asset Account (${newAssetCategory}) | Institution: ${institution} | Account: ...${last4} | Balance: ${formattedBalance}`,
+      balanceNumeric: balanceNum
+    };
+
+    setCustomAccounts([...activeAccounts, newAccount]);
+
+    // Save into monthly data permanently
+    const newAssetItem: Asset = {
+      id: crypto.randomUUID(),
+      name: newAssetName.trim(),
+      value: balanceNum,
+      accountNumber: last4,
+      last4: last4,
+      institution: institution,
+      category: newAssetCategory,
+      isBusiness: newAssetIsBusiness,
+      notes: newAssetNotes.trim(),
+      url: inferred.url,
+      apy: newAssetApy ? newAssetApy.replace('%', '').trim() : undefined,
+      info: `Asset Account (${newAssetCategory}) | Account: ...${last4}`
+    };
+
+    updateMonthData(monthYear, {
+      ...data,
+      assets: [...(data.assets || []), newAssetItem]
+    });
+
+    // Reset form
+    setNewAssetName('');
+    setNewAssetLast4('');
+    setNewAssetBalance('');
+    setNewAssetInstitution('');
+    setNewAssetCategory('Savings / HYSA');
+    setNewAssetApy('');
+    setNewAssetNotes('');
+    setAssetAddError(null);
+    setIsAddingAsset(false);
+    setFilterType('assets');
+    setAddSuccessNotice(`Asset account added with Last 4 digits (...${last4}) for Next Steps matching.`);
+    setTimeout(() => setAddSuccessNotice(null), 4000);
   };
 
   const totalCards = activeAccounts.filter(a => a.category === 'credit-card' || (a.isBusiness && a.category === 'llc')).length;
@@ -192,61 +331,259 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
 
           {activeTab === 'overview' ? (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span>Accounts Ready for Next Steps</span>
-                  <span className="text-xs font-normal text-gray-500">(Includes Debts & Assets)</span>
-                </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span>Accounts Ready for Next Steps</span>
+                    <span className="text-xs font-normal text-gray-400">({activeAccounts.length})</span>
+                  </h3>
+                </div>
 
-                {/* Filter Pills */}
-                <div className="flex items-center gap-1 text-xs">
+                <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+                  {/* Filter Pills */}
+                  <div className="flex items-center gap-1 text-xs">
+                    <button
+                      onClick={() => setFilterType('all')}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                        filterType === 'all'
+                          ? 'bg-brand-primary text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                      }`}
+                    >
+                      All ({activeAccounts.length})
+                    </button>
+                    <button
+                      onClick={() => setFilterType('cards')}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                        filterType === 'cards'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                      }`}
+                    >
+                      Cards ({totalCards})
+                    </button>
+                    <button
+                      onClick={() => setFilterType('loans')}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                        filterType === 'loans'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                      }`}
+                    >
+                      Loans ({totalLoans})
+                    </button>
+                    <button
+                      onClick={() => setFilterType('assets')}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                        filterType === 'assets'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                      }`}
+                    >
+                      Assets ({totalAssets})
+                    </button>
+                  </div>
+
+                  {/* Add Asset Button */}
                   <button
-                    onClick={() => setFilterType('all')}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                      filterType === 'all'
-                        ? 'bg-brand-primary text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                    onClick={() => {
+                      setIsAddingAsset(prev => !prev);
+                      setAssetAddError(null);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                      isAddingAsset 
+                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' 
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                     }`}
                   >
-                    All ({activeAccounts.length})
-                  </button>
-                  <button
-                    onClick={() => setFilterType('cards')}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                      filterType === 'cards'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
-                    }`}
-                  >
-                    Cards ({totalCards})
-                  </button>
-                  <button
-                    onClick={() => setFilterType('loans')}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                      filterType === 'loans'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
-                    }`}
-                  >
-                    Loans ({totalLoans})
-                  </button>
-                  <button
-                    onClick={() => setFilterType('assets')}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                      filterType === 'assets'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
-                    }`}
-                  >
-                    Assets ({totalAssets})
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d={isAddingAsset ? "M6 18L18 6M6 6l12 12" : "M12 4v16m8-8H4"} />
+                    </svg>
+                    <span>{isAddingAsset ? 'Cancel' : '+ Add Asset'}</span>
                   </button>
                 </div>
               </div>
 
+              {/* Add Asset Form Card */}
+              {isAddingAsset && (
+                <form onSubmit={handleAddAsset} className="p-4 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-3.5 animate-fade-in shadow-sm">
+                  <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-emerald-800/40 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-300">
+                        Add Asset Account for Next Steps Sync
+                      </h4>
+                    </div>
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                      Primary Key: Last 4 digits used for account matching
+                    </span>
+                  </div>
+
+                  {/* Matching Info Callout */}
+                  <div className="p-2.5 bg-white dark:bg-gray-800/80 rounded-lg border border-emerald-200 dark:border-emerald-700/50 flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300">
+                    <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <strong className="text-gray-900 dark:text-white">Account Match Key:</strong> Enter the exact <strong>last 4 digits</strong> of your account. The Next Steps App diffs and reconciles your records by matching these 4 digits so your balances update without creating duplicates.
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div className="sm:col-span-5">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Asset / Account Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newAssetName}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        placeholder="e.g. Marcus Savings, Fidelity 401k, Coinbase"
+                        className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium"
+                        required
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Last 4 Digits <span className="text-emerald-600 dark:text-emerald-400 font-bold">* (Next Steps Key)</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          maxLength={4}
+                          value={newAssetLast4}
+                          onChange={(e) => setNewAssetLast4(e.target.value.replace(/\D/g, ''))}
+                          placeholder="e.g. 4821"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-emerald-500 dark:border-emerald-500 rounded-lg text-xs font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white"
+                          title="4-digit identifier for Next Steps matching"
+                          required
+                        />
+                        {newAssetLast4.length === 4 && (
+                          <span className="absolute right-2 top-1.5 text-emerald-600 text-xs font-bold">✓</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-4">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Current Balance / Value ($) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={newAssetBalance}
+                        onChange={(e) => setNewAssetBalance(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div className="sm:col-span-4">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Institution / Broker
+                      </label>
+                      <input
+                        type="text"
+                        value={newAssetInstitution}
+                        onChange={(e) => setNewAssetInstitution(e.target.value)}
+                        placeholder="e.g. Marcus, Fidelity, Vanguard, Chase"
+                        className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-4">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={newAssetCategory}
+                        onChange={(e) => setNewAssetCategory(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs"
+                      >
+                        <option value="Savings / HYSA">Savings / HYSA</option>
+                        <option value="Checking / Cash">Checking / Cash</option>
+                        <option value="Investment / Brokerage">Investment / Brokerage</option>
+                        <option value="Retirement (401k/IRA)">Retirement (401k/IRA)</option>
+                        <option value="Cryptocurrency">Cryptocurrency</option>
+                        <option value="Real Estate Equity">Real Estate Equity</option>
+                        <option value="Vehicle">Vehicle</option>
+                        <option value="Other Asset">Other Asset</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        APY / Yield (%)
+                      </label>
+                      <input
+                        type="text"
+                        value={newAssetApy}
+                        onChange={(e) => setNewAssetApy(e.target.value)}
+                        placeholder="e.g. 4.75"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2 flex items-end pb-1.5">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-600 dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={newAssetIsBusiness}
+                          onChange={(e) => setNewAssetIsBusiness(e.target.checked)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>Business LLC</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
+                    <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+                      {assetAddError}
+                    </div>
+                    <div className="flex items-center gap-2 self-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingAsset(false);
+                          setAssetAddError(null);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Add Asset with Last 4</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Feedback Alert */}
+              {addSuccessNotice && (
+                <div className="p-3 bg-emerald-100/90 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded-xl text-xs font-semibold flex items-center gap-2 animate-fade-in border border-emerald-300 dark:border-emerald-700">
+                  <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{addSuccessNotice}</span>
+                </div>
+              )}
+
               {filteredAccounts.length === 0 ? (
                 <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
                   <p className="text-sm text-gray-500">No accounts found for the selected filter in this snapshot.</p>
-                  <p className="text-xs text-gray-400 mt-1">Add accounts or assets in the Data Editor to populate this view.</p>
+                  <p className="text-xs text-gray-400 mt-1">Click "+ Add Asset" above or add accounts in the Data Editor.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
@@ -258,7 +595,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                         <th className="p-3">Category</th>
                         <th className="p-3">Balance / Value</th>
                         <th className="p-3">Limit / Valuation</th>
-                        <th className="p-3">Last 4 #</th>
+                        <th className="p-3 whitespace-nowrap">Last 4 # <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400 font-sans tracking-normal">(Next Steps Key)</span></th>
                         <th className="p-3">APR / APY</th>
                         <th className="p-3">Type</th>
                         <th className="p-3">Info / Notes</th>
@@ -307,8 +644,13 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                                 maxLength={4}
                                 value={account.accountNumber}
                                 onChange={(e) => handleAccountFieldChange(originalIndex, 'accountNumber', e.target.value.replace(/\D/g, ''))}
-                                className="w-14 px-1.5 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs font-mono font-bold focus:ring-1 focus:ring-blue-500"
-                                title="Last 4 digits used as primary key in Next Steps"
+                                className={`w-14 px-1.5 py-1 rounded text-center text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 ${
+                                  isAsset
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/50 border-2 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+                                    : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+                                }`}
+                                title="4-digit identifier matched with accounts in Next Steps App"
+                                placeholder="0000"
                               />
                             </td>
                             <td className="p-3">

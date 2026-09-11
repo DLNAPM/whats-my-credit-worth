@@ -70,10 +70,10 @@ export const getDummyData = (): FinancialData => {
       { id: generateId(), name: 'BMW i4 Lease/Loan', balance: 42000 - (offset * 650), limit: 65000 }
     ],
     assets: [
-      { id: generateId(), name: 'Marcus Savings', value: 12000 + (offset * 2000) },
-      { id: generateId(), name: 'Fidelity 401k', value: 85000 + (offset * 3200) },
-      { id: generateId(), name: 'Coinbase (BTC)', value: 15000 + (offset * 1100) },
-      { id: generateId(), name: 'Home Equity', value: 125000 + (offset * 500) }
+      { id: generateId(), name: 'Marcus Savings', value: 12000 + (offset * 2000), accountNumber: '4821', last4: '4821', institution: 'Marcus', category: 'Savings / HYSA' },
+      { id: generateId(), name: 'Fidelity 401k', value: 85000 + (offset * 3200), accountNumber: '9102', last4: '9102', institution: 'Fidelity', category: 'Retirement (401k/IRA)' },
+      { id: generateId(), name: 'Coinbase (BTC)', value: 15000 + (offset * 1100), accountNumber: '3318', last4: '3318', institution: 'Coinbase', category: 'Cryptocurrency' },
+      { id: generateId(), name: 'Home Equity', value: 125000 + (offset * 500), accountNumber: '7724', last4: '7724', institution: 'Property', category: 'Real Estate Equity' }
     ],
     monthlyBills: [
       { id: generateId(), name: 'Mortgage Payment', amount: 2450 },

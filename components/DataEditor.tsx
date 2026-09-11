@@ -130,7 +130,15 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
 
         if (type === 'checkbox') {
             formattedValue = (e.target as HTMLInputElement).checked;
-        } else if (['name', 'accountNumber', 'last4', 'lenderName', 'institution', 'apr', 'apy', 'url', 'notes', 'info', 'category'].includes(name)) {
+        } else if (name === 'accountNumber' || name === 'last4') {
+            formattedValue = value.replace(/\D/g, '').slice(0, 4);
+            items[index] = {
+                ...items[index],
+                accountNumber: formattedValue,
+                last4: formattedValue
+            };
+            return { ...prev, [list]: items as any };
+        } else if (['name', 'lenderName', 'institution', 'apr', 'apy', 'url', 'notes', 'info', 'category'].includes(name)) {
             formattedValue = value;
         } else {
             formattedValue = Number(value) || 0;
@@ -431,11 +439,13 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
             </div>
             <div className="sm:col-span-2">
               <InputField 
-                label="Last 4 #"
+                label="Last 4 # (Next Steps)"
                 name="accountNumber"
                 type="text"
+                maxLength={4}
                 value={asset.accountNumber || asset.last4 || ''}
                 placeholder="e.g. 3912"
+                title="Crucial: 4 digits used to match and sync with accounts in Next Steps App"
                 onChange={(e) => handleListChange(index, e, 'assets')}
               />
             </div>
