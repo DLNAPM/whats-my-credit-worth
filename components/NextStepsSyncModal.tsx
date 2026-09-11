@@ -76,6 +76,15 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
 
   const totalCards = activeAccounts.filter(a => a.category === 'credit-card' || (a.isBusiness && a.category === 'llc')).length;
   const totalLoans = activeAccounts.filter(a => a.category === 'loan' || a.category === 'mortgage').length;
+  const totalAssets = activeAccounts.filter(a => a.category === 'asset' || a.accountType === 'asset').length;
+  const [filterType, setFilterType] = useState<'all' | 'cards' | 'loans' | 'assets'>('all');
+
+  const filteredAccounts = activeAccounts.filter(a => {
+    if (filterType === 'cards') return a.category === 'credit-card' || (a.isBusiness && a.category === 'llc');
+    if (filterType === 'loans') return a.category === 'loan' || a.category === 'mortgage';
+    if (filterType === 'assets') return a.category === 'asset' || a.accountType === 'asset';
+    return true;
+  });
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-3 sm:p-6 animate-fade-in">
@@ -98,7 +107,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-blue-100 mt-0.5">
-                Seamlessly transfer and auto-diff all debt & credit accounts into the Next Steps app
+                Seamlessly transfer and auto-diff credit, loan, and asset accounts into the Next Steps app
               </p>
             </div>
           </div>
@@ -114,7 +123,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
 
         {/* Quick Instructions & Metrics Banner */}
         <div className="bg-slate-50 dark:bg-gray-800/60 p-4 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-xs text-gray-600 dark:text-gray-300">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap text-xs text-gray-600 dark:text-gray-300">
             <span className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               Snapshot: {formatMonthYear(monthYear)}
@@ -125,7 +134,10 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
               {totalCards} Cards
             </span>
             <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded-md font-semibold text-[11px]">
-              {totalLoans} Loans/Mortgages
+              {totalLoans} Loans
+            </span>
+            <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 rounded-md font-semibold text-[11px]">
+              {totalAssets} Assets
             </span>
             {accountType === 'business' && (
               <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 rounded-md font-semibold text-[11px]">
@@ -173,100 +185,165 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
               <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center shrink-0">3</div>
               <div>
                 <p className="font-bold text-gray-900 dark:text-white">Paste & Review Diff</p>
-                <p className="text-[11px] text-gray-500">Matches last 4 digits & updates balances</p>
+                <p className="text-[11px] text-gray-500">Matches last 4 digits & syncs all balances</p>
               </div>
             </div>
           </div>
 
           {activeTab === 'overview' ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <span>Accounts Ready for Next Steps</span>
-                  <span className="text-xs font-normal text-gray-500">(Diff matched by Last 4 digits)</span>
+                  <span className="text-xs font-normal text-gray-500">(Includes Debts & Assets)</span>
                 </h3>
+
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1 text-xs">
+                  <button
+                    onClick={() => setFilterType('all')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                      filterType === 'all'
+                        ? 'bg-brand-primary text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    All ({activeAccounts.length})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('cards')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                      filterType === 'cards'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Cards ({totalCards})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('loans')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                      filterType === 'loans'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Loans ({totalLoans})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('assets')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                      filterType === 'assets'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Assets ({totalAssets})
+                  </button>
+                </div>
               </div>
 
-              {activeAccounts.length === 0 ? (
+              {filteredAccounts.length === 0 ? (
                 <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-500">No credit cards or loans found in this month's snapshot.</p>
-                  <p className="text-xs text-gray-400 mt-1">Add accounts in the Data Editor to generate a sync payload.</p>
+                  <p className="text-sm text-gray-500">No accounts found for the selected filter in this snapshot.</p>
+                  <p className="text-xs text-gray-400 mt-1">Add accounts or assets in the Data Editor to populate this view.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 uppercase tracking-wider font-bold border-b border-gray-200 dark:border-gray-700">
                       <tr>
-                        <th className="p-3">Card / Loan Name</th>
-                        <th className="p-3">Lender</th>
+                        <th className="p-3">Account Name</th>
+                        <th className="p-3">Institution / Lender</th>
                         <th className="p-3">Category</th>
-                        <th className="p-3">Balance</th>
-                        <th className="p-3">Limit</th>
+                        <th className="p-3">Balance / Value</th>
+                        <th className="p-3">Limit / Valuation</th>
                         <th className="p-3">Last 4 #</th>
-                        <th className="p-3">APR %</th>
+                        <th className="p-3">APR / APY</th>
                         <th className="p-3">Type</th>
+                        <th className="p-3">Info / Notes</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                      {activeAccounts.map((account, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition-colors">
-                          <td className="p-3 font-semibold text-gray-900 dark:text-white max-w-[160px] truncate">
-                            {account.name}
-                          </td>
-                          <td className="p-3 text-gray-600 dark:text-gray-300">
-                            {account.lenderName}
-                          </td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              account.category === 'credit-card'
-                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                                : account.category === 'mortgage'
-                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                                : account.category === 'llc'
-                                ? 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
-                                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                            }`}>
-                              {account.category}
-                            </span>
-                          </td>
-                          <td className="p-3 font-mono font-semibold text-gray-900 dark:text-gray-100">
-                            {account.currentBalance}
-                          </td>
-                          <td className="p-3 font-mono text-gray-500">
-                            {account.creditLimit}
-                          </td>
-                          <td className="p-3 font-mono">
-                            <input
-                              type="text"
-                              maxLength={4}
-                              value={account.accountNumber}
-                              onChange={(e) => handleAccountFieldChange(idx, 'accountNumber', e.target.value.replace(/\D/g, ''))}
-                              className="w-14 px-1.5 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs font-mono font-bold focus:ring-1 focus:ring-blue-500"
-                              title="Last 4 digits used as primary key in Next Steps"
-                            />
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-1">
+                      {filteredAccounts.map((account, idx) => {
+                        const originalIndex = activeAccounts.indexOf(account);
+                        const isAsset = account.category === 'asset' || account.accountType === 'asset';
+                        return (
+                          <tr key={idx} className="hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition-colors">
+                            <td className="p-3 font-semibold text-gray-900 dark:text-white max-w-[160px] truncate">
+                              {account.name}
+                            </td>
+                            <td className="p-3 text-gray-600 dark:text-gray-300">
+                              {account.lenderName}
+                            </td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                account.category === 'credit-card'
+                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                                  : account.category === 'mortgage'
+                                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                                  : account.category === 'llc'
+                                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                                  : isAsset
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200/50'
+                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                              }`}>
+                                {isAsset ? (account.assetType ? `Asset (${account.assetType})` : 'Asset') : account.category}
+                              </span>
+                            </td>
+                            <td className={`p-3 font-mono font-semibold ${isAsset ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                              {account.currentBalance}
+                            </td>
+                            <td className="p-3 font-mono text-gray-500">
+                              {isAsset ? (
+                                <span className="text-[11px] text-gray-400">Holding</span>
+                              ) : (
+                                account.creditLimit
+                              )}
+                            </td>
+                            <td className="p-3 font-mono">
                               <input
                                 type="text"
-                                value={account.apr}
-                                onChange={(e) => handleAccountFieldChange(idx, 'apr', e.target.value)}
-                                className="w-14 px-1.5 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs font-mono focus:ring-1 focus:ring-blue-500"
+                                maxLength={4}
+                                value={account.accountNumber}
+                                onChange={(e) => handleAccountFieldChange(originalIndex, 'accountNumber', e.target.value.replace(/\D/g, ''))}
+                                className="w-14 px-1.5 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs font-mono font-bold focus:ring-1 focus:ring-blue-500"
+                                title="Last 4 digits used as primary key in Next Steps"
                               />
-                              <span className="text-gray-400">%</span>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                              account.isBusiness
-                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'
-                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300'
-                            }`}>
-                              {account.isBusiness ? 'Business' : 'Personal'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="text"
+                                  value={account.apr}
+                                  onChange={(e) => handleAccountFieldChange(originalIndex, 'apr', e.target.value)}
+                                  className="w-14 px-1.5 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-center text-xs font-mono focus:ring-1 focus:ring-blue-500"
+                                />
+                                <span className="text-gray-400">{isAsset ? 'APY' : '%'}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                account.isBusiness
+                                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300'
+                                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300'
+                              }`}>
+                                {account.isBusiness ? 'Business' : 'Personal'}
+                              </span>
+                            </td>
+                            <td className="p-3 max-w-[180px]">
+                              <input
+                                type="text"
+                                value={account.notes || account.info || ''}
+                                onChange={(e) => handleAccountFieldChange(originalIndex, 'notes', e.target.value)}
+                                className="w-full px-1.5 py-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs text-gray-600 dark:text-gray-300 focus:ring-1 focus:ring-blue-500 truncate"
+                                title={account.notes || account.info || ''}
+                                placeholder="Add notes..."
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -275,7 +352,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
           ) : (
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-500">Official v2.0 JSON Payload</span>
+                <span className="text-xs font-bold text-gray-500">Official v2.0 JSON Payload (Includes Debts & Assets)</span>
                 <span className="text-[11px] text-gray-400">{jsonString.length} bytes</span>
               </div>
               <div className="relative">

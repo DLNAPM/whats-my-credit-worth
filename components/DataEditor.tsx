@@ -130,7 +130,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
 
         if (type === 'checkbox') {
             formattedValue = (e.target as HTMLInputElement).checked;
-        } else if (['name', 'accountNumber', 'last4', 'lenderName', 'apr', 'url', 'notes', 'category'].includes(name)) {
+        } else if (['name', 'accountNumber', 'last4', 'lenderName', 'institution', 'apr', 'apy', 'url', 'notes', 'info', 'category'].includes(name)) {
             formattedValue = value;
         } else {
             formattedValue = Number(value) || 0;
@@ -395,6 +395,131 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
     </div>
   );
 
+  const renderAssetEditor = () => (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 gap-2">
+        <div>
+          <h3 className="text-lg font-semibold">Asset Accounts</h3>
+          <p className="text-xs text-gray-500">Savings, investments, retirement, crypto & real estate accounts (syncs to Next Steps)</p>
+        </div>
+        <div className="text-xs text-gray-500 font-medium">
+          Total Assets: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(data.assets.reduce((sum, a) => sum + (Number(a.value) || 0), 0))}</span>
+        </div>
+      </div>
+
+      {data.assets.map((asset, index) => (
+        <div key={asset.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/60 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div className="sm:col-span-4">
+              <InputField 
+                label="Account / Asset Name"
+                name="name"
+                type="text"
+                value={asset.name}
+                placeholder="e.g. Marcus Savings, Fidelity 401k"
+                onChange={(e) => handleListChange(index, e, 'assets')}
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <InputField 
+                label="Balance / Value ($)"
+                name="value"
+                type="number"
+                value={asset.value}
+                onChange={(e) => handleListChange(index, e, 'assets')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <InputField 
+                label="Last 4 #"
+                name="accountNumber"
+                type="text"
+                value={asset.accountNumber || asset.last4 || ''}
+                placeholder="e.g. 3912"
+                onChange={(e) => handleListChange(index, e, 'assets')}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                <select
+                  name="category"
+                  value={asset.category || ''}
+                  onChange={(e) => handleListChange(index, e, 'assets')}
+                  className="mt-1 block w-full px-2.5 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary text-xs"
+                >
+                  <option value="">Auto-detect</option>
+                  <option value="Savings / HYSA">Savings / HYSA</option>
+                  <option value="Checking / Cash">Checking / Cash</option>
+                  <option value="Investment / Brokerage">Investment / Brokerage</option>
+                  <option value="Retirement (401k/IRA)">Retirement (401k/IRA)</option>
+                  <option value="Cryptocurrency">Cryptocurrency</option>
+                  <option value="Real Estate Equity">Real Estate Equity</option>
+                  <option value="Vehicle">Vehicle</option>
+                  <option value="Other Asset">Other Asset</option>
+                </select>
+              </div>
+            </div>
+            <div className="sm:col-span-1 flex justify-end pb-1">
+              <Button onClick={() => handleRemoveItem(index, 'assets')} variant="danger" size="small"><DeleteIcon /></Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-gray-200/60 dark:border-gray-700/40 text-xs items-center">
+            <div className="sm:col-span-4 flex items-center gap-2">
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">Institution:</span>
+              <input
+                type="text"
+                name="institution"
+                value={asset.institution || ''}
+                placeholder="Auto-inferred (e.g. Fidelity, Marcus)"
+                onChange={(e) => handleListChange(index, e, 'assets')}
+                className="w-full px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs"
+              />
+            </div>
+            <div className="sm:col-span-5 flex items-center gap-2">
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">Info / Notes:</span>
+              <input
+                type="text"
+                name="notes"
+                value={asset.notes || ''}
+                placeholder="e.g. Emergency fund / Liquid reserves"
+                onChange={(e) => handleListChange(index, e, 'assets')}
+                className="w-full px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs"
+              />
+            </div>
+            <div className="sm:col-span-3 flex justify-end">
+              <label className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] text-gray-500">
+                <input 
+                  type="checkbox"
+                  name="isBusiness"
+                  checked={!!asset.isBusiness}
+                  onChange={(e) => handleListChange(index, e, 'assets')}
+                  className="rounded text-brand-primary focus:ring-brand-primary"
+                />
+                <span>Commercial Asset</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <Button onClick={() => {
+        const newItem: Asset = { 
+          id: crypto.randomUUID(), 
+          name: 'New Asset Account', 
+          value: 0,
+          accountNumber: '',
+          institution: '',
+          category: '',
+          isBusiness: false,
+          notes: ''
+        };
+        handleAddItem<Asset>('assets', newItem);
+      }} size="small"><AddIcon /> Add Asset Account</Button>
+    </div>
+  );
+
   const renderListEditor = <T extends {id: string, name: string}>(
     title: string, 
     listName: ItemType, 
@@ -547,7 +672,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
 
             {renderCreditCardEditor()}
             {renderLoanEditor()}
-            {renderListEditor<Asset>('Assets', 'assets', data.assets, ['name', 'value'])}
+            {renderAssetEditor()}
             {renderListEditor<NamedAmount>('Monthly Bills', 'monthlyBills', data.monthlyBills, ['name', 'amount'])}
         </div>
         <div className="p-6 flex justify-end gap-4 sticky bottom-0 bg-white dark:bg-gray-900 border-t">

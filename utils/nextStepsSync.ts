@@ -1,11 +1,11 @@
-import type { MonthlyData, CreditCard, Loan, NextStepsAccount, NextStepsSyncPayload, AccountType } from '../types';
+import type { MonthlyData, CreditCard, Loan, Asset, NextStepsAccount, NextStepsSyncPayload, AccountType } from '../types';
 
 interface LenderRule {
   keywords: string[];
   name: string;
   url: string;
   defaultApr?: string;
-  categoryHint?: 'credit-card' | 'mortgage' | 'loan' | 'llc';
+  categoryHint?: 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'asset';
 }
 
 const LENDER_DIRECTORY: LenderRule[] = [
@@ -64,7 +64,7 @@ const LENDER_DIRECTORY: LenderRule[] = [
     defaultApr: '19.74'
   },
   {
-    keywords: ['apple card', 'goldman sachs', 'apple'],
+    keywords: ['apple card', 'apple'],
     name: 'Apple Card / Goldman Sachs',
     url: 'https://card.apple.com',
     defaultApr: '19.24'
@@ -95,9 +95,106 @@ const LENDER_DIRECTORY: LenderRule[] = [
   },
   {
     keywords: ['fidelity'],
-    name: 'Fidelity',
+    name: 'Fidelity Investments',
     url: 'https://www.fidelity.com',
-    defaultApr: '19.24'
+    defaultApr: '19.24',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['vanguard'],
+    name: 'Vanguard Group',
+    url: 'https://investor.vanguard.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['schwab', 'charles schwab'],
+    name: 'Charles Schwab',
+    url: 'https://www.schwab.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['marcus', 'goldman sachs', 'goldman'],
+    name: 'Marcus by Goldman Sachs',
+    url: 'https://www.marcus.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['coinbase'],
+    name: 'Coinbase',
+    url: 'https://www.coinbase.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['kraken'],
+    name: 'Kraken',
+    url: 'https://www.kraken.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['robinhood'],
+    name: 'Robinhood',
+    url: 'https://robinhood.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['etrade', 'e*trade', 'morgan stanley'],
+    name: 'E*TRADE / Morgan Stanley',
+    url: 'https://us.etrade.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['merrill', 'merrill lynch', 'merrill edge'],
+    name: 'Merrill Edge / Bank of America',
+    url: 'https://www.merrilledge.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['ally', 'ally bank', 'ally invest'],
+    name: 'Ally Financial',
+    url: 'https://www.ally.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['betterment'],
+    name: 'Betterment',
+    url: 'https://www.betterment.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['wealthfront'],
+    name: 'Wealthfront',
+    url: 'https://www.wealthfront.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['interactive brokers', 'ibkr'],
+    name: 'Interactive Brokers',
+    url: 'https://www.interactivebrokers.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['treasurydirect', 'treasury direct', 'i-bond', 'savings bond'],
+    name: 'TreasuryDirect (US Treasury)',
+    url: 'https://www.treasurydirect.gov',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['empower', 'personal capital'],
+    name: 'Empower Retirement',
+    url: 'https://www.empower.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['principal'],
+    name: 'Principal Financial Group',
+    url: 'https://www.principal.com',
+    categoryHint: 'asset'
+  },
+  {
+    keywords: ['t. rowe', 't rowe', 'troweprice'],
+    name: 'T. Rowe Price',
+    url: 'https://www.troweprice.com',
+    categoryHint: 'asset'
   },
   {
     keywords: ['rocket mortgage', 'rocket', 'quicken loans'],
@@ -267,23 +364,65 @@ export function inferLenderDetails(name: string, explicitLender?: string, explic
   };
 }
 
+export function inferAssetDetails(
+  name: string, 
+  explicitInstitution?: string, 
+  explicitUrl?: string, 
+  explicitCategory?: string
+) {
+  const lender = inferLenderDetails(name, explicitInstitution, explicitUrl);
+  const nameLower = name.toLowerCase();
+  
+  let assetType = 'Asset Account';
+  if (explicitCategory && explicitCategory.trim().length > 0) {
+    assetType = explicitCategory;
+  } else if (nameLower.includes('401k') || nameLower.includes('401(k)') || nameLower.includes('ira') || nameLower.includes('roth') || nameLower.includes('pension') || nameLower.includes('retirement')) {
+    assetType = 'Retirement (401k/IRA)';
+  } else if (nameLower.includes('saving') || nameLower.includes('hysa') || nameLower.includes('money market') || nameLower.includes('cd') || nameLower.includes('deposit')) {
+    assetType = 'Savings / HYSA';
+  } else if (nameLower.includes('checking') || nameLower.includes('cash') || nameLower.includes('debit')) {
+    assetType = 'Checking / Cash';
+  } else if (nameLower.includes('crypto') || nameLower.includes('bitcoin') || nameLower.includes('btc') || nameLower.includes('eth') || nameLower.includes('coinbase') || nameLower.includes('kraken')) {
+    assetType = 'Cryptocurrency';
+  } else if (nameLower.includes('invest') || nameLower.includes('stock') || nameLower.includes('brokerage') || nameLower.includes('etf') || nameLower.includes('fidelity') || nameLower.includes('vanguard') || nameLower.includes('schwab')) {
+    assetType = 'Investment / Brokerage';
+  } else if (nameLower.includes('equity') || nameLower.includes('real estate') || nameLower.includes('property') || nameLower.includes('home') || nameLower.includes('house')) {
+    assetType = 'Real Estate Equity';
+  } else if (nameLower.includes('vehicle') || nameLower.includes('car') || nameLower.includes('auto') || nameLower.includes('boat')) {
+    assetType = 'Vehicle';
+  }
+
+  return {
+    institutionName: explicitInstitution || lender.lenderName,
+    url: explicitUrl || lender.url,
+    assetType
+  };
+}
+
 /**
  * Normalizes category to Next Steps recognized categories:
- * 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'other'
+ * 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'asset' | 'other'
  */
 export function normalizeCategory(
   item: { name: string; isBusiness?: boolean; category?: string },
-  sourceType: 'card' | 'loan',
+  sourceType: 'card' | 'loan' | 'asset',
   accountType?: AccountType
-): 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'other' {
+): 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'asset' | 'other' {
   const isBusiness = item.isBusiness || accountType === 'business';
   const nameLower = item.name.toLowerCase();
 
   if (item.category) {
     const cat = item.category.toLowerCase();
-    if (['credit-card', 'mortgage', 'loan', 'llc', 'other'].includes(cat)) {
+    if (['credit-card', 'mortgage', 'loan', 'llc', 'asset', 'other'].includes(cat)) {
       return cat as any;
     }
+  }
+
+  if (sourceType === 'asset') {
+    if (isBusiness && (nameLower.includes('llc') || nameLower.includes('business') || nameLower.includes('corporate'))) {
+      return 'llc';
+    }
+    return 'asset';
   }
 
   if (sourceType === 'card') {
@@ -348,7 +487,10 @@ export function buildNextStepsSyncPayload(data: MonthlyData, options?: SyncOptio
       apr: apr,
       isBusiness: isBiz,
       url: lender.url,
-      notes: notes
+      notes: notes,
+      accountType: 'debt',
+      info: `Revolving Card | Lender: ${lender.lenderName} | Limit: ${formatSyncCurrency(card.limit)} | APR: ${apr}%`,
+      balanceNumeric: Number(card.balance) || 0
     });
   });
 
@@ -371,15 +513,65 @@ export function buildNextStepsSyncPayload(data: MonthlyData, options?: SyncOptio
       apr: apr,
       isBusiness: isBiz,
       url: lender.url,
-      notes: notes
+      notes: notes,
+      accountType: 'debt',
+      info: `Installment Account (${category}) | Lender: ${lender.lenderName} | Original Limit: ${formatSyncCurrency(loan.limit)} | Rate: ${apr}%`,
+      balanceNumeric: Number(loan.balance) || 0
     });
   });
+
+  // 3. Process Asset Accounts (Savings, Investments, Retirement, Real Estate, Crypto, etc.)
+  (data.assets || []).forEach((asset: Asset) => {
+    const isBiz = asset.isBusiness !== undefined ? asset.isBusiness : isGlobalBusiness;
+    const details = inferAssetDetails(asset.name, asset.institution, asset.url, asset.category);
+    const last4 = extractOrGenerateLast4(asset.name, asset.accountNumber || asset.last4, asset.id);
+    const category = normalizeCategory(asset, 'asset', options?.accountType);
+    const formattedBalance = formatSyncCurrency(asset.value || 0);
+    const aprOrApy = asset.apy ? String(asset.apy).replace('%', '').trim() : '0.00';
+    const notes = asset.notes || (isBiz && options?.businessName 
+      ? `Commercial asset account (${details.assetType}) for ${options.businessName}` 
+      : `${details.assetType} account synced from What's My Credit Worth`);
+    const info = asset.info || `Asset Account (${details.assetType}) | Institution: ${details.institutionName} | Account: ...${last4} | Balance: ${formattedBalance}`;
+
+    accounts.push({
+      name: asset.name,
+      lenderName: details.institutionName,
+      category: category,
+      currentBalance: formattedBalance,
+      creditLimit: formattedBalance, // Asset holding valuation
+      accountNumber: last4,
+      apr: aprOrApy,
+      isBusiness: isBiz,
+      url: details.url,
+      notes: notes,
+      accountType: 'asset',
+      assetType: details.assetType,
+      info: info,
+      balanceNumeric: Number(asset.value) || 0
+    });
+  });
+
+  const totalDebtNum = (data.creditCards || []).reduce((s, c) => s + (Number(c.balance) || 0), 0) +
+                       (data.loans || []).reduce((s, l) => s + (Number(l.balance) || 0), 0);
+  const totalAssetNum = (data.assets || []).reduce((s, a) => s + (Number(a.value) || 0), 0);
+  const assetAccounts = accounts.filter(a => a.accountType === 'asset' || a.category === 'asset');
 
   return {
     app: 'WhatsMyCreditWorth',
     version: '2.0',
     exportedAt: timestamp,
-    accounts: accounts
+    accounts: accounts,
+    assetAccounts: assetAccounts,
+    assets: assetAccounts,
+    summary: {
+      totalDebts: formatSyncCurrency(totalDebtNum),
+      totalAssets: formatSyncCurrency(totalAssetNum),
+      netWorth: formatSyncCurrency(totalAssetNum - totalDebtNum),
+      totalAccounts: accounts.length,
+      totalCards: (data.creditCards || []).length,
+      totalLoans: (data.loans || []).length,
+      totalAssetsCount: (data.assets || []).length
+    }
   };
 }
 

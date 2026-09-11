@@ -50,7 +50,7 @@ export interface Loan {
 export interface NextStepsAccount {
   name: string;
   lenderName: string;
-  category: 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'other';
+  category: 'credit-card' | 'mortgage' | 'loan' | 'llc' | 'asset' | 'other' | string;
   currentBalance: string;
   creditLimit: string;
   accountNumber: string;
@@ -58,6 +58,10 @@ export interface NextStepsAccount {
   isBusiness: boolean;
   url: string;
   notes: string;
+  accountType?: 'liability' | 'asset' | 'debt';
+  assetType?: string;
+  info?: string;
+  balanceNumeric?: number;
 }
 
 export interface NextStepsSyncPayload {
@@ -65,12 +69,32 @@ export interface NextStepsSyncPayload {
   version: '2.0';
   exportedAt: string;
   accounts: NextStepsAccount[];
+  assetAccounts?: NextStepsAccount[];
+  assets?: NextStepsAccount[];
+  summary?: {
+    totalDebts: string;
+    totalAssets: string;
+    netWorth: string;
+    totalAccounts: number;
+    totalCards: number;
+    totalLoans: number;
+    totalAssetsCount: number;
+  };
 }
 
 export interface Asset {
   id: string;
   name: string;
   value: number;
+  institution?: string;
+  accountNumber?: string;
+  last4?: string;
+  category?: string;
+  isBusiness?: boolean;
+  notes?: string;
+  info?: string;
+  url?: string;
+  apy?: string | number;
 }
 
 export interface MonthlyData {
