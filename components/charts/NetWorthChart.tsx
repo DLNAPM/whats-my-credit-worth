@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FinancialData } from '../../types';
-import { calculateNetWorth, formatCurrency, formatMonthYear, getCurrentMonthYear } from '../../utils/helpers';
+import { calculateNetWorth, formatCurrency, formatMonthYear, getCurrentMonthYear, isValidMonthYear } from '../../utils/helpers';
 
 interface NetWorthChartProps {
   data: FinancialData;
@@ -26,6 +26,7 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
     const currentMonth = getCurrentMonthYear();
     
     return Object.keys(data)
+      .filter(isValidMonthYear)
       .filter((monthYear) => monthYear.localeCompare(currentMonth) <= 0) // Filter out future dates
       .map((monthYear) => ({
         monthYear,

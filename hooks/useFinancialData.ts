@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FinancialData, MonthlyData } from '../types';
-import { getInitialData, getDummyData } from '../utils/helpers';
+import { getInitialData, getDummyData, isValidMonthYear } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
@@ -149,7 +149,13 @@ export function useFinancialData() {
   }, [persistData]);
 
   const exportData = useCallback(() => {
-    const jsonString = JSON.stringify(financialData, null, 2);
+    const cleanExport: FinancialData = {};
+    Object.keys(financialData).forEach(k => {
+      if (isValidMonthYear(k)) {
+        cleanExport[k] = financialData[k];
+      }
+    });
+    const jsonString = JSON.stringify(cleanExport, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -184,7 +190,7 @@ export function useFinancialData() {
     importData, 
     exportData, 
     clearCloudData,
-    hasData: () => Object.keys(financialData).length > 0, 
+    hasData: () => Object.keys(financialData).filter(isValidMonthYear).length > 0, 
     exportTemplateData: () => {}, 
     saveStatus,
     refreshCounter,

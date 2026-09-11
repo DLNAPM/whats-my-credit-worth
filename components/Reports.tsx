@@ -1,14 +1,14 @@
 
 import React, { useState, useMemo } from 'react';
 import type { FinancialData } from '../types';
-import { formatMonthYear, calculateNetWorth, formatCurrency } from '../utils/helpers';
+import { formatMonthYear, calculateNetWorth, formatCurrency, isValidMonthYear } from '../utils/helpers';
 import Card from './ui/Card';
 
 type ReportType = 'monthly' | 'quarterly' | 'annual';
 
 const Reports: React.FC<{ allData: FinancialData }> = ({ allData }) => {
   const [reportType, setReportType] = useState<ReportType>('monthly');
-  const monthYears = useMemo(() => Object.keys(allData).sort().reverse(), [allData]);
+  const monthYears = useMemo(() => Object.keys(allData).filter(isValidMonthYear).sort().reverse(), [allData]);
 
   if (monthYears.length < 2) {
     return (

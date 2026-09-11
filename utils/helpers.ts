@@ -166,10 +166,19 @@ export const getCurrentMonthYear = (): string => {
   return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 };
 
+export const isValidMonthYear = (monthYear?: string | null): boolean => {
+  if (!monthYear || typeof monthYear !== 'string') return false;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthYear)) return false;
+  const [year, month] = monthYear.split('-').map(Number);
+  const date = new Date(year, month - 1);
+  return !isNaN(date.getTime()) && date.getFullYear() === year && date.getMonth() === month - 1;
+};
+
 export const formatMonthYear = (monthYear: string, format: 'long' | 'short' | 'numeric' | '2-digit' | 'narrow' = 'long'): string => {
-    if (!monthYear) return '';
+    if (!monthYear || !isValidMonthYear(monthYear)) return '';
     const [year, month] = monthYear.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1);
+    if (isNaN(date.getTime())) return '';
     return date.toLocaleString('default', { month: format, year: 'numeric' });
 };
 

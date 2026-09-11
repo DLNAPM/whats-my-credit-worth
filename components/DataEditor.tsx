@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource } from '../types';
 import { useFinancialData } from '../hooks/useFinancialData';
-import { formatMonthYear } from '../utils/helpers';
+import { formatMonthYear, isValidMonthYear } from '../utils/helpers';
 import Button from './ui/Button';
 import { AddIcon, DeleteIcon, SaveIcon } from './ui/Icons';
 
@@ -38,7 +38,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
   if (!isOpen) return null;
 
   const availableMonths = Object.keys(financialData)
-    .filter(m => m !== monthYear)
+    .filter(m => isValidMonthYear(m) && m !== monthYear)
     .sort((a, b) => b.localeCompare(a));
 
   const handleCopyData = () => {
@@ -449,9 +449,11 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                         className="block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
                     >
                         <option value="">Select a month...</option>
-                        {availableMonths.map(m => (
-                            <option key={m} value={m}>{formatMonthYear(m)}</option>
-                        ))}
+                        {availableMonths.map(m => {
+                            const label = formatMonthYear(m);
+                            if (!label) return null;
+                            return <option key={m} value={m}>{label}</option>;
+                        })}
                     </select>
                     <Button onClick={handleCopyData} disabled={!copyFromMonth} size="small">
                         Copy Data

@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FinancialData } from '../../types';
-import { formatMonthYear, getCurrentMonthYear } from '../../utils/helpers';
+import { formatMonthYear, getCurrentMonthYear, isValidMonthYear } from '../../utils/helpers';
 
 interface CreditScoreChartProps {
   data: FinancialData;
@@ -31,7 +31,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
   const mortgageLabel = useMemo(() => {
     const currentMonth = getCurrentMonthYear();
-    const sortedMonths = Object.keys(data).sort().reverse();
+    const sortedMonths = Object.keys(data).filter(isValidMonthYear).sort().reverse();
     const latestMonth = sortedMonths.find(m => m <= currentMonth) || sortedMonths[0];
     if (latestMonth && data[latestMonth]?.creditScores?.mrCooperLabel) {
       return data[latestMonth].creditScores.mrCooperLabel!;
@@ -57,6 +57,7 @@ const CreditScoreChart: React.FC<CreditScoreChartProps> = ({ data }) => {
     const currentMonth = getCurrentMonthYear();
     
     return Object.keys(data)
+      .filter(isValidMonthYear)
       .filter((monthYear) => monthYear.localeCompare(currentMonth) <= 0) // Filter out future dates
       .map((monthYear) => {
         const scores = data[monthYear]?.creditScores;
