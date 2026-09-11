@@ -112,6 +112,18 @@
         "occurrenceCount": { "type": "number", "description": "Number of occurrences" }
       },
       "required": ["title", "category", "severity", "status", "message", "occurredAt"]
+    },
+    "MailMessage": {
+      "title": "Mail Message",
+      "description": "Email queue documents processed by Firebase Trigger Email extension",
+      "type": "object",
+      "properties": {
+        "to": { "type": "string", "description": "Recipient email or array of recipients" },
+        "message": { "type": "object", "description": "Email subject, text, and html content" },
+        "createdAt": { "type": "string", "description": "Timestamp when queued" },
+        "delivery": { "type": "object", "description": "Delivery status populated by Trigger Email extension" }
+      },
+      "required": ["to", "message"]
     }
   },
   "firestore": {
@@ -122,6 +134,10 @@
     "support_requests/{requestId}": {
       "schema": "SupportRequest",
       "description": "Support request messages for admin and automated email routing"
+    },
+    "mail/{mailId}": {
+      "schema": "MailMessage",
+      "description": "Email queue documents for Firebase Trigger Email extension"
     },
     "shared_snapshots/{snapshotId}": {
       "schema": "SharedSnapshot",

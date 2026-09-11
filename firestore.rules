@@ -67,8 +67,15 @@ service cloud.firestore {
 
     match /support_requests/{requestId} {
       allow read: if isSuperUser();
-      allow create: if isValidId(requestId) && isValidSupportRequest(incoming());
-      allow update: if isSuperUser() && isValidSupportRequest(incoming());
+      allow create: if isSuperUser() || (isValidId(requestId) && isValidSupportRequest(incoming()));
+      allow update: if isSuperUser() || isValidSupportRequest(incoming());
+      allow delete: if isSuperUser();
+    }
+
+    match /mail/{mailId} {
+      allow read: if isSuperUser();
+      allow create: if isSuperUser() || isSignedIn();
+      allow update: if isSuperUser();
       allow delete: if isSuperUser();
     }
 

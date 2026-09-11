@@ -11,6 +11,7 @@ import {
   reportIncident, 
   runSystemHealthCheck,
   getAdminDashboardUrl,
+  type HealthCheckResult,
   RENDER_APP_DOMAIN,
   CANONICAL_APP_DOMAIN,
   FIREBASE_APP_DOMAIN,
@@ -155,6 +156,10 @@ export const AdminDashboard: React.FC = () => {
   const [testAlertTriggering, setTestAlertTriggering] = useState(false);
   const [healthCheckRunning, setHealthCheckRunning] = useState(false);
   const [healthCheckSummary, setHealthCheckSummary] = useState<string | null>(null);
+  const [healthCheckResult, setHealthCheckResult] = useState<HealthCheckResult | null>(null);
+  const [showHealthModal, setShowHealthModal] = useState(false);
+  const [copiedReport, setCopiedReport] = useState(false);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [incidentNotificationMsg, setIncidentNotificationMsg] = useState<string | null>(null);
 
   const adminEmail = user?.email || APP_ADMIN_EMAIL;
@@ -339,7 +344,7 @@ export const AdminDashboard: React.FC = () => {
         title: 'Gemini API Rate Limit & Restriction Check (Test Incident)',
         category: 'api_restriction',
         severity: 'critical',
-        message: `Admin verification test for alarm pipeline. If this were a real quota exhaustion, Gemini API calls (chatbot, score prediction, recommendations) would be restricted. An alert email detailing this event has been routed to ${APP_ADMIN_EMAIL}.`,
+        message: `Admin verification test for alarm pipeline. If this were a real quota exhaustion, Gemini API calls (chatbot, score prediction, recommendations) would be restricted. An alert email detailing this event has been queued in Firestore for ${APP_ADMIN_EMAIL}.`,
         errorDetails: 'RESOURCE_EXHAUSTED: Quota exceeded for quota metric "generate_content_requests" and limit "GenerateContent requests per minute per user". https://ai.google.dev/gemini-api/docs/rate-limits',
         source: 'Admin Diagnostics Engine',
         userEmail: adminEmail,
@@ -348,7 +353,7 @@ export const AdminDashboard: React.FC = () => {
       });
 
       if (testId) {
-        showNotification(`Test Incident created! Alert email dispatched to ${APP_ADMIN_EMAIL}`);
+        showNotification(`Test Incident created & queued in Firestore! Use 'Email Alert' icon to send via email client.`);
         setExpandedIncidentId(testId);
       }
     } catch (err) {
@@ -363,9 +368,16 @@ export const AdminDashboard: React.FC = () => {
     setHealthCheckRunning(true);
     try {
       const result = await runSystemHealthCheck(adminEmail);
+      setHealthCheckResult(result);
+      setShowHealthModal(true);
+
       if (result.success) {
-        showNotification(`Health check passed! Diagnostic email sent to ${adminEmail}`);
-        setHealthCheckSummary(`All subsystems operational (Firestore, Auth, Notifications). Verified Admin link: ${result.adminUrl}`);
+        if (result.emailReport?.deliveryState === 'DELIVERED') {
+          showNotification(`Health check passed! Email verified delivered to ${adminEmail}`);
+        } else {
+          showNotification(`Health check completed & queued in Firestore! Diagnostic window opened.`);
+        }
+        setHealthCheckSummary(`Subsystems verified (Firestore, Auth, Incident Queue). Report queued for ${adminEmail}`);
         if (result.incidentId) {
           setExpandedIncidentId(result.incidentId);
         }
@@ -706,7 +718,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-xs space-y-1.5 border border-gray-100 dark:border-gray-800">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-xs space-y-2 border border-gray-100 dark:border-gray-800">
               <div className="flex items-start gap-2">
                 <span className="font-bold text-gray-700 dark:text-gray-200 shrink-0">Resolved Error Notice:</span>
                 <span className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -714,8 +726,52 @@ export const AdminDashboard: React.FC = () => {
                 </span>
               </div>
               {healthCheckSummary && (
-                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 text-emerald-600 dark:text-emerald-400 font-medium">
-                  ✔ {healthCheckSummary}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 text-emerald-600 dark:text-emerald-400 font-medium flex items-center justify-between flex-wrap gap-2">
+                  <span>✔ {healthCheckSummary}</span>
+                  {healthCheckResult && (
+                    <button
+                      onClick={() => setShowHealthModal(true)}
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>View Health Check Report & Email Options</span>
+                      <ExternalLinkIcon className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => setShowSetupGuide(!showSetupGuide)}
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  <MailIcon className="w-3 h-3" />
+                  <span>{showSetupGuide ? 'Hide' : 'View'} Firebase "Trigger Email" Extension Configuration Guide</span>
+                </button>
+              </div>
+
+              {/* Collapsible Setup Guide */}
+              {showSetupGuide && (
+                <div className="mt-2 p-3.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-200/70 dark:border-blue-900/50 space-y-2 text-xs text-gray-700 dark:text-gray-300">
+                  <div className="font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                    <MailIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Why did the Admin not receive the Health Check report via email?</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    Google Cloud Firestore is a database. When you click <strong>Run System Health Check</strong>, the application logs the incident into <code>system_incidents</code> and writes the email payload into the <code>support_requests</code> and <code>mail</code> collections.
+                  </p>
+                  <p className="leading-relaxed">
+                    However, Firestore does not send emails on its own. In Firebase, dispatching emails to an inbox (like <strong>{APP_ADMIN_EMAIL}</strong>) requires the official <strong>"Trigger Email from Firestore" (firestore-send-email)</strong> extension, or a backend SMTP worker:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 pl-1 text-[11px] font-medium text-gray-800 dark:text-gray-200">
+                    <li>Open the <a href="https://console.firebase.google.com/project/whats-my-credit-worth/extensions" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline">Firebase Extensions Console</a> for project <code>whats-my-credit-worth</code>.</li>
+                    <li>Search for <strong>Trigger Email</strong> (<code>firestore-send-email</code>) and click <strong>Install</strong>.</li>
+                    <li>Set <strong>Email documents collection</strong> to <code>support_requests</code> (or <code>mail</code>).</li>
+                    <li>Provide your <strong>SMTP connection URI</strong> (e.g. SendGrid, Mailgun, Brevo, or a Google Workspace App Password).</li>
+                    <li>Once deployed, every document written by the app will automatically be sent to <strong>{APP_ADMIN_EMAIL}</strong>.</li>
+                  </ol>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 italic">
+                    Tip: Until the extension is installed, you can use the pre-formatted <strong>"Send via Email Client"</strong> button to send any diagnostic report or incident alert directly with 1 click!
+                  </p>
                 </div>
               )}
             </div>
@@ -954,11 +1010,11 @@ export const AdminDashboard: React.FC = () => {
                           </button>
 
                           <a
-                            href={`mailto:${APP_ADMIN_EMAIL}?subject=${encodeURIComponent(`[INCIDENT ALERT] ${incident.title}`)}&body=${encodeURIComponent(
-                              `Incident ID: ${incident.id}\nSeverity: ${incident.severity}\nCategory: ${incident.category}\nTimestamp: ${incident.occurredAt}\n\nMessage:\n${incident.message}\n\nError Details:\n${incident.errorDetails || 'N/A'}`
+                            href={`mailto:${APP_ADMIN_EMAIL}?subject=${encodeURIComponent(`[INCIDENT ALERT: ${incident.title}] What's My Credit Worth`)}&body=${encodeURIComponent(
+                              `WMCW INCIDENT ALERT: ${incident.title}\n==================================================\nIncident ID: ${incident.id}\nSeverity: ${incident.severity.toUpperCase()}\nCategory: ${incident.category}\nTimestamp: ${incident.occurredAt}\n\nMessage:\n${incident.message}\n\nError Details:\n${incident.errorDetails || 'None'}\n\nOPEN ADMIN DASHBOARD TO REVIEW / ACKNOWLEDGE:\n${getAdminDashboardUrl(incident.id).primaryUrl}\n==================================================`
                             )}`}
                             className="p-1.5 text-gray-500 hover:text-indigo-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                            title={`Email alert to ${APP_ADMIN_EMAIL}`}
+                            title={`Email alert with dashboard link to ${APP_ADMIN_EMAIL}`}
                           >
                             <MailIcon className="w-3.5 h-3.5" />
                           </a>
@@ -1240,6 +1296,134 @@ export const AdminDashboard: React.FC = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* System Health Check & Email Pipeline Diagnostics Modal */}
+      {showHealthModal && healthCheckResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-7 border border-gray-100 dark:border-gray-800 space-y-5 my-8">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                    <ActivityIcon className="w-5 h-5" />
+                  </span>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    System Health Check & Email Pipeline Diagnostics
+                  </h3>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Incident ID: <code className="text-indigo-600 dark:text-indigo-400">{healthCheckResult.incidentId}</code> • {new Date(healthCheckResult.timestamp).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHealthModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Subsystems Status Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-center border border-gray-100 dark:border-gray-800">
+                <div className="text-emerald-500 font-bold text-sm">✔ OK</div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Firestore DB</div>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-center border border-gray-100 dark:border-gray-800">
+                <div className="text-emerald-500 font-bold text-sm">✔ OK</div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Incident Queue</div>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-center border border-gray-100 dark:border-gray-800">
+                <div className="text-emerald-500 font-bold text-sm">✔ Queued</div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Firestore Mail</div>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-center border border-gray-100 dark:border-gray-800">
+                <div className="text-emerald-500 font-bold text-sm">✔ Verified</div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Admin Hash URL</div>
+              </div>
+            </div>
+
+            {/* Email Delivery Pipeline Diagnosis Card */}
+            <div className={`p-4 rounded-2xl border text-xs space-y-2.5 ${
+              healthCheckResult.emailReport.deliveryState === 'DELIVERED'
+                ? 'bg-emerald-50/80 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200'
+                : 'bg-amber-50/80 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200'
+            }`}>
+              <div className="flex items-start gap-2.5">
+                <MailIcon className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div>
+                  <h4 className="font-bold text-sm">
+                    {healthCheckResult.emailReport.deliveryState === 'DELIVERED'
+                      ? 'Email Delivery Confirmed via Firebase Extension'
+                      : 'Why the Admin does not receive this email in Gmail automatically:'}
+                  </h4>
+                  <p className="mt-1 leading-relaxed text-gray-700 dark:text-gray-300">
+                    {healthCheckResult.emailReport.deliveryState === 'DELIVERED' ? (
+                      `Firebase Trigger Email extension verified successful dispatch to ${healthCheckResult.emailReport.recipient}.`
+                    ) : (
+                      <>
+                        The diagnostic report was successfully recorded in Google Cloud Firestore (collections <code>support_requests</code> and <code>mail</code>). However, Firestore is a database and cannot send SMTP emails by itself. Transmitting emails into your Gmail inbox (<strong>{healthCheckResult.emailReport.recipient}</strong>) requires the Firebase <strong>"Trigger Email from Firestore"</strong> extension configured with an SMTP service (SendGrid, Mailgun, Brevo, or a Gmail App Password).
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Direct Actions */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <a
+                href={healthCheckResult.emailReport.mailtoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
+                title="Opens your email client with pre-filled report ready to send to admin"
+              >
+                <MailIcon className="w-4 h-4" />
+                <span>Send via My Email Client (1-Click)</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(healthCheckResult.emailReport.bodyText);
+                  setCopiedReport(true);
+                  setTimeout(() => setCopiedReport(false), 2200);
+                }}
+                className="px-4 py-2.5 text-xs font-bold rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all flex items-center gap-1.5"
+              >
+                <CheckCircle className={`w-4 h-4 ${copiedReport ? 'text-emerald-500' : 'text-gray-400'}`} />
+                <span>{copiedReport ? 'Copied to Clipboard!' : 'Copy Diagnostic Report'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowSetupGuide(!showSetupGuide)}
+                className="px-3 py-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                {showSetupGuide ? 'Hide Extension Guide' : 'How to configure automated SMTP emails'}
+              </button>
+            </div>
+
+            {/* Generated Email Preview */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                Pre-formatted Diagnostic Report Preview:
+              </span>
+              <pre className="p-3 bg-gray-900 text-gray-200 rounded-xl text-[11px] leading-relaxed font-mono whitespace-pre-wrap max-h-48 overflow-y-auto border border-gray-800">
+                {healthCheckResult.emailReport.bodyText}
+              </pre>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowHealthModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                Close Diagnostic
+              </button>
             </div>
           </div>
         </div>

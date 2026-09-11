@@ -1,4 +1,4 @@
-import { doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { SystemIncident, IncidentCategory, IncidentSeverity } from '../types';
 
@@ -358,7 +358,21 @@ Direct Verified Environment Links:
       }
     });
 
-    console.info(`[IncidentReporter] Created incident ${incidentId} and dispatched alert email to ${APP_ADMIN_EMAIL}`);
+    try {
+      await setDoc(doc(db, 'mail', `alert_${incidentId}`), {
+        to: [APP_ADMIN_EMAIL],
+        message: {
+          subject: emailSubject,
+          text: emailText,
+          html: emailHtml
+        },
+        createdAt: serverTimestamp()
+      });
+    } catch (mailErr) {
+      console.warn("[IncidentReporter] Optional mail queue note:", mailErr);
+    }
+
+    console.info(`[IncidentReporter] Created incident ${incidentId} and queued alert email to ${APP_ADMIN_EMAIL}`);
     return incidentId;
   } catch (err) {
     console.error("[IncidentReporter] Failed to record incident or send alert email:", err);
@@ -366,11 +380,7 @@ Direct Verified Environment Links:
   }
 }
 
-/**
- * Runs a live System Health Check across Firestore, Auth, and Email dispatch,
- * and sends an official Health Check email with the verified Admin Dashboard link.
- */
-export async function runSystemHealthCheck(adminEmail?: string): Promise<{
+export interface HealthCheckResult {
   success: boolean;
   incidentId: string | null;
   timestamp: string;
@@ -380,7 +390,22 @@ export async function runSystemHealthCheck(adminEmail?: string): Promise<{
     incidentQueue: boolean;
     emailDispatch: boolean;
   };
-}> {
+  emailReport: {
+    recipient: string;
+    subject: string;
+    bodyText: string;
+    mailtoUrl: string;
+    deliveryState: 'DELIVERED' | 'QUEUED_IN_FIRESTORE' | 'DELIVERY_ERROR';
+    deliveryMessage: string;
+  };
+}
+
+/**
+ * Runs a live System Health Check across Firestore, Auth, and Email dispatch,
+ * queues the diagnostic report in Firestore (support_requests & mail), probes for
+ * active Trigger Email extension delivery, and produces a 1-click direct email fallback.
+ */
+export async function runSystemHealthCheck(adminEmail?: string): Promise<HealthCheckResult> {
   const recipient = adminEmail || APP_ADMIN_EMAIL;
   const timestamp = new Date().toISOString();
   const checks = {
@@ -520,6 +545,7 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
       </div>
     `;
 
+    // 2a. Queue Health Check in support_requests collection
     await setDoc(doc(db, 'support_requests', `health_${incidentId}`), {
       to: recipient,
       message: {
@@ -535,15 +561,70 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
       }
     });
 
+    // 2b. Also queue in standard mail collection (default for Firebase Trigger Email extension)
+    try {
+      await setDoc(doc(db, 'mail', `health_${incidentId}`), {
+        to: [recipient],
+        message: {
+          subject: emailSubject,
+          text: emailText,
+          html: emailHtml
+        },
+        createdAt: serverTimestamp()
+      });
+    } catch (mailErr) {
+      console.warn("[IncidentReporter] Optional mail collection queue note:", mailErr);
+    }
+
     checks.emailDispatch = true;
-    console.info(`[IncidentReporter] System Health Check completed successfully. Report dispatched to ${recipient}`);
+
+    // 3. Fast probe to detect if the Firebase Trigger Email extension is active
+    let deliveryState: 'DELIVERED' | 'QUEUED_IN_FIRESTORE' | 'DELIVERY_ERROR' = 'QUEUED_IN_FIRESTORE';
+    let deliveryMessage = 'Queued in Firestore collections (support_requests & mail). Delivery to your Gmail inbox requires the Firebase "Trigger Email" extension with an active SMTP provider (SendGrid/Gmail).';
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const [mailDoc, supportDoc] = await Promise.all([
+        getDoc(doc(db, 'mail', `health_${incidentId}`)).catch(() => null),
+        getDoc(doc(db, 'support_requests', `health_${incidentId}`)).catch(() => null)
+      ]);
+
+      const delivery = mailDoc?.data()?.delivery || supportDoc?.data()?.delivery;
+      if (delivery) {
+        if (delivery.state === 'SUCCESS') {
+          deliveryState = 'DELIVERED';
+          deliveryMessage = 'Verified delivered to Gmail inbox via Firebase Trigger Email Extension.';
+        } else if (delivery.state === 'ERROR') {
+          deliveryState = 'DELIVERY_ERROR';
+          deliveryMessage = `Trigger Email extension reported error: ${delivery.error || 'SMTP delivery issue'}`;
+        }
+      }
+    } catch {
+      // Ignore probe read error
+    }
+
+    const mailtoUrl = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`;
+
+    if (deliveryState === 'DELIVERED') {
+      console.info(`[IncidentReporter] System Health Check verified delivered to ${recipient}`);
+    } else {
+      console.info(`[IncidentReporter] System Health Check queued in Firestore for ${recipient}. Note: Real-time inbox delivery requires the Firebase Trigger Email extension configured in Firebase Console. Direct mailto link is available.`);
+    }
 
     return {
       success: true,
       incidentId,
       timestamp,
       adminUrl: primaryUrl,
-      checks
+      checks,
+      emailReport: {
+        recipient,
+        subject: emailSubject,
+        bodyText: emailText,
+        mailtoUrl,
+        deliveryState,
+        deliveryMessage
+      }
     };
   } catch (err) {
     console.error("[IncidentReporter] Health Check failed:", err);
@@ -552,7 +633,15 @@ All dashboard URLs are now automatically normalized to prevent duplicate protoco
       incidentId: null,
       timestamp,
       adminUrl: primaryUrl,
-      checks
+      checks,
+      emailReport: {
+        recipient,
+        subject: '[HEALTH CHECK ERROR]',
+        bodyText: 'Health check encountered an error while writing to Firestore.',
+        mailtoUrl: `mailto:${encodeURIComponent(recipient)}?subject=Health%20Check%20Error`,
+        deliveryState: 'DELIVERY_ERROR',
+        deliveryMessage: 'Failed to write diagnostic record to Firestore.'
+      }
     };
   }
 }
