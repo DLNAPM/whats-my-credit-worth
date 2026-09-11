@@ -26,6 +26,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
   const [copySuccess, setCopySuccess] = useState(false);
   const [customAccounts, setCustomAccounts] = useState<NextStepsAccount[] | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'raw_json'>('overview');
+  const [filterType, setFilterType] = useState<'all' | 'cards' | 'loans' | 'assets'>('all');
 
   const basePayload = useMemo(() => {
     return buildNextStepsSyncPayload(data, {
@@ -77,7 +78,6 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
   const totalCards = activeAccounts.filter(a => a.category === 'credit-card' || (a.isBusiness && a.category === 'llc')).length;
   const totalLoans = activeAccounts.filter(a => a.category === 'loan' || a.category === 'mortgage').length;
   const totalAssets = activeAccounts.filter(a => a.category === 'asset' || a.accountType === 'asset').length;
-  const [filterType, setFilterType] = useState<'all' | 'cards' | 'loans' | 'assets'>('all');
 
   const filteredAccounts = activeAccounts.filter(a => {
     if (filterType === 'cards') return a.category === 'credit-card' || (a.isBusiness && a.category === 'llc');
