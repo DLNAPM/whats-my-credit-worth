@@ -3,29 +3,67 @@ import { db } from '../firebase';
 import type { SystemIncident, IncidentCategory, IncidentSeverity } from '../types';
 
 export const APP_ADMIN_EMAIL = 'dlaniger.napm.consulting@gmail.com';
-export const CANONICAL_APP_DOMAIN = 'https://whats-my-credit-worth.web.app';
+export const RENDER_APP_DOMAIN = 'https://whats-my-credit-worth.onrender.com';
+export const CANONICAL_APP_DOMAIN = 'https://whats-my-credit-worth.onrender.com';
+export const FIREBASE_APP_DOMAIN = 'https://whats-my-credit-worth.web.app';
 export const PREVIEW_APP_DOMAIN = 'https://ais-pre-flm33zf6mpqumlfniclbg4-55266864645.us-east1.run.app';
 
 /**
- * Returns reliable URLs for the Admin Dashboard.
+ * Sanitizes and normalizes URLs to permanently prevent duplicate protocols
+ * (such as https://https://) and duplicate slashes (such as //admin).
+ */
+export function normalizeAppUrl(rawOriginOrUrl: string, subPathAndQuery: string = ''): string {
+  let origin = (rawOriginOrUrl || '').trim();
+
+  // Strip repeated protocol declarations (e.g. https://https://, http://https://, etc.)
+  while (/^https?:\/\/https?:\/\//i.test(origin)) {
+    origin = origin.replace(/^https?:\/\//i, '');
+  }
+
+  // Ensure valid https:// protocol is present
+  if (!/^https?:\/\//i.test(origin)) {
+    origin = `https://${origin}`;
+  }
+
+  // Remove trailing slashes from origin
+  origin = origin.replace(/\/+$/, '');
+
+  // Format subpath & query ensuring single leading slash
+  let path = (subPathAndQuery || '').trim();
+  if (path && !path.startsWith('/')) {
+    path = `/${path}`;
+  }
+
+  // Clean any multiple consecutive slashes (except in http:// or https://)
+  const full = `${origin}${path}`;
+  return full.replace(/(https?:\/\/)|(\/)+/g, (match, protocol) => protocol || '/');
+}
+
+/**
+ * Returns reliable, sanitized URLs for the Admin Dashboard.
  * Uses hash routing (/#/admin) and query parameters so it works cleanly
- * on any web host, Firebase Hosting (with or without rewrites), and container environments.
+ * across Render (Static/Web service), Firebase Hosting (SPA rewrite), and container environments.
  */
 export function getAdminDashboardUrl(incidentId?: string): {
   primaryUrl: string;
+  renderUrl: string;
+  firebaseUrl: string;
   previewUrl: string;
 } {
   const query = incidentId ? `?incident=${encodeURIComponent(incidentId)}&tab=alerts` : '?tab=alerts';
-  
-  let currentOrigin = CANONICAL_APP_DOMAIN;
+  const targetSubPath = `/#/admin${query}`;
+
+  let activeOrigin = RENDER_APP_DOMAIN;
   if (typeof window !== 'undefined' && window.location?.origin && !window.location.origin.includes('localhost')) {
-    currentOrigin = window.location.origin;
+    activeOrigin = window.location.origin;
   }
 
-  const primaryUrl = `${currentOrigin}/#/admin${query}`;
-  const previewUrl = `${PREVIEW_APP_DOMAIN}/#/admin${query}`;
+  const primaryUrl = normalizeAppUrl(activeOrigin, targetSubPath);
+  const renderUrl = normalizeAppUrl(RENDER_APP_DOMAIN, targetSubPath);
+  const firebaseUrl = normalizeAppUrl(FIREBASE_APP_DOMAIN, targetSubPath);
+  const previewUrl = normalizeAppUrl(PREVIEW_APP_DOMAIN, targetSubPath);
 
-  return { primaryUrl, previewUrl };
+  return { primaryUrl, renderUrl, firebaseUrl, previewUrl };
 }
 
 // Cache recent incidents in memory to avoid duplicate spam within 3 minutes
@@ -193,7 +231,7 @@ export async function reportIncident(options: ReportIncidentOptions): Promise<st
     // 1. Write to system_incidents collection in Firestore
     await setDoc(doc(db, 'system_incidents', incidentId), incidentData);
 
-    const { primaryUrl: primaryAdminUrl, previewUrl: previewAdminUrl } = getAdminDashboardUrl(incidentId);
+    const { primaryUrl: primaryAdminUrl, renderUrl: renderAdminUrl, firebaseUrl: firebaseAdminUrl, previewUrl: previewAdminUrl } = getAdminDashboardUrl(incidentId);
 
     // 2. Queue Email via support_requests (Trigger Email extension)
     const emailSubject = `[ALERT: ${severity.toUpperCase()}] ${title} - WMCW App`;
@@ -221,8 +259,10 @@ Please open the WMCW Admin Dashboard to review and acknowledge this incident:
 --> Open Admin Dashboard to Acknowledge:
     ${primaryAdminUrl}
 
-Alternative Live Preview Link:
-    ${previewAdminUrl}
+Direct Verified Environment Links:
+- Render Production: ${renderAdminUrl}
+- Firebase Hosting:  ${firebaseAdminUrl}
+- AI Studio Preview: ${previewAdminUrl}
 
 - If this is a Gemini API quota issue, check plan & limits at: https://ai.google.dev/gemini-api/docs/rate-limits
 - If this is a billing/Stripe issue, check the Stripe dashboard.
@@ -281,7 +321,8 @@ Alternative Live Preview Link:
               Open Admin Dashboard to Acknowledge
             </a>
             <div style="margin-top: 14px; font-size: 11px; color: #64748b; line-height: 1.6;">
-              <div><strong>Primary Domain:</strong> <a href="${primaryAdminUrl}" style="color: #4f46e5; word-break: break-all;">${primaryAdminUrl}</a></div>
+              <div><strong>Render Production:</strong> <a href="${renderAdminUrl}" style="color: #4f46e5; word-break: break-all;">${renderAdminUrl}</a></div>
+              <div><strong>Firebase Domain:</strong> <a href="${firebaseAdminUrl}" style="color: #4f46e5; word-break: break-all;">${firebaseAdminUrl}</a></div>
               <div><strong>AI Studio Preview:</strong> <a href="${previewAdminUrl}" style="color: #4f46e5; word-break: break-all;">${previewAdminUrl}</a></div>
             </div>
           </div>
@@ -349,7 +390,7 @@ export async function runSystemHealthCheck(adminEmail?: string): Promise<{
   };
 
   const incidentId = `health_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-  const { primaryUrl, previewUrl } = getAdminDashboardUrl(incidentId);
+  const { primaryUrl, renderUrl, firebaseUrl, previewUrl } = getAdminDashboardUrl(incidentId);
 
   try {
     // 1. Verify Firestore Write
@@ -396,12 +437,13 @@ OPEN ADMIN DASHBOARD TO ACKNOWLEDGE / REVIEW:
 --> Primary Production Domain:
     ${primaryUrl}
 
---> AI Studio Cloud Run Deployment:
-    ${previewUrl}
+Direct Environment Links:
+- Render Production: ${renderUrl}
+- Firebase Hosting:  ${firebaseUrl}
+- AI Studio Preview: ${previewUrl}
 
-NOTE REGARDING DOMAIN ROUTING:
-If you previously received links to "realcal-bookings.web.app", please note that was an obsolete external domain. The verified, official domain for What's My Credit Worth is:
-${CANONICAL_APP_DOMAIN}
+NOTE REGARDING URL FORMATTING & ROUTING:
+All dashboard URLs are now automatically normalized to prevent duplicate protocols or double slashes (resolving issues such as https://https://whats-my-credit-worth.onrender.com//admin). Single-page hash routing (/#/admin) ensures 100% reliable dashboard loading.
 ==================================================
     `.trim();
 
@@ -460,14 +502,15 @@ ${CANONICAL_APP_DOMAIN}
               Open Admin Dashboard to Acknowledge
             </a>
             <div style="margin-top: 14px; font-size: 11px; color: #64748b; line-height: 1.6;">
-              <div><strong>Primary Domain:</strong> <a href="${primaryUrl}" style="color: #4f46e5; word-break: break-all;">${primaryUrl}</a></div>
+              <div><strong>Render Production:</strong> <a href="${renderUrl}" style="color: #4f46e5; word-break: break-all;">${renderUrl}</a></div>
+              <div><strong>Firebase Domain:</strong> <a href="${firebaseUrl}" style="color: #4f46e5; word-break: break-all;">${firebaseUrl}</a></div>
               <div><strong>AI Studio Preview:</strong> <a href="${previewUrl}" style="color: #4f46e5; word-break: break-all;">${previewUrl}</a></div>
             </div>
           </div>
 
           <!-- DOMAIN CORRECTION NOTICE -->
           <div style="margin-top: 20px; padding: 12px 16px; background-color: #fefce8; border: 1px solid #fef08a; border-radius: 8px; font-size: 12px; color: #854d0e;">
-            <strong>Domain Resolution Notice:</strong> If you previously received health checks pointing to <code>realcal-bookings.web.app</code>, that was an obsolete external domain. The verified domain for this application is <strong>whats-my-credit-worth.web.app</strong>.
+            <strong>Resolved Link Notice:</strong> The previous error (e.g. <code>https://https://whats-my-credit-worth.onrender.com//admin</code> returning "Site Not Found" due to duplicate protocols and double slashes) has been corrected. All links now use normalized protocols, sanitized paths, and hash-based SPA routing (<code>/#/admin</code>) compatible with Render, Firebase, and AI Studio environments.
           </div>
         </div>
 

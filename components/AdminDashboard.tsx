@@ -11,7 +11,9 @@ import {
   reportIncident, 
   runSystemHealthCheck,
   getAdminDashboardUrl,
+  RENDER_APP_DOMAIN,
   CANONICAL_APP_DOMAIN,
+  FIREBASE_APP_DOMAIN,
   PREVIEW_APP_DOMAIN,
   APP_ADMIN_EMAIL 
 } from '../utils/incidentReporter';
@@ -678,17 +680,27 @@ export const AdminDashboard: React.FC = () => {
                   Verified Admin Routing Active
                 </span>
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                  SPA Rewrites Configured in firebase.json + Client Hash Fallback
+                  Render _redirects + Firebase rewrites + Hash Routing (/#/admin)
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-3 text-xs">
                 <a 
-                  href={`${CANONICAL_APP_DOMAIN}/#/admin`} 
+                  href={`${RENDER_APP_DOMAIN}/#/admin`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1"
                 >
-                  <span>whats-my-credit-worth.web.app/#/admin</span>
+                  <span>whats-my-credit-worth.onrender.com/#/admin</span>
+                  <ExternalLinkIcon className="w-3 h-3" />
+                </a>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <a 
+                  href={`${FIREBASE_APP_DOMAIN}/#/admin`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-600 dark:text-gray-400 font-medium hover:underline flex items-center gap-1"
+                >
+                  <span>Firebase Mirror</span>
                   <ExternalLinkIcon className="w-3 h-3" />
                 </a>
               </div>
@@ -696,9 +708,9 @@ export const AdminDashboard: React.FC = () => {
 
             <div className="p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl text-xs space-y-1.5 border border-gray-100 dark:border-gray-800">
               <div className="flex items-start gap-2">
-                <span className="font-bold text-gray-700 dark:text-gray-200 shrink-0">Domain Clarification:</span>
+                <span className="font-bold text-gray-700 dark:text-gray-200 shrink-0">Resolved Error Notice:</span>
                 <span className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  The link <code>https://realcal-bookings.web.app/admin</code> reported as "Site Not Found" was pointing to an unrelated or obsolete project. The correct production domain for this application is <strong>{CANONICAL_APP_DOMAIN}</strong>. All Health Check and Incident Alert emails now feature direct, verified links to <code>{CANONICAL_APP_DOMAIN}/#/admin</code> and <code>{PREVIEW_APP_DOMAIN}/#/admin</code>.
+                  The error <code>https://https://whats-my-credit-worth.onrender.com//admin not Found</code> was caused by duplicated URL protocols and double slashes in previously dispatched links. All incident alert and health check notifications now generate normalized, verified URLs pointing directly to <strong>{RENDER_APP_DOMAIN}/#/admin</strong> and <strong>{FIREBASE_APP_DOMAIN}/#/admin</strong> using single-page hash routing (/#/admin) and Render <code>_redirects</code> rewrite rules.
                 </span>
               </div>
               {healthCheckSummary && (

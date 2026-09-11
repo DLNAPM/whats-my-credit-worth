@@ -371,12 +371,13 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
 // Robust helper to check if the incoming URL targets the Admin Dashboard
 const checkIsAdminRoute = () => {
   if (typeof window === 'undefined') return false;
-  const path = (window.location.pathname || '').toLowerCase();
-  const hash = (window.location.hash || '').toLowerCase();
+  const rawPath = (window.location.pathname || '').toLowerCase();
+  const normalizedPath = rawPath.replace(/\/+/g, '/');
+  const hash = (window.location.hash || '').toLowerCase().replace(/\/+/g, '/');
   const search = (window.location.search || '').toLowerCase();
   return (
-    path === '/admin' ||
-    path.startsWith('/admin/') ||
+    normalizedPath === '/admin' ||
+    normalizedPath.startsWith('/admin/') ||
     hash.startsWith('#/admin') ||
     search.includes('view=admin')
   );
