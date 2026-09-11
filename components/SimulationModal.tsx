@@ -9,6 +9,7 @@ import Button from './ui/Button';
 import { SparklesIcon, SimulationIcon, AlertTriangleIcon, InfoIcon, DownloadIcon, GoldAsterisk, CheckIcon } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipModal from './MembershipModal';
+import { reportIncident, analyzeErrorForIncident } from '../utils/incidentReporter';
 
 interface SimulationModalProps {
   isOpen: boolean;
@@ -108,7 +109,18 @@ const SimulationModal: React.FC<SimulationModalProps> = ({ isOpen, onClose, data
       const parsed = JSON.parse(result.text || '{}');
       setPrediction(parsed);
     } catch (err: any) {
-      console.error(err);
+      console.error("Simulation error:", err);
+      const analyzed = analyzeErrorForIncident(err, 'Credit Score Simulation');
+      reportIncident({
+        title: analyzed.title,
+        category: analyzed.category,
+        severity: analyzed.severity,
+        message: analyzed.message,
+        errorDetails: analyzed.details,
+        source: 'Credit Score Simulation',
+        userEmail: user?.email || undefined,
+        userId: user?.uid || undefined
+      });
       setError(err.message || "Simulation failed. Try again.");
     } finally {
       setIsLoading(false);

@@ -9,6 +9,7 @@ import { formatMonthYear, formatCurrency, calculateMonthlyIncome, calculateTotal
 import { exportRecommendationsReportToPDF } from '../utils/pdfGenerator';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipModal from './MembershipModal';
+import { reportIncident, analyzeErrorForIncident } from '../utils/incidentReporter';
 
 interface RecommendationsModalProps {
   isOpen: boolean;
@@ -169,7 +170,18 @@ Deliver exactly 4 comprehensive, actionable personal wealth recommendations adhe
         throw new Error("Invalid response structure from AI model.");
       }
     } catch (err: any) {
-      console.error(err);
+      console.error("AI Recommendations error:", err);
+      const analyzed = analyzeErrorForIncident(err, 'AI Deep Dive Recommendations');
+      reportIncident({
+        title: analyzed.title,
+        category: analyzed.category,
+        severity: analyzed.severity,
+        message: analyzed.message,
+        errorDetails: analyzed.details,
+        source: 'AI Deep Dive Recommendations',
+        userEmail: user?.email || undefined,
+        userId: user?.uid || undefined
+      });
       setError(err.message || "AI Analysis failed. Please try again.");
     } finally {
       setIsAiLoading(false);

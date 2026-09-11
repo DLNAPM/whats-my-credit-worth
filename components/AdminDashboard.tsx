@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, writeBatch } from 'firebase/firestore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import type { SystemIncident, IncidentCategory, IncidentSeverity, IncidentStatus } from '../types';
+import { 
+  acknowledgeIncident, 
+  resolveIncident, 
+  deleteIncident, 
+  reportIncident, 
+  APP_ADMIN_EMAIL 
+} from '../utils/incidentReporter';
 
 const Shield = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -62,6 +70,45 @@ const Unlock = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
+const BellAlert = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+  </svg>
+);
+
+const AlertTriangle = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+    <line x1="12" y1="9" x2="12" y2="13"></line>
+    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+  </svg>
+);
+
+const MailIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+  </svg>
+);
+
+const RefreshIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+    <path d="M3 3v5h5"></path>
+    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+    <path d="M16 21h5v-5"></path>
+  </svg>
+);
+
+const ExternalLinkIcon = ({ className = "w-3.5 h-3.5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+    <polyline points="15 3 21 3 21 9"></polyline>
+    <line x1="10" y1="14" x2="21" y2="3"></line>
+  </svg>
+);
+
 interface UserData {
   id: string;
   email: string;
@@ -74,19 +121,37 @@ interface UserData {
 }
 
 export const AdminDashboard: React.FC = () => {
-  const { isSuperUser } = useAuth();
+  const { user, isSuperUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<'alerts' | 'users'>('alerts');
+  
+  // Users state
   const [users, setUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [userError, setUserError] = useState<string | null>(null);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
 
+  // Incidents / Alerts state
+  const [incidents, setIncidents] = useState<SystemIncident[]>([]);
+  const [loadingIncidents, setLoadingIncidents] = useState(true);
+  const [incidentSearchTerm, setIncidentSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | IncidentStatus>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | IncidentCategory>('all');
+  const [severityFilter, setSeverityFilter] = useState<'all' | IncidentSeverity>('all');
+  const [expandedIncidentId, setExpandedIncidentId] = useState<string | null>(null);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [testAlertTriggering, setTestAlertTriggering] = useState(false);
+  const [incidentNotificationMsg, setIncidentNotificationMsg] = useState<string | null>(null);
+
+  const adminEmail = user?.email || APP_ADMIN_EMAIL;
+
+  // 1. Fetch Users
   useEffect(() => {
     const fetchUsers = async () => {
       if (!isSuperUser) return;
       
       try {
-        setLoading(true);
+        setLoadingUsers(true);
         const usersCollection = collection(db, 'users');
         const usersSnapshot = await getDocs(usersCollection);
         const usersList = usersSnapshot.docs.map(doc => ({
@@ -94,7 +159,6 @@ export const AdminDashboard: React.FC = () => {
           ...doc.data()
         })) as UserData[];
         
-        // Sort by last login descending
         usersList.sort((a, b) => {
           const dateA = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
           const dateB = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
@@ -104,26 +168,150 @@ export const AdminDashboard: React.FC = () => {
         setUsers(usersList);
       } catch (err) {
         console.error("Error fetching users:", err);
-        setError("Failed to load users. Please check your permissions.");
+        setUserError("Failed to load users. Please check your permissions.");
       } finally {
-        setLoading(false);
+        setLoadingUsers(false);
       }
     };
 
     fetchUsers();
   }, [isSuperUser]);
 
+  // 2. Real-time Subscription to System Incidents
+  useEffect(() => {
+    if (!isSuperUser) return;
+
+    setLoadingIncidents(true);
+    const incidentsRef = collection(db, 'system_incidents');
+
+    const unsubscribe = onSnapshot(
+      incidentsRef,
+      (snapshot) => {
+        const incidentList = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        })) as SystemIncident[];
+
+        // Sort by occurredAt descending (newest first)
+        incidentList.sort((a, b) => {
+          const tA = new Date(a.occurredAt || 0).getTime();
+          const tB = new Date(b.occurredAt || 0).getTime();
+          return tB - tA;
+        });
+
+        setIncidents(incidentList);
+        setLoadingIncidents(false);
+      },
+      (error) => {
+        console.error("Error subscribing to system incidents:", error);
+        setLoadingIncidents(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [isSuperUser]);
+
+  const showNotification = (msg: string) => {
+    setIncidentNotificationMsg(msg);
+    setTimeout(() => {
+      setIncidentNotificationMsg(null);
+    }, 4000);
+  };
+
+  // Incident Actions
+  const handleAcknowledge = async (incidentId: string) => {
+    setActionInProgress(incidentId);
+    try {
+      await acknowledgeIncident(incidentId, adminEmail);
+      showNotification(`Incident ${incidentId} acknowledged by ${adminEmail}`);
+    } catch (err) {
+      console.error("Failed to acknowledge incident:", err);
+      alert("Failed to acknowledge alert.");
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleResolve = async (incidentId: string) => {
+    setActionInProgress(incidentId);
+    try {
+      await resolveIncident(incidentId, adminEmail);
+      showNotification(`Incident marked as resolved.`);
+    } catch (err) {
+      console.error("Failed to resolve incident:", err);
+      alert("Failed to resolve alert.");
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleAcknowledgeAllOpen = async () => {
+    const openIncidents = incidents.filter(i => i.status === 'open');
+    if (openIncidents.length === 0) return;
+
+    if (!window.confirm(`Acknowledge all ${openIncidents.length} open alert(s)?`)) return;
+
+    setActionInProgress('batch');
+    try {
+      for (const inc of openIncidents) {
+        await acknowledgeIncident(inc.id, adminEmail);
+      }
+      showNotification(`All ${openIncidents.length} open alert(s) acknowledged.`);
+    } catch (err) {
+      console.error("Failed to batch acknowledge:", err);
+      alert("Failed to acknowledge all alerts.");
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleDeleteIncident = async (incidentId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this incident record?")) return;
+    setActionInProgress(incidentId);
+    try {
+      await deleteIncident(incidentId);
+      showNotification("Incident deleted successfully.");
+    } catch (err) {
+      console.error("Failed to delete incident:", err);
+      alert("Failed to delete incident.");
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleTriggerTestAlert = async () => {
+    setTestAlertTriggering(true);
+    try {
+      const testId = await reportIncident({
+        title: 'Gemini API Rate Limit & Restriction Check (Test Incident)',
+        category: 'api_restriction',
+        severity: 'critical',
+        message: `Admin verification test for alarm pipeline. If this were a real quota exhaustion, Gemini API calls (chatbot, score prediction, recommendations) would be restricted. An alert email detailing this event has been routed to ${APP_ADMIN_EMAIL}.`,
+        errorDetails: 'RESOURCE_EXHAUSTED: Quota exceeded for quota metric "generate_content_requests" and limit "GenerateContent requests per minute per user". https://ai.google.dev/gemini-api/docs/rate-limits',
+        source: 'Admin Diagnostics Engine',
+        userEmail: adminEmail,
+        userId: user?.uid,
+        forceEmail: true
+      });
+
+      if (testId) {
+        showNotification(`Test Incident created! Alert email dispatched to ${APP_ADMIN_EMAIL}`);
+        setExpandedIncidentId(testId);
+      }
+    } catch (err) {
+      console.error("Failed to trigger test incident:", err);
+      alert("Failed to create test alert.");
+    } finally {
+      setTestAlertTriggering(false);
+    }
+  };
+
+  // User Actions
   const togglePremiumStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        isPremium: !currentStatus
-      });
-      
-      // Update local state
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, isPremium: !currentStatus } : user
-      ));
+      await updateDoc(userRef, { isPremium: !currentStatus });
+      setUsers(users.map(u => u.id === userId ? { ...u, isPremium: !currentStatus } : u));
     } catch (err) {
       console.error("Error updating user status:", err);
       alert("Failed to update user status.");
@@ -133,14 +321,8 @@ export const AdminDashboard: React.FC = () => {
   const toggleFreezeStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        isFrozen: !currentStatus
-      });
-      
-      // Update local state
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, isFrozen: !currentStatus } : user
-      ));
+      await updateDoc(userRef, { isFrozen: !currentStatus });
+      setUsers(users.map(u => u.id === userId ? { ...u, isFrozen: !currentStatus } : u));
     } catch (err) {
       console.error("Error freezing user:", err);
       alert("Failed to update freeze status.");
@@ -151,9 +333,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const userRef = doc(db, 'users', userId);
       await deleteDoc(userRef);
-      
-      // Update local state
-      setUsers(users.filter(user => user.id !== userId));
+      setUsers(users.filter(u => u.id !== userId));
       setUserToDelete(null);
     } catch (err) {
       console.error("Error deleting user:", err);
@@ -167,26 +347,51 @@ export const AdminDashboard: React.FC = () => {
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view this page.</p>
+          <p className="text-gray-600">You do not have permission to view the Admin Dashboard.</p>
         </div>
       </div>
     );
   }
 
-  const filteredUsers = users.filter(user => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
+  // Filtered Incidents
+  const openIncidentsCount = incidents.filter(i => i.status === 'open').length;
+  const acknowledgedIncidentsCount = incidents.filter(i => i.status === 'acknowledged').length;
+  const resolvedIncidentsCount = incidents.filter(i => i.status === 'resolved').length;
+  const apiIncidentsCount = incidents.filter(i => i.category === 'api_restriction').length;
+
+  const filteredIncidents = incidents.filter(inc => {
+    if (statusFilter !== 'all' && inc.status !== statusFilter) return false;
+    if (categoryFilter !== 'all' && inc.category !== categoryFilter) return false;
+    if (severityFilter !== 'all' && inc.severity !== severityFilter) return false;
+
+    if (incidentSearchTerm.trim()) {
+      const queryStr = incidentSearchTerm.toLowerCase();
+      const match =
+        inc.title?.toLowerCase().includes(queryStr) ||
+        inc.message?.toLowerCase().includes(queryStr) ||
+        inc.errorDetails?.toLowerCase().includes(queryStr) ||
+        inc.source?.toLowerCase().includes(queryStr) ||
+        inc.userEmail?.toLowerCase().includes(queryStr);
+      if (!match) return false;
+    }
+
+    return true;
+  });
+
+  // Filtered Users
+  const filteredUsers = users.filter(u => {
+    if (!userSearchTerm) return true;
+    const searchLower = userSearchTerm.toLowerCase();
     return (
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.displayName?.toLowerCase().includes(searchLower) ||
-      user.id.toLowerCase().includes(searchLower)
+      u.email?.toLowerCase().includes(searchLower) ||
+      u.displayName?.toLowerCase().includes(searchLower) ||
+      u.id.toLowerCase().includes(searchLower)
     );
   });
 
   const chartData = useMemo(() => {
     const premiumCount = users.filter(u => u.isPremium).length;
     const basicCount = users.length - premiumCount;
-    
     return [
       { name: 'Basic', value: basicCount, color: '#9CA3AF' },
       { name: 'Premium', value: premiumCount, color: '#10B981' }
@@ -194,237 +399,722 @@ export const AdminDashboard: React.FC = () => {
   }, [users]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-indigo-600" />
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600 mt-2">Manage user accounts and premium access</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-600/20">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                Admin Operations & System Command
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Logged in as <span className="font-semibold text-gray-700 dark:text-gray-300">{adminEmail}</span> • Alert Notifications: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{APP_ADMIN_EMAIL}</span>
+              </p>
+            </div>
+          </div>
         </div>
-        
-        <div className="relative">
-          <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
-          />
+
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setActiveTab('alerts')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === 'alerts'
+                ? 'bg-white dark:bg-gray-900 text-red-600 dark:text-red-400 shadow-sm border border-gray-200/50 dark:border-gray-700'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <BellAlert className="w-4 h-4" />
+            <span>Alarms & Alerts</span>
+            {openIncidentsCount > 0 && (
+              <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-black rounded-full bg-red-600 text-white animate-pulse">
+                {openIncidentsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === 'users'
+                ? 'bg-white dark:bg-gray-900 text-indigo-600 dark:text-indigo-400 shadow-sm border border-gray-200/50 dark:border-gray-700'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Users & Accounts</span>
+            <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full font-semibold">
+              {users.length}
+            </span>
+          </button>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-          <p className="text-red-700">{error}</p>
+      {/* Floating Notification Toast */}
+      {incidentNotificationMsg && (
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-gray-700 flex items-center gap-3 animate-fade-in text-sm font-medium">
+          <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span>{incidentNotificationMsg}</span>
         </div>
       )}
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center min-h-[300px] md:col-span-1">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">User Distribution</h3>
-          {users.length > 0 ? (
-            <div className="w-full h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend verticalAlign="bottom" height={36}/>
-                </PieChart>
-              </ResponsiveContainer>
+      {/* =========================================================================================
+          TAB 1: ALARMS & INCIDENTS
+         ========================================================================================= */}
+      {activeTab === 'alerts' && (
+        <div className="space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`p-5 rounded-2xl border shadow-sm transition-all ${
+              openIncidentsCount > 0 
+                ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 text-red-900 dark:text-red-100 ring-2 ring-red-500/20' 
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                  Active Alarms
+                </span>
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-black mt-2 text-red-600 dark:text-red-400">
+                {openIncidentsCount}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {openIncidentsCount === 0 ? 'No unacknowledged alerts' : 'Requires Administrator Acknowledgment'}
+              </p>
             </div>
-          ) : (
-            <div className="text-gray-400 italic">No user data available</div>
-          )}
-        </div>
 
-        <div className="md:col-span-2 grid grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Users</p>
-            <p className="text-4xl font-bold text-gray-900 mt-1">{users.length}</p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Premium Users</p>
-            <p className="text-4xl font-bold text-green-600 mt-1">
-              {users.filter(u => u.isPremium).length}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {users.length > 0 
-                ? `${Math.round((users.filter(u => u.isPremium).length / users.length) * 100)}% of total`
-                : '0% of total'}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Basic Users</p>
-            <p className="text-4xl font-bold text-gray-400 mt-1">
-              {users.filter(u => !u.isPremium).length}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center">
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Admins</p>
-            <p className="text-4xl font-bold text-purple-600 mt-1">
-              {users.filter(u => u.isAdmin).length}
-            </p>
-          </div>
-        </div>
-      </div>
+            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  Acknowledged
+                </span>
+                <ClockIcon className="w-5 h-5 text-amber-500" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-black mt-2 text-amber-600 dark:text-amber-400">
+                {acknowledgedIncidentsCount}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Under investigation or monitoring</p>
+            </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600">User</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Last Login</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                    <div className="flex justify-center items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                      Loading users...
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                    No users found matching "{searchTerm}"
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                          {user.displayName ? user.displayName.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
+            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Resolved
+                </span>
+                <CheckCircle className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-black mt-2 text-emerald-600 dark:text-emerald-400">
+                {resolvedIncidentsCount}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Closed incidents</p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  API & Restrictions
+                </span>
+                <ZapIcon className="w-5 h-5 text-indigo-500" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-black mt-2 text-indigo-600 dark:text-indigo-400">
+                {apiIncidentsCount}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Quota, 429, & billing limits</p>
+            </div>
+          </div>
+
+          {/* Email Notification & Integration Status Banner */}
+          <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-purple-950/20 p-4 sm:p-5 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2 bg-indigo-600 text-white rounded-xl shrink-0 mt-0.5">
+                <MailIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                  Real-time Admin Dispatch to <span className="underline decoration-indigo-400">{APP_ADMIN_EMAIL}</span>
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5 leading-relaxed">
+                  Whenever an operational error occurs (Gemini API quota exhaustion, rate restrictions, payment/subscription failures, or cloud persistence drops), an incident is recorded in Firestore and queued to the App Admin's email automatically.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleTriggerTestAlert}
+                disabled={testAlertTriggering}
+                className="px-3.5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-50"
+                title="Send a sample incident alert to verify email delivery"
+              >
+                {testAlertTriggering ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Dispatching...</span>
+                  </>
+                ) : (
+                  <>
+                    <ZapIcon className="w-3.5 h-3.5" />
+                    <span>Trigger Test Alert</span>
+                  </>
+                )}
+              </button>
+
+              {openIncidentsCount > 0 && (
+                <button
+                  onClick={handleAcknowledgeAllOpen}
+                  disabled={actionInProgress === 'batch'}
+                  className="px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Acknowledge All ({openIncidentsCount})</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Incident Filter Toolbar */}
+          <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search incidents..."
+                  value={incidentSearchTerm}
+                  onChange={(e) => setIncidentSearchTerm(e.target.value)}
+                  className="pl-9 pr-3 py-1.5 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none w-full"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-3 py-1.5 text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none text-gray-700 dark:text-gray-200"
+              >
+                <option value="all">All Statuses</option>
+                <option value="open">🚨 Open Only</option>
+                <option value="acknowledged">⚠️ Acknowledged</option>
+                <option value="resolved">✅ Resolved</option>
+              </select>
+
+              {/* Category Filter */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value as any)}
+                className="px-3 py-1.5 text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none text-gray-700 dark:text-gray-200"
+              >
+                <option value="all">All Categories</option>
+                <option value="api_restriction">API Restrictions & Quota</option>
+                <option value="billing">Billing & Stripe</option>
+                <option value="integration">Integrations & Cloud</option>
+                <option value="system">System Errors</option>
+              </select>
+
+              {/* Severity Filter */}
+              <select
+                value={severityFilter}
+                onChange={(e) => setSeverityFilter(e.target.value as any)}
+                className="px-3 py-1.5 text-xs font-semibold border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none text-gray-700 dark:text-gray-200"
+              >
+                <option value="all">All Severities</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+
+            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between md:justify-end gap-2">
+              <span>Showing {filteredIncidents.length} of {incidents.length} incidents</span>
+              {(incidentSearchTerm || statusFilter !== 'all' || categoryFilter !== 'all' || severityFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setIncidentSearchTerm('');
+                    setStatusFilter('all');
+                    setCategoryFilter('all');
+                    setSeverityFilter('all');
+                  }}
+                  className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Incidents Feed / List */}
+          <div className="space-y-3">
+            {loadingIncidents ? (
+              <div className="p-12 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Loading system incidents and alert logs...</p>
+              </div>
+            ) : filteredIncidents.length === 0 ? (
+              <div className="p-12 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">All Systems Operational</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
+                  {incidents.length === 0 
+                    ? 'No incidents or alarms have been registered yet. Errors will appear here in real-time.' 
+                    : 'No incidents match your selected filters.'}
+                </p>
+                {incidents.length === 0 && (
+                  <button
+                    onClick={handleTriggerTestAlert}
+                    className="mt-4 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all inline-flex items-center gap-2"
+                  >
+                    <ZapIcon className="w-3.5 h-3.5" />
+                    <span>Trigger a Sample Alert</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              filteredIncidents.map((incident) => {
+                const isExpanded = expandedIncidentId === incident.id;
+                const isCritical = incident.severity === 'critical';
+                const isHigh = incident.severity === 'high';
+                const isOpen = incident.status === 'open';
+                const isAcknowledged = incident.status === 'acknowledged';
+                const isResolved = incident.status === 'resolved';
+
+                const severityBadgeStyle = 
+                  isCritical ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border-red-200 dark:border-red-900' :
+                  isHigh ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border-orange-200 dark:border-orange-900' :
+                  'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-900';
+
+                const categoryBadgeStyle =
+                  incident.category === 'api_restriction' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' :
+                  incident.category === 'billing' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
+                  incident.category === 'integration' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' :
+                  'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+
+                return (
+                  <div
+                    key={incident.id}
+                    className={`rounded-2xl border transition-all overflow-hidden ${
+                      isOpen
+                        ? 'bg-white dark:bg-gray-900 border-red-300 dark:border-red-900/60 shadow-md ring-1 ring-red-400/20'
+                        : isAcknowledged
+                        ? 'bg-white dark:bg-gray-900 border-amber-200 dark:border-amber-900/40 shadow-sm'
+                        : 'bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800 opacity-80'
+                    }`}
+                  >
+                    {/* Top Bar of Incident Card */}
+                    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Severity Pill */}
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${severityBadgeStyle}`}>
+                            {incident.severity}
+                          </span>
+
+                          {/* Category Pill */}
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${categoryBadgeStyle}`}>
+                            {incident.category.replace('_', ' ')}
+                          </span>
+
+                          {/* Status Pill */}
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            isOpen 
+                              ? 'bg-red-600 text-white animate-pulse' 
+                              : isAcknowledged 
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' 
+                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          }`}>
+                            {isOpen ? '🚨 OPEN' : isAcknowledged ? '⚠️ ACKNOWLEDGED' : '✅ RESOLVED'}
+                          </span>
+
+                          <span className="text-xs text-gray-400">
+                            • {new Date(incident.occurredAt).toLocaleString()}
+                          </span>
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{user.displayName || 'Anonymous User'}</div>
-                          <div className="text-sm text-gray-500">{user.email || 'No email provided'}</div>
+
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                          {incident.title}
+                        </h3>
+
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                          {incident.message}
+                        </p>
+
+                        {/* Audit Details */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400 pt-1">
+                          <span>Source: <strong>{incident.source}</strong></span>
+                          <span>User: <strong>{incident.userEmail || 'Anonymous'}</strong></span>
+                          <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
+                            <MailIcon className="w-3 h-3" />
+                            <span>Alert Dispatched to {incident.emailRecipient || APP_ADMIN_EMAIL}</span>
+                          </span>
+                        </div>
+
+                        {/* Acknowledged / Resolved Status Metadata */}
+                        {(incident.acknowledgedAt || incident.resolvedAt) && (
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-1 rounded-lg inline-block mt-1">
+                            {incident.acknowledgedAt && (
+                              <span>Acknowledged by <strong>{incident.acknowledgedBy}</strong> at {new Date(incident.acknowledgedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            )}
+                            {incident.resolvedAt && (
+                              <span className="ml-2">• Resolved by <strong>{incident.resolvedBy}</strong></span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Buttons on Right */}
+                      <div className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
+                        {isOpen && (
+                          <button
+                            onClick={() => handleAcknowledge(incident.id)}
+                            disabled={actionInProgress === incident.id}
+                            className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Acknowledge Alert</span>
+                          </button>
+                        )}
+
+                        {isAcknowledged && (
+                          <button
+                            onClick={() => handleResolve(incident.id)}
+                            disabled={actionInProgress === incident.id}
+                            className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Mark Resolved</span>
+                          </button>
+                        )}
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setExpandedIncidentId(isExpanded ? null : incident.id)}
+                            className="px-2.5 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          >
+                            {isExpanded ? 'Hide Details' : 'View Details'}
+                          </button>
+
+                          <a
+                            href={`mailto:${APP_ADMIN_EMAIL}?subject=${encodeURIComponent(`[INCIDENT ALERT] ${incident.title}`)}&body=${encodeURIComponent(
+                              `Incident ID: ${incident.id}\nSeverity: ${incident.severity}\nCategory: ${incident.category}\nTimestamp: ${incident.occurredAt}\n\nMessage:\n${incident.message}\n\nError Details:\n${incident.errorDetails || 'N/A'}`
+                            )}`}
+                            className="p-1.5 text-gray-500 hover:text-indigo-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            title={`Email alert to ${APP_ADMIN_EMAIL}`}
+                          >
+                            <MailIcon className="w-3.5 h-3.5" />
+                          </a>
+
+                          <button
+                            onClick={() => handleDeleteIncident(incident.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                            title="Delete Incident"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.isAdmin ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          <Shield className="w-3.5 h-3.5" />
-                          Admin
-                        </span>
-                      ) : user.isFrozen ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <Lock className="w-3.5 h-3.5" />
-                          Frozen
-                        </span>
-                      ) : user.isPremium ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          Premium
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          <XCircle className="w-3.5 h-3.5" />
-                          Basic
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : 'Never'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {!user.isAdmin && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => togglePremiumStatus(user.id, user.isPremium)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                              user.isPremium 
-                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                            }`}
-                          >
-                            {user.isPremium ? 'Downgrade' : 'Upgrade'}
-                          </button>
-                          
-                          <button
-                            onClick={() => toggleFreezeStatus(user.id, !!user.isFrozen)}
-                            title={user.isFrozen ? 'Unfreeze Account' : 'Freeze Account'}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              user.isFrozen
-                                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                          >
-                            {user.isFrozen ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                          </button>
+                    </div>
 
-                          <button
-                            onClick={() => setUserToDelete(user)}
-                            title="Delete User"
-                            className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                    {/* Expanded Technical Details Drawer */}
+                    {isExpanded && (
+                      <div className="p-4 sm:p-5 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            Technical Error Log & Stack
+                          </h4>
+                          {incident.category === 'api_restriction' && (
+                            <a
+                              href="https://ai.google.dev/gemini-api/docs/rate-limits"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                            >
+                              <span>Google AI Studio Rate Limits & Billing Docs</span>
+                              <ExternalLinkIcon />
+                            </a>
+                          )}
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
+                        {incident.errorDetails ? (
+                          <pre className="p-3 rounded-xl bg-gray-900 text-red-400 font-mono text-xs overflow-x-auto whitespace-pre-wrap leading-relaxed border border-gray-800">
+                            {incident.errorDetails}
+                          </pre>
+                        ) : (
+                          <p className="text-xs text-gray-500 italic">No low-level stack trace logged for this incident.</p>
+                        )}
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300 space-y-1">
+                          <div className="font-bold text-gray-800 dark:text-gray-200">Incident Remediation Guidance:</div>
+                          <ul className="list-disc pl-5 space-y-0.5">
+                            {incident.category === 'api_restriction' && (
+                              <>
+                                <li>Check if your Gemini API Key is valid or if the project has exceeded free tier quotas.</li>
+                                <li>Review quota metrics in Google AI Studio or Google Cloud Console.</li>
+                                <li>Upgrade billing tier or apply token rate limiting if usage is high.</li>
+                              </>
+                            )}
+                            {incident.category === 'billing' && (
+                              <>
+                                <li>Inspect the Stripe Dashboard for failed webhook events or declined cards.</li>
+                                <li>Verify customer subscription status and retry payment link integration.</li>
+                              </>
+                            )}
+                            {incident.category === 'integration' && (
+                              <>
+                                <li>Check Firebase Firestore Security Rules and connection status.</li>
+                                <li>Ensure cloud network access is uninterrupted.</li>
+                              </>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================================
+          TAB 2: USERS & ACCOUNTS
+         ========================================================================================= */}
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          {/* User Search */}
+          <div className="flex items-center justify-between">
+            <div className="relative">
+              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search users by email, name, or UID..."
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 w-72 text-sm"
+              />
+            </div>
+          </div>
+
+          {userError && (
+            <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-4 rounded-xl text-red-700 dark:text-red-300 text-sm">
+              {userError}
+            </div>
+          )}
+
+          {/* Stats Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center min-h-[280px]">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-4">
+                User Tier Distribution
+              </h3>
+              {users.length > 0 ? (
+                <div className="w-full h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={75}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-gray-400 italic text-sm">No user data available</div>
+              )}
+            </div>
+
+            <div className="md:col-span-2 grid grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Users</p>
+                <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">{users.length}</p>
+              </div>
+              <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Premium Users</p>
+                <p className="text-3xl font-black text-emerald-600 mt-1">
+                  {users.filter(u => u.isPremium).length}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {users.length > 0 
+                    ? `${Math.round((users.filter(u => u.isPremium).length / users.length) * 100)}% conversion`
+                    : '0%'}
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Basic Users</p>
+                <p className="text-3xl font-black text-gray-400 mt-1">
+                  {users.filter(u => !u.isPremium).length}
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col justify-center">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Admins</p>
+                <p className="text-3xl font-black text-purple-600 mt-1">
+                  {users.filter(u => u.isAdmin).length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* User Table */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800">
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Last Login</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                  {loadingUsers ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                        <div className="flex justify-center items-center gap-2">
+                          <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                          Loading user directory...
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                        No users found matching "{userSearchTerm}"
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                              {u.displayName ? u.displayName.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <div className="font-bold text-sm text-gray-900 dark:text-white">{u.displayName || 'Anonymous User'}</div>
+                              <div className="text-xs text-gray-500">{u.email || 'No email provided'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {u.isAdmin ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                              <Shield className="w-3.5 h-3.5" />
+                              Admin
+                            </span>
+                          ) : u.isFrozen ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                              <Lock className="w-3.5 h-3.5" />
+                              Frozen
+                            </span>
+                          ) : u.isPremium ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Premium
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                              <XCircle className="w-3.5 h-3.5" />
+                              Basic
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-gray-500">
+                          {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'Never'}
+                        </td>
+                        <td className="px-6 py-4">
+                          {!u.isAdmin && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => togglePremiumStatus(u.id, u.isPremium)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                                  u.isPremium 
+                                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                }`}
+                              >
+                                {u.isPremium ? 'Downgrade' : 'Upgrade'}
+                              </button>
+                              
+                              <button
+                                onClick={() => toggleFreezeStatus(u.id, !!u.isFrozen)}
+                                title={u.isFrozen ? 'Unfreeze Account' : 'Freeze Account'}
+                                className={`p-2 rounded-xl transition-colors ${
+                                  u.isFrozen
+                                    ? 'bg-red-100 text-red-600 dark:bg-red-950 hover:bg-red-200'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                {u.isFrozen ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                              </button>
+
+                              <button
+                                onClick={() => setUserToDelete(u)}
+                                title="Delete User"
+                                className="p-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/40 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
       {userToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-md w-full p-6 border border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-3 text-red-600 mb-4">
               <Trash2 className="w-6 h-6" />
-              <h3 className="text-xl font-bold">Delete User?</h3>
+              <h3 className="text-xl font-bold">Delete User Permanently?</h3>
             </div>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
               Are you sure you want to delete <strong>{userToDelete.displayName || userToDelete.email}</strong>? 
-              This action cannot be undone and will remove all their data from Firestore.
+              This action cannot be undone and will purge their data from Firestore.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setUserToDelete(null)}
-                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteUser(userToDelete.id)}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
+                className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 text-xs font-bold transition-colors"
               >
                 Delete Permanently
               </button>
@@ -435,3 +1125,17 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
+
+// Additional Helper Icons
+const ClockIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <polyline points="12 6 12 12 16 14"></polyline>
+  </svg>
+);
+
+const ZapIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+  </svg>
+);

@@ -8,6 +8,7 @@ import { exportAdvisorReportToPDF, printAdvisorReport } from '../utils/pdfGenera
 import type { SavedAdvisorRequest } from '../types';
 import { collection, doc, setDoc, deleteDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
+import { reportIncident, analyzeErrorForIncident } from '../utils/incidentReporter';
 
 interface Message {
   id: string;
@@ -268,6 +269,20 @@ Base your advice strictly on these personal wealth standards and the user's data
       ]);
     } catch (error: any) {
       console.error("Chatbot error:", error);
+      
+      // Automatically report incident & notify Admin if API restricted, quota exhausted, or integration failure
+      const analyzed = analyzeErrorForIncident(error, 'Financial Advisor AI Chatbot');
+      reportIncident({
+        title: analyzed.title,
+        category: analyzed.category,
+        severity: analyzed.severity,
+        message: analyzed.message,
+        errorDetails: analyzed.details,
+        source: 'AI Financial Advisor Chatbot',
+        userEmail: user?.email || undefined,
+        userId: user?.uid || undefined
+      });
+
       setMessages(prev => [
         ...prev,
         {

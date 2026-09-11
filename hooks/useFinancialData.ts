@@ -5,6 +5,7 @@ import { getInitialData, getDummyData } from '../utils/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { reportIncident, analyzeErrorForIncident } from '../utils/incidentReporter';
 
 const LOCAL_STORAGE_KEY = 'wmcw_local_guest_data';
 
@@ -66,6 +67,19 @@ export function useFinancialData() {
     }, (error) => {
       console.error("Firestore sync error:", error);
       setSaveStatus('error');
+      const analyzed = analyzeErrorForIncident(error, 'Firestore Data Sync');
+      if (analyzed.isIncident) {
+        reportIncident({
+          title: analyzed.title,
+          category: analyzed.category,
+          severity: analyzed.severity,
+          message: analyzed.message,
+          errorDetails: analyzed.details,
+          source: 'Firestore Sync Subscription',
+          userEmail: user?.email || undefined,
+          userId: user?.uid || undefined
+        });
+      }
     });
 
     return () => unsubscribe();
@@ -89,6 +103,19 @@ export function useFinancialData() {
     } catch (err) {
       console.error("Save failed:", err);
       setSaveStatus('error');
+      const analyzed = analyzeErrorForIncident(err, 'Financial Data Cloud Save');
+      if (analyzed.isIncident) {
+        reportIncident({
+          title: analyzed.title,
+          category: analyzed.category,
+          severity: analyzed.severity,
+          message: analyzed.message,
+          errorDetails: analyzed.details,
+          source: 'Cloud Storage Persist',
+          userEmail: user?.email || undefined,
+          userId: user?.uid || undefined
+        });
+      }
     }
   }, [user]);
 

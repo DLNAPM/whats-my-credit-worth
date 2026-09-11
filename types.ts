@@ -134,3 +134,29 @@ export interface SavedAdvisorRequest {
   createdAt: string;
 }
 
+export type IncidentCategory = 'api_restriction' | 'billing' | 'integration' | 'system';
+export type IncidentSeverity = 'critical' | 'high' | 'medium' | 'low';
+export type IncidentStatus = 'open' | 'acknowledged' | 'resolved';
+
+export interface SystemIncident {
+  id: string;
+  title: string;
+  category: IncidentCategory;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  message: string;
+  errorDetails?: string;
+  source: string;
+  userEmail?: string;
+  userId?: string;
+  occurredAt: string;
+  acknowledgedAt?: string;
+  acknowledgedBy?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  emailSent: boolean;
+  emailRecipient: string;
+  actionTaken?: string;
+  occurrenceCount?: number;
+}
+
