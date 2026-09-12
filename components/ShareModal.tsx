@@ -34,8 +34,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, data, monthYea
 My WMCW Financial Snapshot (${formatMonthYear(monthYear)}):
 - Net Worth: ${formatCurrency(netWorth)}
 - Monthly Income: ${formatCurrency(monthlyIncome)}
-- Total Assets: ${formatCurrency(data.assets.reduce((sum, a) => sum + a.value, 0))}
-- Total Debt: ${formatCurrency(data.creditCards.reduce((s, c) => s + c.balance, 0) + data.loans.reduce((s, l) => s + l.balance, 0))}
+- Total Assets: ${formatCurrency((data.assets || []).reduce((sum, a) => sum + (Number(a.value) || 0), 0))}
+- Total Debt: ${formatCurrency((data.creditCards || []).reduce((s, c) => s + (Number(c.balance) || 0), 0) + (data.loans || []).reduce((s, l) => s + (Number(l.balance) || 0), 0))}
   `.trim();
 
   const handleCopyText = () => {

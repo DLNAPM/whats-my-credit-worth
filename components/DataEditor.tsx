@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource } from '../types';
 import { useFinancialData } from '../hooks/useFinancialData';
-import { formatMonthYear, isValidMonthYear } from '../utils/helpers';
+import { formatMonthYear, isValidMonthYear, formatCurrency } from '../utils/helpers';
 import Button from './ui/Button';
 import { AddIcon, DeleteIcon, SaveIcon } from './ui/Icons';
 
@@ -202,7 +202,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
         </div>
       </div>
 
-      {data.creditCards.map((card, index) => (
+      {(data.creditCards || []).map((card, index) => (
         <div key={card.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/60 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4">
@@ -306,7 +306,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
         <p className="text-xs text-gray-500">Fixed & installment accounts with last 4 digits matching</p>
       </div>
 
-      {data.loans.map((loan, index) => (
+      {(data.loans || []).map((loan, index) => (
         <div key={loan.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/60 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4">
@@ -411,11 +411,11 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
           <p className="text-xs text-gray-500">Savings, investments, retirement, crypto & real estate accounts (syncs to Next Steps)</p>
         </div>
         <div className="text-xs text-gray-500 font-medium">
-          Total Assets: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(data.assets.reduce((sum, a) => sum + (Number(a.value) || 0), 0))}</span>
+          Total Assets: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency((data.assets || []).reduce((sum, a) => sum + (Number(a.value) || 0), 0))}</span>
         </div>
       </div>
 
-      {data.assets.map((asset, index) => (
+      {(data.assets || []).map((asset, index) => (
         <div key={asset.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/60 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-4">
