@@ -102,7 +102,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
     const updated = [...activeAccounts];
     let formattedVal = value;
     if (field === 'accountNumber') {
-      formattedVal = String(value).replace(/\D/g, '').slice(0, 4);
+      formattedVal = String(value).replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
     }
     const currentAcc = updated[index];
     updated[index] = {
@@ -146,12 +146,12 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
       return;
     }
 
-    const cleanedDigits = newAssetLast4.replace(/\D/g, '');
-    if (!cleanedDigits) {
-      setAssetAddError('Please enter the last 4 digits of the account so Next Steps can accurately match it.');
+    const cleanedChars = newAssetLast4.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (!cleanedChars) {
+      setAssetAddError('Please enter the last 4 characters of the account (e.g. 4YBN or 4821) so Next Steps can accurately match it.');
       return;
     }
-    const last4 = cleanedDigits.padStart(4, '0').slice(-4);
+    const last4 = cleanedChars.length >= 4 ? cleanedChars.slice(-4) : cleanedChars.padStart(4, '0');
     const balanceNum = parseFloat(newAssetBalance) || 0;
     const formattedBalance = `$${balanceNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const inferred = inferAssetDetails(newAssetName, newAssetInstitution, undefined, newAssetCategory);
@@ -210,7 +210,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
     setAssetAddError(null);
     setIsAddingAsset(false);
     setFilterType('assets');
-    setAddSuccessNotice(`Asset account added with Last 4 digits (...${last4}) for Next Steps matching.`);
+    setAddSuccessNotice(`Asset account added with Last 4 # (...${last4}) for Next Steps matching.`);
     setTimeout(() => setAddSuccessNotice(null), 4000);
   };
 
@@ -415,7 +415,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                       </h4>
                     </div>
                     <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-                      Primary Key: Last 4 digits used for account matching
+                      Primary Key: Last 4 alphanumeric characters (e.g. 4YBN) used for account matching
                     </span>
                   </div>
 
@@ -425,7 +425,7 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <strong className="text-gray-900 dark:text-white">Account Match Key:</strong> Enter the exact <strong>last 4 digits</strong> of your account. The Next Steps App diffs and reconciles your records by matching these 4 digits so your balances update without creating duplicates.
+                      <strong className="text-gray-900 dark:text-white">Account Match Key:</strong> Enter the exact <strong>last 4 alphanumeric characters</strong> (e.g. <code>4YBN</code> or <code>4821</code>) of your account. The Next Steps App diffs and reconciles your records by matching these 4 characters so your balances update without creating duplicates.
                     </div>
                   </div>
 
@@ -446,17 +446,17 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
 
                     <div className="sm:col-span-3">
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Last 4 Digits <span className="text-emerald-600 dark:text-emerald-400 font-bold">* (Next Steps Key)</span>
+                        Last 4 # <span className="text-emerald-600 dark:text-emerald-400 font-bold">* (Next Steps Key)</span>
                       </label>
                       <div className="relative">
                         <input
                           type="text"
                           maxLength={4}
                           value={newAssetLast4}
-                          onChange={(e) => setNewAssetLast4(e.target.value.replace(/\D/g, ''))}
-                          placeholder="e.g. 4821"
-                          className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-emerald-500 dark:border-emerald-500 rounded-lg text-xs font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white"
-                          title="4-digit identifier for Next Steps matching"
+                          onChange={(e) => setNewAssetLast4(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
+                          placeholder="e.g. 4YBN"
+                          className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-emerald-500 dark:border-emerald-500 rounded-lg text-xs font-mono font-bold text-center tracking-widest focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white uppercase"
+                          title="4-character alphanumeric identifier for Next Steps matching (e.g. 4YBN)"
                           required
                         />
                         {newAssetLast4.length === 4 && (
@@ -643,14 +643,14 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                                 type="text"
                                 maxLength={4}
                                 value={account.accountNumber}
-                                onChange={(e) => handleAccountFieldChange(originalIndex, 'accountNumber', e.target.value.replace(/\D/g, ''))}
-                                className={`w-14 px-1.5 py-1 rounded text-center text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 ${
+                                onChange={(e) => handleAccountFieldChange(originalIndex, 'accountNumber', e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
+                                className={`w-16 px-1.5 py-1 rounded text-center text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-blue-500 ${
                                   isAsset
                                     ? 'bg-emerald-50 dark:bg-emerald-950/50 border-2 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
                                     : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
                                 }`}
-                                title="4-digit identifier matched with accounts in Next Steps App"
-                                placeholder="0000"
+                                title="4-character alphanumeric identifier (e.g. 4YBN) matched with accounts in Next Steps App"
+                                placeholder="4YBN"
                               />
                             </td>
                             <td className="p-3">

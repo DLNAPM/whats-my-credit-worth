@@ -131,7 +131,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
         if (type === 'checkbox') {
             formattedValue = (e.target as HTMLInputElement).checked;
         } else if (name === 'accountNumber' || name === 'last4') {
-            formattedValue = value.replace(/\D/g, '').slice(0, 4);
+            formattedValue = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
             items[index] = {
                 ...items[index],
                 accountNumber: formattedValue,
@@ -234,11 +234,13 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
             </div>
             <div className="sm:col-span-2">
               <InputField 
-                label="Last 4 #"
+                label="Last 4 # (Next Steps)"
                 name="accountNumber"
                 type="text"
+                maxLength={4}
                 value={card.accountNumber || card.last4 || ''}
-                placeholder="e.g. 4819"
+                placeholder="e.g. 4YBN"
+                title="4-character alphanumeric identifier (e.g. 4YBN, 4819) used to match and sync with Next Steps App"
                 onChange={(e) => handleListChange(index, e, 'creditCards')}
               />
             </div>
@@ -338,11 +340,13 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
             </div>
             <div className="sm:col-span-2">
               <InputField 
-                label="Last 4 #"
+                label="Last 4 # (Next Steps)"
                 name="accountNumber"
                 type="text"
+                maxLength={4}
                 value={loan.accountNumber || loan.last4 || ''}
-                placeholder="e.g. 1024"
+                placeholder="e.g. 4YBN"
+                title="4-character alphanumeric identifier (e.g. 4YBN, 1024) used to match and sync with Next Steps App"
                 onChange={(e) => handleListChange(index, e, 'loans')}
               />
             </div>
@@ -444,8 +448,8 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear }) =
                 type="text"
                 maxLength={4}
                 value={asset.accountNumber || asset.last4 || ''}
-                placeholder="e.g. 3912"
-                title="Crucial: 4 digits used to match and sync with accounts in Next Steps App"
+                placeholder="e.g. 4YBN"
+                title="Crucial: 4-character alphanumeric identifier (e.g. 4YBN, 3912) used to match and sync with accounts in Next Steps App"
                 onChange={(e) => handleListChange(index, e, 'assets')}
               />
             </div>

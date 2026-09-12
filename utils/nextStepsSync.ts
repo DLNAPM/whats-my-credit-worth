@@ -297,12 +297,13 @@ const LENDER_DIRECTORY: LenderRule[] = [
 ];
 
 /**
- * Extracts or infers a 4-digit account number (last4) from account name or properties.
+ * Extracts or infers a 4-character alphanumeric account number (last4) from account name or properties.
+ * E.g., numbers like '4821' or alphanumeric identifiers like '4YBN'.
  * If not present, produces a stable, deterministic 4-digit code based on the card id.
  */
 export function extractOrGenerateLast4(name: string, explicitNumber?: string, id?: string): string {
   if (explicitNumber && explicitNumber.trim().length > 0) {
-    const cleaned = explicitNumber.replace(/\D/g, '');
+    const cleaned = explicitNumber.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     if (cleaned.length >= 4) {
       return cleaned.slice(-4);
     }
@@ -311,16 +312,18 @@ export function extractOrGenerateLast4(name: string, explicitNumber?: string, id
     }
   }
 
-  // Look for 4 digits in the name like "Sapphire (4819)", "CapOne - 8921", "*3312", "#4490", "x1234"
+  // Look for 4 alphanumeric characters in the name like "Sapphire (4YBN)", "CapOne - 8921", "*3312", "#4490", "x1234"
   const patterns = [
-    /(?:[#\-*x(\[]\s*|\b)(\d{4})(?:\b|[)\]])/i,
-    /\b(\d{4})\b/
+    /(?:[#\-*x(\[]\s*|\.{3}\s*)([A-Za-z0-9]{4})(?:\b|[)\]])/i,
+    /(?:account|acct|ending|last\s*4|#|\*)\s*[:\-]?\s*([A-Za-z0-9]{4})\b/i,
+    // 4-character token containing at least one digit so words like 'CARD', 'LOAN', 'AMEX' aren't mistaken for account numbers
+    /\b(?=[A-Za-z0-9]*\d)([A-Za-z0-9]{4})\b/i
   ];
 
   for (const regex of patterns) {
     const match = name.match(regex);
     if (match && match[1]) {
-      return match[1];
+      return match[1].toUpperCase();
     }
   }
 
