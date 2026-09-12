@@ -219,7 +219,14 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           {view === 'reports' && (
             <Reports 
               key={`reports-${refreshCounter}`} 
-              allData={financialData} 
+              allData={financialData}
+              currentMonthYear={currentMonthYear}
+              currentMonthData={currentMonthData}
+              accountType={accountType}
+              businessName={businessName}
+              businessType={businessType}
+              userEmail={user?.email || undefined}
+              displayName={user?.displayName || undefined}
             />
           )}
           {view === 'admin' && (

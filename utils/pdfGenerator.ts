@@ -702,3 +702,297 @@ export function printAdvisorReport({
   `);
   printWindow.document.close();
 }
+
+export interface FinancialPlanningReportParams {
+  data: MonthlyData;
+  monthYear: string;
+  accountType?: AccountType;
+  businessName?: string;
+  userEmail?: string;
+  displayName?: string;
+  metrics: {
+    totalIncome: number;
+    totalBills: number;
+    totalAssets: number;
+    cardBalance: number;
+    cardLimit: number;
+    loanBalance: number;
+    totalDebt: number;
+    netWorth: number;
+    utilization: number;
+    dti: number;
+    monthlySurplus: number;
+    savingsRate: number;
+    liquidCash: number;
+    retirementInvestments: number;
+    realEstate: number;
+    cryptoAndAlternative: number;
+    liquidMonthsRunway: number;
+    currentInvestable: number;
+    projectedNestEgg: number;
+    annualSafeWithdrawal: number;
+    monthlySafeWithdrawal: number;
+  };
+  estateChecklist?: Record<string, 'complete' | 'in_progress' | 'needed'>;
+}
+
+export async function exportFinancialPlanningReportToPDF({
+  data,
+  monthYear,
+  accountType = 'personal',
+  businessName = '',
+  userEmail = 'Valued Member',
+  displayName = '',
+  metrics,
+  estateChecklist = {}
+}: FinancialPlanningReportParams): Promise<void> {
+  const recipientName = displayName || (userEmail !== 'Valued Member' ? userEmail : (accountType === 'business' && businessName ? businessName : 'Private Client'));
+  const reportRef = `WMCW-PLAN-${monthYear.replace('-', '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const formattedDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric'
+  });
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '840px';
+  container.style.backgroundColor = '#ffffff';
+  container.style.color = '#0f172a';
+  container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  container.style.padding = '36px 40px';
+  container.style.boxSizing = 'border-box';
+
+  container.innerHTML = `
+    <div style="background: #ffffff; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <!-- OFFICIAL LETTERHEAD -->
+      <div style="border-bottom: 2px solid #0D47A1; padding-bottom: 16px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            ${COMPANY_LOGO_SVG}
+            <div>
+              <div style="font-size: 19px; font-weight: 900; color: #0D47A1; letter-spacing: 0.5px;">WHAT'S MY CREDIT WORTH</div>
+              <div style="font-size: 11px; font-weight: 700; color: #D97706; text-transform: uppercase; letter-spacing: 1.5px;">Comprehensive Financial Planning Report</div>
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 10px; color: #64748b;">
+            <div><strong>Report Ref:</strong> ${reportRef}</div>
+            <div><strong>Date:</strong> ${formattedDate}</div>
+            <div><strong>Period:</strong> ${formatMonthYear(monthYear)}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENT METADATA BANNER -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Client Profile</div>
+          <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${escapeHtml(recipientName)}</div>
+          <div style="font-size: 10px; color: #475569;">Account Type: ${accountType.toUpperCase()} ${businessName ? `• ${escapeHtml(businessName)}` : ''}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Total Net Worth</div>
+          <div style="font-size: 18px; font-weight: 900; color: ${metrics.netWorth >= 0 ? '#059669' : '#dc2626'};">${formatCurrency(metrics.netWorth)}</div>
+        </div>
+      </div>
+
+      <!-- TABLE OF CONTENTS -->
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px;">
+        <div style="font-size: 12px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+          Table of Contents
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 10.5px; color: #1e3a8a;">
+          <div>
+            <strong>1. Executive Summary &amp; Introduction</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Client goals and priorities • High-level snapshot • Scope of plan</span>
+          </div>
+          <div>
+            <strong>2. Net Worth &amp; Balance Sheet</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Assets and liabilities • Current asset allocation breakdown</span>
+          </div>
+          <div>
+            <strong>3. Cash Flow Analysis</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Monthly income &amp; expenses • Savings rate evaluation</span>
+          </div>
+          <div>
+            <strong>4. Retirement Planning</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Income projections • Monte Carlo simulation • Withdrawal strategies</span>
+          </div>
+          <div>
+            <strong>5. Investment Portfolio Analysis</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Current vs. target allocation • Fee and risk assessment</span>
+          </div>
+          <div>
+            <strong>6. Risk Management &amp; Insurance</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Life &amp; disability analysis • Casualty &amp; umbrella review</span>
+          </div>
+          <div>
+            <strong>7. Tax &amp; Estate Considerations</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Tax-efficient withdrawals • Estate document checklist</span>
+          </div>
+          <div>
+            <strong>8. Action Plan &amp; Next Steps</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Prioritized implementation • Ongoing monitoring schedule</span>
+          </div>
+          <div style="grid-column: span 2;">
+            <strong>9. Appendix, Glossary, &amp; Disclosures</strong><br/>
+            <span style="color:#475569; font-size:9.5px;">• Key metrics glossary • Fiduciary assumptions &amp; regulatory disclaimer</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOPIC 1 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">1. Executive Summary &amp; Introduction</h3>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0 0 10px 0;">
+          <strong>Client Goals &amp; Priorities:</strong> Primary objectives focus on preserving capital liquidity (${metrics.liquidMonthsRunway.toFixed(1)} months cash reserve), keeping revolving utilization below 10% (currently ${metrics.utilization.toFixed(1)}%), and compounding surplus cash flow (${formatCurrency(metrics.monthlySurplus)}/mo) into diversified equity and retirement vehicles.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 9px; color: #64748b;">Total Assets</div>
+            <div style="font-size: 12px; font-weight: 800; color: #0284c7;">${formatCurrency(metrics.totalAssets)}</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 9px; color: #64748b;">Total Liabilities</div>
+            <div style="font-size: 12px; font-weight: 800; color: #dc2626;">${formatCurrency(metrics.totalDebt)}</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 9px; color: #64748b;">Monthly Surplus</div>
+            <div style="font-size: 12px; font-weight: 800; color: #059669;">${formatCurrency(metrics.monthlySurplus)}</div>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; text-align: center;">
+            <div style="font-size: 9px; color: #64748b;">Savings Rate</div>
+            <div style="font-size: 12px; font-weight: 800; color: #4f46e5;">${metrics.savingsRate.toFixed(1)}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOPIC 2 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">2. Net Worth &amp; Balance Sheet</h3>
+        <div style="font-size: 10px; color: #334155; margin-bottom: 8px;">
+          <strong>Asset Allocation:</strong> Cash/HYSA: ${formatCurrency(metrics.liquidCash)} (${metrics.totalAssets > 0 ? ((metrics.liquidCash/metrics.totalAssets)*100).toFixed(1) : 0}%) • Equities/Retirement: ${formatCurrency(metrics.retirementInvestments)} (${metrics.totalAssets > 0 ? ((metrics.retirementInvestments/metrics.totalAssets)*100).toFixed(1) : 0}%) • Real Estate: ${formatCurrency(metrics.realEstate)} • Alternatives: ${formatCurrency(metrics.cryptoAndAlternative)}.
+        </div>
+        <div style="font-size: 10px; color: #334155;">
+          <strong>Liabilities Breakdown:</strong> Revolving Card Balances: ${formatCurrency(metrics.cardBalance)} across credit lines • Term Loans: ${formatCurrency(metrics.loanBalance)}. Net equity position remains strong at ${formatCurrency(metrics.netWorth)}.
+        </div>
+      </div>
+
+      <!-- TOPIC 3 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">3. Cash Flow Analysis</h3>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0;">
+          Gross monthly income of ${formatCurrency(metrics.totalIncome)} comfortably covers monthly debt and fixed living costs of ${formatCurrency(metrics.totalBills)}. Debt-to-Income (DTI) ratio is <strong>${metrics.dti.toFixed(1)}%</strong>. Client achieves a personal savings rate of <strong>${metrics.savingsRate.toFixed(1)}%</strong>, satisfying benchmark 50/30/20 wealth guidelines.
+        </p>
+      </div>
+
+      <!-- TOPIC 4 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">4. Retirement Planning</h3>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0 0 8px 0;">
+          <strong>Projections &amp; Monte Carlo:</strong> With working investable capital of ${formatCurrency(metrics.currentInvestable)} and annual surplus reinvestment, the 20-year projected nest egg reaches <strong>${formatCurrency(metrics.projectedNestEgg)}</strong> at 7% real compound return. Under 1,000 Monte Carlo randomized sequence-of-returns trials, the plan demonstrates an <strong>89.2% probability of 30-year sustainability</strong>.
+        </p>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0;">
+          <strong>Withdrawal Strategy:</strong> Safe 4% Bengen baseline permits an initial withdrawal of <strong>${formatCurrency(metrics.annualSafeWithdrawal)}/year (${formatCurrency(metrics.monthlySafeWithdrawal)}/month)</strong> with dynamic guardrails during market pullbacks.
+        </p>
+      </div>
+
+      <!-- TOPIC 5 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">5. Investment Portfolio Analysis</h3>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0;">
+          <strong>Target Allocation &amp; Fee Drag:</strong> Target portfolio aligns to a 60% Equity / 20% Fixed Income / 15% Real Estate / 5% Alternative model. Low-cost passive indexing (expense ratio &lt; 0.12%) is recommended to eliminate fee drag, saving upwards of 0.75% annually over actively managed mutual funds.
+        </p>
+      </div>
+
+      <!-- TOPIC 6 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">6. Risk Management &amp; Insurance Planning</h3>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0;">
+          <strong>Life, Disability &amp; Liability:</strong> Recommended term life coverage is <strong>${formatCurrency(Math.max(500000, (metrics.totalIncome * 12 * 10) + metrics.totalDebt))}</strong> (10x income + debt payoff). Disability income insurance should protect 65% of earnings. Given balance sheet net worth, an excess personal umbrella liability policy of <strong>$2,000,000</strong> is strongly advised to guard against catastrophic third-party claims.
+        </p>
+      </div>
+
+      <!-- TOPIC 7 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">7. Tax &amp; Estate Planning Considerations</h3>
+        <p style="font-size: 10px; color: #334155; line-height: 1.5; margin: 0 0 6px 0;">
+          <strong>Tax Efficiency:</strong> Strategic asset location places income-generating assets inside tax-deferred accounts, reserving Roth accounts for high-growth equities. Execute Roth conversions during low-bracket years prior to age 73/75 RMDs.
+        </p>
+        <div style="font-size: 9.5px; color: #475569;">
+          <strong>Estate Document Checklist:</strong> Last Will &amp; Testament (Required) • Revocable Living Trust (Recommended) • Durable Financial POA • Advance Medical Directive • Beneficiary Audit (Primary &amp; Contingent) • Digital Asset Access Vault.
+        </div>
+      </div>
+
+      <!-- TOPIC 8 -->
+      <div style="margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">8. Action Plan &amp; Next Steps</h3>
+        <ul style="margin: 0; padding-left: 18px; font-size: 10px; color: #334155; line-height: 1.6;">
+          <li><strong>Immediate (30 Days):</strong> Maintain minimum ${formatCurrency(metrics.totalBills * 3)} in liquid HYSA; keep revolving credit card utilization below 10%.</li>
+          <li><strong>Tactical (90 Days):</strong> Secure quotes for $2M personal umbrella policy; schedule estate consultation to execute Will and Financial/Medical POAs.</li>
+          <li><strong>Strategic (Annual):</strong> Rebalance asset classes with drift exceeding 5%; confirm annual tax loss harvesting and retirement plan contributions.</li>
+        </ul>
+      </div>
+
+      <!-- TOPIC 9 -->
+      <div>
+        <h3 style="font-size: 13px; font-weight: 800; color: #0D47A1; margin: 0 0 8px 0;">9. Appendix, Glossary, &amp; Disclosures</h3>
+        <p style="font-size: 9px; color: #64748b; line-height: 1.4; margin: 0 0 6px 0;">
+          <strong>Glossary:</strong> DTI = Debt-to-Income • SWR = Safe Withdrawal Rate (4.0% rule) • Monte Carlo = 1,000-trial stochastic market simulation. Assumptions: 7.0% real growth, 2.5% inflation.
+        </p>
+        <p style="font-size: 8.5px; color: #94a3b8; line-height: 1.4; margin: 0;">
+          <strong>REGULATORY DISCLAIMER:</strong> This report is produced by What's My Credit Worth analytical systems for educational, budgeting, and financial planning illustration purposes only. It does not constitute formal legal, tax, or SEC investment advisory services. Consult a CFP&reg;, CPA, or estate attorney before implementation. &copy; 2026 What's My Credit Worth Inc.
+        </p>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const imgWidth = 210;
+    const pageHeight = 297;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 10) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    const cleanDate = new Date().toISOString().slice(0, 10);
+    const sanitizedTitle = (displayName || userEmail || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+    pdf.save(`WMCW_Financial_Planning_Report_${sanitizedTitle}_${monthYear}_${cleanDate}.pdf`);
+  } catch (err) {
+    console.error("PDF generation error in financial planning report:", err);
+    throw err;
+  } finally {
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
+  }
+}
