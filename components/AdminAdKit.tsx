@@ -86,7 +86,7 @@ export const AdminAdKit: React.FC = () => {
       subheadline: 'Test-drive our comprehensive wealth & multi-bureau credit platform in instant Guest Mode.',
       targetAudience: 'Consumers & Business Owners looking for holistic credit and wealth tracking',
       howToSteps: [
-        { number: 1, title: 'Click "Try Guest Mode"', description: 'Instantly access the full application pre-populated with 4 months of realistic sample data.' },
+        { number: 1, title: 'Click "Guest Mode"', description: 'Instantly access the full application pre-populated with 4 months of realistic sample financial data.' },
         { number: 2, title: 'Inspect the Unified View', description: 'See how your credit scores directly correlate with credit utilization, cash flow, and net worth.' },
         { number: 3, title: 'Switch Between Modes', description: 'Seamlessly toggle between Personal finances and Business entity accounting in one click.' }
       ],
@@ -95,7 +95,7 @@ export const AdminAdKit: React.FC = () => {
 What's My Credit Worth connects your 3-bureau credit scores, credit cards, loans, and assets into one unified wealth command center.
 
 👉 HOW TO GET STARTED IN 30 SECONDS:
-1️⃣ Visit whatsmycreditworth.com and click "Try Guest Mode"
+1️⃣ Visit whatsmycreditworth.com and click "Guest Mode"
 2️⃣ Explore 4 months of pre-loaded sample data—no credit card or signup required
 3️⃣ See how lowering credit utilization from 30% to 2.6% propels your net worth forward
 
@@ -111,9 +111,9 @@ What's My Credit Worth connects your 3-bureau credit scores, credit cards, loans
       subheadline: 'Track Net Worth, Credit Utilization (<10%), and Debt-to-Income on a single executive screen.',
       targetAudience: 'Everyday investors, budgeters, and home buyers preparing for mortgage approval',
       howToSteps: [
-        { number: 1, title: 'Monitor Core Vital Gauges', description: 'Review your Net Worth, revolving Credit Utilization, and Debt-to-Income (DTI) ratio at a glance.' },
-        { number: 2, title: 'Track Monthly Free Cash Flow', description: 'See exactly how much surplus cash remains after all living expenses and debt payments.' },
-        { number: 3, title: 'Navigate Historical Periods', description: 'Select past reporting months from the header to evaluate multi-month financial momentum.' }
+        { number: 1, title: 'Monitor 5 Vital Gauges', description: 'Review Net Worth, Total Assets, Total Debt, Monthly Income, and DTI Ratio on high-contrast cards.' },
+        { number: 2, title: 'Switch Interactive Charts', description: 'Toggle between Net Worth Over Time and Multi-Bureau Credit Scores to track financial momentum.' },
+        { number: 3, title: 'Optimize Credit Utilization', description: 'Monitor revolving credit utilization to keep it strictly under 10% (Guest Mode: an optimal 2.6%).' }
       ],
       caption: `📊 Stop logging into 5 different banking and credit apps just to see where your money stands!
 
@@ -136,18 +136,18 @@ The WMCW Dashboard unites your credit cards, term loans, liquid assets, income, 
       subheadline: 'Update income streams, card limits, balances, loans, and assets with instant cloud synchronization.',
       targetAudience: 'Users who want total control over past and present financial records',
       howToSteps: [
-        { number: 1, title: 'Open the Data Editor', description: 'Click "Edit Data" on any dashboard to access the organized multi-tab financial editor.' },
-        { number: 2, title: 'Update Values in Seconds', description: 'Modify your salary, credit card balances, loan amortization, or asset balances with real-time auto-saving.' },
-        { number: 3, title: 'Backfill Historical Months', description: 'Select any prior month from the dropdown to correct past entries and update trajectory charts.' }
+        { number: 1, title: 'Click "Edit" in Header', description: 'Click the "Edit" button in the top navigation bar to launch the multi-section financial ledger modal.' },
+        { number: 2, title: '1-Click Copy Prior Month', description: 'Use "Start with data from another month?" to duplicate previous balances and save setup time.' },
+        { number: 3, title: 'Update & Save Changes', description: 'Update salaries, card limits, loan balances, or asset values with instant auto-save and cloud security.' }
       ],
       caption: `✏️ Received a raise, paid down a credit card, or bought new assets? Updating your financial records should take seconds, not hours.
 
 With WMCW, you can edit current and past months' data with instantaneous auto-saving and zero friction.
 
 👉 HOW TO UPDATE YOUR FINANCIAL DATA:
-1️⃣ Click "Edit Data" from your dashboard to open the streamlined ledger
-2️⃣ Update your credit card balances, add new savings/investment accounts, or adjust salaries
-3️⃣ Jump back to past months to backfill historical numbers and watch your net worth charts adjust in real-time
+1️⃣ Click "Edit" from the top navigation bar to open the organized ledger modal
+2️⃣ Use 1-click "Start with data from another month?" to copy previous month values
+3️⃣ Update credit cards with 4-char match keys (#4819), add savings, or adjust salaries, then click "Save Changes"
 
 💡 Test out the flexible data editor risk-free in Guest Mode!
 #FinanceApp #DataManagement #BudgetingTools #FinancialTracking #Productivity #MoneyManagement`
@@ -161,9 +161,9 @@ With WMCW, you can edit current and past months' data with instantaneous auto-sa
       subheadline: 'Access a 9-topic fiduciary-grade audit with Monte Carlo simulations and multi-period comparisons.',
       targetAudience: 'High earners, retirees, and families wanting professional financial roadmap reports',
       howToSteps: [
-        { number: 1, title: 'Navigate to Reports', description: 'Click "Reports" in the top navigation bar to open the reporting suite.' },
-        { number: 2, title: 'Click "Generate Financial Plan"', description: 'Instantly produce a 9-topic comprehensive audit covering cash flow, estate, insurance, and retirement.' },
-        { number: 3, title: 'Review & Export to PDF', description: 'Audit period-over-period net worth changes and download an official publication-ready PDF.' }
+        { number: 1, title: 'Navigate to "Reports"', description: 'Click "Reports" in the top navigation bar to view historical period-over-period comparisons.' },
+        { number: 2, title: 'Click "Generate Report"', description: 'Click "Generate Financial Planning Report" to compile a 9-topic fiduciary audit with Monte Carlo models.' },
+        { number: 3, title: 'Review & Print / Export', description: 'Review asset allocation, estate checklists, and withdrawal sequencing, then export to publication-ready PDF.' }
       ],
       caption: `📑 Traditional financial planners charge upwards of $2,500 to draft a comprehensive financial roadmap.
 
@@ -179,26 +179,26 @@ What's My Credit Worth generates an institutional 9-topic Financial Planning Rep
     },
     {
       id: 'four_steps',
-      label: '4 Steps to Fiancial Freedom',
+      label: '4 Steps to Financial Freedom',
       category: 'Milestone Roadmap',
       badge: 'PROVEN WEALTH SEQUENCE',
       headline: 'The Proven 4 Steps to Financial Freedom',
       subheadline: 'Follow our structured milestone framework from emergency liquid reserves to generational wealth.',
       targetAudience: 'Anyone striving for financial independence, FIRE, or stress-free money management',
       howToSteps: [
-        { number: 1, title: 'Step 1: Emergency Fund', description: 'Build 3 to 6 months of living expenses in an FDIC-insured High-Yield Savings Account.' },
-        { number: 2, title: 'Step 2: Eliminate High-Interest Debt', description: 'Crush revolving credit card balances and maintain overall utilization strictly under 10%.' },
-        { number: 3, title: 'Steps 3 & 4: Invest & Protect', description: 'Compound monthly surplus into tax-advantaged accounts and safeguard assets with estate planning.' }
+        { number: 1, title: 'Step 1: Replace Income', description: 'Target: Monthly Income × 300 ($2,805,000) invested to perpetually replace your monthly salary.' },
+        { number: 2, title: 'Steps 2 & 3: Invest & HYSA', description: 'Invest 2% minimum ($187/mo) & build 3x monthly income in FDIC-insured HYSA ($28,050).' },
+        { number: 3, title: 'Step 4: Rainy Day Cap', description: 'Cap monthly rainy day cash savings at 50% ($4,675/mo) to eliminate cash drag and compound wealth.' }
       ],
       caption: `🛣️ Achieving financial independence doesn't require luck—it requires following an exact, battle-tested sequence.
 
-The WMCW 4 Steps to Financial Freedom guides you step-by-step from liquid emergency cash to true generational wealth.
+The WMCW 4 Steps to Financial Freedom dynamically calculates personalized milestone targets derived from your real monthly income:
 
-👉 THE 4 PROVEN STEPS:
-1️⃣ Step 1: Build a 3-6 month liquid emergency buffer (Guest Mode: 5.8 months secured!)
-2️⃣ Step 2: Eliminate high-interest revolving credit card debt (Keep utilization <10%)
-3️⃣ Step 3: Compound monthly cash flow surplus into diversified index funds & retirement accounts
-4️⃣ Step 4: Protect your legacy with estate planning, life insurance, and umbrella liability
+👉 THE 4 PROVEN FORMULA STEPS:
+1️⃣ Step 1: Replace Monthly Income (Monthly Income × 300 = $2,805,000 invested target)
+2️⃣ Step 2: Minimum Monthly Investment (Monthly Income × 2% = $187/mo automated habit)
+3️⃣ Step 3: High Yield Savings Reserve (Monthly Income × 3 = $28,050 in FDIC-insured HYSA)
+4️⃣ Step 4: Rainy Day Monthly Savings Cap (Monthly Income × 50% = $4,675/mo max cap to prevent cash drag)
 
 🏁 See where you stand on the 4-step roadmap in Guest Mode today!
 #FinancialFreedom #DebtFreeJourney #EmergencyFund #Investing #FIRECommunity #WealthBuilding`
@@ -237,9 +237,9 @@ WMCW tracks your credit scores across Experian, Equifax, TransUnion, Mortgage FI
       subheadline: 'Understand why $10k in credit card debt hurts your FICO score 10x more than a $300k mortgage.',
       targetAudience: 'Individuals carrying consumer balances or refinancing home and auto loans',
       howToSteps: [
-        { number: 1, title: 'Analyze Credit Card Limits & Balances', description: 'Ensure your revolving utilization stays below 10% to secure elite FICO credit tier status.' },
-        { number: 2, title: 'Separate Installment Debt', description: 'Distinguish low-rate asset-backed mortgage debt from high-interest revolving balances.' },
-        { number: 3, title: 'Target High-Impact Payoffs', description: 'Simulate the exact score impact of paying down specific credit lines first.' }
+        { number: 1, title: 'Toggle Cards vs Loans', description: 'Switch between [Credit Cards] and [Loans] in the liability card to audit revolving vs term balances.' },
+        { number: 2, title: 'Keep Utilization <10%', description: 'Monitor total card utilization (Guest Mode: 2.64%) to maintain top-tier FICO scoring.' },
+        { number: 3, title: 'Run Payoff Simulation', description: 'Click "RUN SIMULATION ✨" to model card paydowns and simulate score improvements.' }
       ],
       caption: `💳 All debt is NOT created equal!
 
@@ -248,7 +248,7 @@ Carrying $10,000 across maxed-out credit cards can destroy your credit score, wh
 👉 HOW TO OPTIMIZE YOUR DEBT ARCHITECTURE:
 1️⃣ Keep revolving credit card utilization below 10% (Guest Mode shows an optimal 2.6% across 3 cards)
 2️⃣ Separate fixed installment loans (mortgage, auto) from high-interest revolving debt
-3️⃣ Prioritize high-utilization cards first to trigger the largest FICO score boosts
+3️⃣ Click "RUN SIMULATION ✨" to model paying down specific card balances for maximum FICO boosts
 
 🔍 Explore the Credit Card vs. Loans breakdown live in Guest Mode!
 #DebtFree #CreditCards #Mortgage #CreditUtilization #SmartMoney #DebtPayoff #PersonalFinance`
@@ -262,9 +262,9 @@ Carrying $10,000 across maxed-out credit cards can destroy your credit score, wh
       subheadline: 'Organize your entire asset portfolio with alphanumeric account IDs and Next Steps App synchronization.',
       targetAudience: 'Investors, savers, and professionals managing diversified assets',
       howToSteps: [
-        { number: 1, title: 'Log Diverse Asset Classes', description: 'Add High-Yield Savings, 401k/IRA retirement accounts, cryptocurrency, and real estate equity.' },
-        { number: 2, title: 'Tag Last-4 Digits (Alphanumeric)', description: 'Include account identifiers (e.g. 4YBN or 4821) to match seamlessly with Next Steps accounts.' },
-        { number: 3, title: 'Watch Liquid Runway Expand', description: 'Evaluate your emergency runway in months and watch compound interest grow your net worth.' }
+        { number: 1, title: 'Audit Asset Classes', description: 'View total assets ($257,400) categorized into Liquid Cash, 401k/IRA, Real Estate, and Crypto.' },
+        { number: 2, title: 'Use 4-Char Match Keys', description: 'Tag accounts with 4-character identifiers (e.g. #4821, #9102, #7724) for duplicate-free sync.' },
+        { number: 3, title: 'Track Liquid Runway', description: 'Monitor emergency reserves ($18k in Marcus HYSA = 5.8 months runway) and compound growth.' }
       ],
       caption: `💰 Net worth is your TRUE financial scorecard—not just your monthly salary.
 
@@ -287,9 +287,9 @@ The WMCW Assets module lets you organize all your holdings in one place with acc
       subheadline: 'Ask complex money questions and receive instant guidance calculated directly from your balance sheet.',
       targetAudience: 'Users seeking immediate financial strategy without paying expensive hourly planner fees',
       howToSteps: [
-        { number: 1, title: 'Launch the AI Advisor', description: 'Click the AI Advisor icon anywhere in the app to open the fiduciary chat console.' },
-        { number: 2, title: 'Ask Targeted Strategy Questions', description: 'Ask how to allocate surplus cash flow, optimize debt payoff, or model retirement scenarios.' },
-        { number: 3, title: 'Receive Data-Driven Answers', description: 'Get instant recommendations tailored directly to your live emergency runway and credit utilization.' }
+        { number: 1, title: 'Click "AI ADVISOR ✨"', description: 'Click the purple "AI ADVISOR ✨" button in the WMCW header to launch the fiduciary console.' },
+        { number: 2, title: 'Review Surplus Cash Flow', description: 'Inspect your live $6,255 monthly cash flow surplus, 5.8-month runway, and 2.6% utilization.' },
+        { number: 3, title: 'Receive Targeted Strategy', description: 'Get data-backed recommendations on debt payoff sequencing, index investing, and milestone pace.' }
       ],
       caption: `🤖 Imagine having a certified financial advisor in your pocket who already understands your income, debt, and assets.
 
@@ -828,6 +828,97 @@ The "Chat With Us" console in What's My Credit Worth gives you 24/7 access to bo
   );
 };
 
+// HELPER: Authentic App Viewport & Browser Chrome
+// Wraps mockups in a realistic browser window + WMCW header matching the live application
+const AppViewportChrome: React.FC<{
+  activeView?: 'Dashboard' | 'Reports' | 'Admin';
+  monthLabel?: string;
+  activeFeatureTag?: string;
+  children: React.ReactNode;
+}> = ({ activeView = 'Dashboard', monthLabel = 'March 2026', activeFeatureTag, children }) => {
+  return (
+    <div className="rounded-xl overflow-hidden shadow-2xl border border-slate-700/80 bg-white text-slate-900 text-[9px]">
+      {/* 1. TOP BROWSER CHROME */}
+      <div className="bg-slate-900 px-3 py-1.5 flex items-center justify-between border-b border-slate-800 text-[8px] text-slate-400 select-none">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+          <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+        </div>
+        <div className="bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-slate-800 text-slate-300 flex items-center gap-1 font-mono text-[7.5px]">
+          <span className="text-emerald-400">🔒</span>
+          <span>https://whatsmycreditworth.com</span>
+          <span className="text-emerald-400 font-bold ml-1">• Guest Mode</span>
+        </div>
+        <div className="flex items-center gap-1 text-[7.5px] text-slate-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Cloud Sync 100%</span>
+        </div>
+      </div>
+
+      {/* 2. REAL-TIME STREAMING STOCK & CRYPTO TICKER TAPE */}
+      <div className="bg-slate-950 text-white px-3 py-0.5 border-b border-slate-800 flex items-center gap-3 overflow-hidden text-[7.5px] font-mono whitespace-nowrap">
+        <span className="text-amber-400 font-bold tracking-wider uppercase text-[7px]">LIVE TICKER:</span>
+        <span className="text-emerald-400">▲ AAPL $182.50 (+1.2%)</span>
+        <span className="text-emerald-400">▲ NVDA $875.20 (+3.4%)</span>
+        <span className="text-emerald-400">▲ BTC $67,400 (+2.8%)</span>
+        <span className="text-emerald-400">▲ ETH $3,520 (+1.9%)</span>
+        <span className="text-emerald-400">▲ TSLA $175.40 (+0.8%)</span>
+      </div>
+
+      {/* 3. AUTHENTIC WMCW HEADER */}
+      <div className="bg-white px-3 py-1.5 border-b-2 border-blue-900 shadow-sm flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 font-extrabold text-blue-900 text-[10.5px] tracking-tight">
+            <span>💰</span>
+            <span>WMCW Dashboard</span>
+          </div>
+          <div className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-[7.5px] font-bold text-slate-700">
+            <span>◀</span>
+            <span>{monthLabel}</span>
+            <span>▶</span>
+          </div>
+        </div>
+
+        {/* View Navigation Tabs */}
+        <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[7.5px] font-bold">
+          <span className={`px-2 py-0.5 rounded ${activeView === 'Dashboard' ? 'bg-blue-900 text-white shadow-xs' : 'text-slate-600'}`}>
+            Dashboard
+          </span>
+          <span className={`px-2 py-0.5 rounded ${activeView === 'Reports' ? 'bg-blue-900 text-white shadow-xs' : 'text-slate-600'}`}>
+            Reports
+          </span>
+          <span className={`px-2 py-0.5 rounded ${activeView === 'Admin' ? 'bg-blue-900 text-white shadow-xs' : 'text-slate-600'}`}>
+            Admin
+          </span>
+        </div>
+
+        {/* Header Action Badges */}
+        <div className="flex items-center gap-1 text-[7.5px]">
+          <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 flex items-center gap-0.5">
+            <span>✓</span>
+            <span>DATABASE SECURED</span>
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-xs">
+            ✨ AI ADVISOR
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-blue-900 text-white font-bold">
+            Edit
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold">
+            Sync Next Steps
+          </span>
+        </div>
+      </div>
+
+      {/* 4. ACTIVE SCREEN CONTENT */}
+      <div className="bg-slate-50 p-2.5 space-y-2">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 // SUB-COMPONENT: TOPIC MOCKUP RENDERER
 // Renders rich, realistic UI showcases using actual Guest Mode values
 const TopicMockupRenderer: React.FC<{
@@ -839,430 +930,983 @@ const TopicMockupRenderer: React.FC<{
   switch (topicId) {
     case 'landing_page':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
-            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-              ✦ Landing Page Gateway
-            </span>
-            <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-black text-[9px]">
-              Guest Mode: Instant Access
-            </span>
+        <div className="rounded-xl overflow-hidden shadow-2xl border border-slate-700/80 bg-white text-slate-900 text-[9px]">
+          {/* Top Browser Chrome */}
+          <div className="bg-slate-900 px-3 py-1.5 flex items-center justify-between border-b border-slate-800 text-[8px] text-slate-400 select-none">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            </div>
+            <div className="bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-slate-800 text-slate-300 flex items-center gap-1 font-mono text-[7.5px]">
+              <span className="text-emerald-400">🔒</span>
+              <span>https://whatsmycreditworth.com</span>
+            </div>
+            <span className="text-[7.5px] text-emerald-400 font-bold">Public Gateway</span>
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
-              <div className="text-[8px] text-slate-400">Total Assets</div>
-              <div className="text-[11px] font-black text-emerald-400">{formatCurrency(metrics?.totalAssets || 257400)}</div>
+
+          {/* Landing Page Navbar */}
+          <div className="px-3 py-2 bg-white border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">💰</span>
+              <span className="font-extrabold text-blue-900 text-[11px] tracking-tight">WMCW</span>
+              <span className="text-[7.5px] text-slate-500 font-medium hidden sm:inline">What's My Credit Worth</span>
             </div>
-            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
-              <div className="text-[8px] text-slate-400">Card Utilization</div>
-              <div className="text-[11px] font-black text-blue-400">{metrics?.utilization.toFixed(1) || '2.6'}%</div>
-            </div>
-            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
-              <div className="text-[8px] text-slate-400">DTI Ratio</div>
-              <div className="text-[11px] font-black text-purple-400">{metrics?.dti.toFixed(1) || '33.1'}%</div>
-            </div>
-            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
-              <div className="text-[8px] text-slate-400">Top FICO</div>
-              <div className="text-[11px] font-black text-amber-400">740 FICO 4</div>
+            <div className="flex items-center gap-1.5 text-[8px]">
+              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold border border-slate-200">
+                ▶ Tour
+              </span>
+              <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold border border-amber-300">
+                Guest Mode
+              </span>
+              <span className="px-2 py-0.5 rounded bg-blue-900 text-white font-bold">
+                Login
+              </span>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-slate-800/60 p-2.5 rounded-xl border border-blue-500/30 flex items-center justify-between text-[10px]">
-            <span className="text-slate-200">Try with 4 months of pre-loaded data</span>
-            <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black rounded-lg text-[9px] shadow">
-              One-Click Guest Access &rarr;
-            </span>
+
+          {/* Hero Section */}
+          <div className="p-3 bg-gradient-to-b from-blue-50/60 via-slate-50 to-white text-center space-y-2">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 font-bold text-[7.5px] border border-blue-200">
+              <span>⭐</span>
+              <span>PERSONAL FINANCE DASHBOARD</span>
+            </div>
+            <h3 className="text-sm sm:text-base font-black text-slate-900 leading-tight">
+              Know Your Worth.{' '}
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Grow Your Future.
+              </span>
+            </h3>
+            <p className="text-[8px] text-slate-600 max-w-sm mx-auto leading-relaxed">
+              The comprehensive, private way to track your assets, liabilities, and credit scores across all major bureaus.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-center gap-1.5 pt-1">
+              <div className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 shadow-xs text-slate-800 font-bold text-[8px] flex items-center gap-1">
+                <span className="font-black text-blue-600">G</span>
+                <span>Sign in with Google</span>
+              </div>
+              <div className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[8px] shadow-xs flex items-center gap-1">
+                <span>Guest Mode (Instant Access) &rarr;</span>
+              </div>
+            </div>
+
+            {/* 3 Value Pillars */}
+            <div className="grid grid-cols-3 gap-1.5 pt-2 text-left">
+              <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+                <div className="font-bold text-blue-900 text-[8px]">Multi-Bureau Scores</div>
+                <div className="text-[7.5px] text-slate-500 mt-0.5">Experian, Equifax, TransUnion &amp; Mortgage FICO 4</div>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+                <div className="font-bold text-emerald-800 text-[8px]">4 Steps to Freedom</div>
+                <div className="text-[7.5px] text-slate-500 mt-0.5">Income-driven formulas from emergency cash to FIRE</div>
+              </div>
+              <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs">
+                <div className="font-bold text-indigo-900 text-[8px]">1-Click Next Steps</div>
+                <div className="text-[7.5px] text-slate-500 mt-0.5">4-character match keys prevent duplicate syncs</div>
+              </div>
+            </div>
           </div>
         </div>
       );
 
     case 'wmcw_dashboard':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="font-bold text-slate-300">Executive Dashboard Snapshot</span>
-            <span className="bg-slate-800 px-2 py-0.5 rounded text-[9px] text-blue-400 font-mono">Period: March 2026</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-              <div className="text-[8.5px] text-slate-400">Total Net Worth</div>
-              <div className="text-sm font-black text-emerald-400">+{formatCurrency(metrics?.totalAssets - metrics?.totalDebt)}</div>
-              <div className="text-[7.5px] text-emerald-400/80 mt-0.5">&uarr; +$8,450 vs past month</div>
+        <AppViewportChrome activeView="Dashboard">
+          {/* 5 TOP VITAL METRIC CARDS */}
+          <div className="grid grid-cols-5 gap-1.5 text-center">
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
+              <div className="text-[7px] font-bold text-slate-500 uppercase">Net Worth</div>
+              <div className="text-[10px] font-black text-emerald-600">+{formatCurrency(metrics?.totalAssets - metrics?.totalDebt)}</div>
+              <div className="text-[6.5px] text-emerald-700 font-semibold mt-0.5">▲ +$8,450 MoM</div>
             </div>
-            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-              <div className="text-[8.5px] text-slate-400">Revolving Utilization</div>
-              <div className="text-sm font-black text-blue-400">{metrics?.utilization.toFixed(1)}%</div>
-              <div className="text-[7.5px] text-blue-300/80 mt-0.5">$1,400 / $53,000 Limit</div>
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
+              <div className="text-[7px] font-bold text-slate-500 uppercase">Total Assets</div>
+              <div className="text-[10px] font-black text-blue-900">{formatCurrency(metrics?.totalAssets || 257400)}</div>
+              <div className="text-[6.5px] text-slate-500 mt-0.5">4 Accounts</div>
             </div>
-            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-              <div className="text-[8.5px] text-slate-400">Monthly Surplus</div>
-              <div className="text-sm font-black text-amber-400">+{formatCurrency(metrics?.surplus)}</div>
-              <div className="text-[7.5px] text-amber-300/80 mt-0.5">5.8 Mo Living Runway</div>
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
+              <div className="text-[7px] font-bold text-slate-500 uppercase">Total Debt</div>
+              <div className="text-[10px] font-black text-rose-600">-{formatCurrency(metrics?.totalDebt || 116850)}</div>
+              <div className="text-[6.5px] text-slate-500 mt-0.5">$1.4k Cards / $115k Loans</div>
             </div>
-          </div>
-          {/* Progress bar visual */}
-          <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between text-[8px] text-slate-400 mb-1">
-              <span>Credit Card Balance: $1,400</span>
-              <span className="text-emerald-400 font-bold">Optimal Range (&lt;10%)</span>
-              <span>Available Credit: $51,600</span>
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
+              <div className="text-[7px] font-bold text-slate-500 uppercase">Monthly Income</div>
+              <div className="text-[10px] font-black text-emerald-600">+{formatCurrency(metrics?.monthlyIncome || 9350)}</div>
+              <div className="text-[6.5px] text-slate-500 mt-0.5">2 Sources</div>
             </div>
-            <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full" style={{ width: '2.6%' }}></div>
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
+              <div className="text-[7px] font-bold text-slate-500 uppercase">DTI Ratio</div>
+              <div className="text-[10px] font-black text-emerald-600">{metrics?.dti.toFixed(1) || '33.1'}%</div>
+              <div className="text-[6.5px] text-emerald-700 font-bold mt-0.5">Optimal (≤36%)</div>
             </div>
           </div>
-        </div>
+
+          {/* DASHBOARD CORE: CHART & CREDIT SCORES */}
+          <div className="grid grid-cols-2 gap-2">
+            {/* Chart Switcher Preview */}
+            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                <div className="flex items-center gap-1 text-[7.5px] font-bold">
+                  <span className="px-1.5 py-0.5 bg-blue-900 text-white rounded">Net Worth Over Time</span>
+                  <span className="px-1.5 py-0.5 text-slate-500">Credit Scores</span>
+                </div>
+                <span className="text-[7px] font-mono text-emerald-600 font-bold">+24.3% YoY</span>
+              </div>
+              <div className="py-2 px-1">
+                {/* Visual Trajectory Curve */}
+                <div className="h-10 flex items-end justify-between gap-2 px-2 border-b border-slate-100">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[6.5px] text-slate-400">$118k</span>
+                    <div className="w-5 bg-blue-200 rounded-t h-4"></div>
+                    <span className="text-[6.5px] text-slate-500 mt-0.5">Dec</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[6.5px] text-slate-400">$124k</span>
+                    <div className="w-5 bg-blue-300 rounded-t h-5"></div>
+                    <span className="text-[6.5px] text-slate-500 mt-0.5">Jan</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[6.5px] text-slate-400">$132k</span>
+                    <div className="w-5 bg-blue-500 rounded-t h-7"></div>
+                    <span className="text-[6.5px] text-slate-500 mt-0.5">Feb</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[6.5px] font-bold text-emerald-600">$140.5k</span>
+                    <div className="w-5 bg-emerald-500 rounded-t h-9 shadow-xs"></div>
+                    <span className="text-[6.5px] font-bold text-blue-900 mt-0.5">Mar</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Credit Scores Card */}
+            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-xs space-y-1.5">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                <span className="font-bold text-blue-900 text-[8px]">Multi-Bureau Credit Scores</span>
+                <span className="text-[7px] text-emerald-600 font-bold">+45 pts Past 4 Mo</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 text-center">
+                <div className="bg-blue-50/70 p-1 rounded border border-blue-100">
+                  <div className="text-[6.5px] text-slate-500">Experian</div>
+                  <div className="text-[10px] font-black text-blue-900">730</div>
+                  <div className="text-[6px] text-emerald-600 font-bold">▲ +15</div>
+                </div>
+                <div className="bg-rose-50/70 p-1 rounded border border-rose-100">
+                  <div className="text-[6.5px] text-slate-500">Equifax</div>
+                  <div className="text-[10px] font-black text-rose-800">716</div>
+                  <div className="text-[6px] text-emerald-600 font-bold">▲ +12</div>
+                </div>
+                <div className="bg-emerald-50/70 p-1 rounded border border-emerald-100">
+                  <div className="text-[6.5px] text-slate-500">TransUnion</div>
+                  <div className="text-[10px] font-black text-emerald-800">732</div>
+                  <div className="text-[6px] text-emerald-600 font-bold">▲ +14</div>
+                </div>
+              </div>
+              <div className="flex justify-between text-[7px] text-slate-600 px-1 pt-0.5">
+                <span>Auto FICO: <strong className="text-slate-900">728</strong></span>
+                <span>Mr. Cooper FICO 4: <strong className="text-amber-700">740</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* BOTTOM STRIP: CARDS & ASSETS PREVIEW */}
+          <div className="grid grid-cols-2 gap-2 text-[7.5px]">
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-slate-800">Revolving Card Utilization:</span>
+                <span className="text-emerald-700 font-black ml-1">2.64%</span>
+                <span className="text-slate-400 ml-1">($1,400 / $53,000)</span>
+              </div>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[7px]">Optimal &lt;10%</span>
+            </div>
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-slate-800">Liquid Runway (Marcus HYSA):</span>
+                <span className="text-blue-900 font-black ml-1">$18,000.00</span>
+              </div>
+              <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[7px]">5.8 Mo Runway</span>
+            </div>
+          </div>
+        </AppViewportChrome>
       );
 
     case 'edit_data':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px]">
-            <div className="flex gap-1.5">
-              <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-bold text-[8.5px]">Income</span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Scores</span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Cards</span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Loans</span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Assets</span>
+        <AppViewportChrome activeView="Dashboard">
+          {/* AUTHENTIC DATA EDITOR MODAL VIEWPORT */}
+          <div className="bg-white rounded-xl border-2 border-blue-900 shadow-xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-blue-950 text-white px-3 py-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-[9px]">
+                <span>✏️</span>
+                <span>Edit Data for March 2026</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[7.5px] border border-emerald-500/30">
+                  ✓ Database Secured
+                </span>
+                <span className="text-slate-400 text-[9px] cursor-pointer">✕</span>
+              </div>
             </div>
-            <span className="text-[8px] text-emerald-400 flex items-center gap-1 font-mono">
-              ✓ Auto-saved
-            </span>
+
+            {/* 1-Click Copy Bar */}
+            <div className="bg-amber-50 px-3 py-1 border-b border-amber-200 flex items-center justify-between text-[7.5px]">
+              <div className="flex items-center gap-1.5 text-amber-900 font-medium">
+                <span>Start with data from another month?</span>
+                <span className="bg-white px-1.5 py-0.5 rounded border border-amber-300 font-bold text-slate-800">
+                  February 2026 ▼
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black cursor-pointer shadow-2xs">
+                📋 Copy Data
+              </span>
+            </div>
+
+            {/* Tab Categories */}
+            <div className="flex items-center gap-1 px-3 py-1 bg-slate-100 border-b border-slate-200 text-[7.5px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-white text-blue-900 shadow-xs border border-slate-200">Scores</span>
+              <span className="px-2 py-0.5 rounded bg-blue-900 text-white">Income</span>
+              <span className="px-2 py-0.5 rounded bg-white text-slate-700">Credit Cards</span>
+              <span className="px-2 py-0.5 rounded bg-white text-slate-700">Loans</span>
+              <span className="px-2 py-0.5 rounded bg-white text-slate-700">Assets</span>
+            </div>
+
+            {/* Active Ledger Form Rows */}
+            <div className="p-2 space-y-1.5 text-[8px]">
+              <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                <div>
+                  <span className="text-[6.5px] text-slate-500 block">Experian FICO</span>
+                  <input readOnly value="730" className="w-full bg-white border border-slate-300 rounded px-1 py-0.5 font-bold text-blue-900 font-mono" />
+                </div>
+                <div>
+                  <span className="text-[6.5px] text-slate-500 block">Equifax FICO</span>
+                  <input readOnly value="716" className="w-full bg-white border border-slate-300 rounded px-1 py-0.5 font-bold text-rose-800 font-mono" />
+                </div>
+                <div>
+                  <span className="text-[6.5px] text-slate-500 block">TransUnion FICO</span>
+                  <input readOnly value="732" className="w-full bg-white border border-slate-300 rounded px-1 py-0.5 font-bold text-emerald-800 font-mono" />
+                </div>
+                <div>
+                  <span className="text-[6.5px] text-slate-500 block">🏠 Mortgage Label &amp; Score</span>
+                  <input readOnly value="Mr. Cooper: 740" className="w-full bg-white border border-amber-300 rounded px-1 py-0.5 font-bold text-amber-900 font-mono" />
+                </div>
+              </div>
+
+              {/* Sample Card Row with 4-Char Match Key */}
+              <div className="bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex items-center justify-between text-[7.5px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-blue-100 text-blue-900 font-mono font-bold text-[7px]">KEY #4819</span>
+                  <span className="font-bold text-slate-800">Chase Sapphire Preferred</span>
+                  <span className="text-slate-400">| 21.4% APR</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono">
+                  <span>Bal: <strong className="text-blue-900">$900.00</strong></span>
+                  <span>Limit: <strong>$15,000.00</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="px-3 py-1.5 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-[8px]">
+              <span className="text-slate-500 text-[7px]">Auto-saved 1.2s ago • Encrypted</span>
+              <div className="flex items-center gap-1.5">
+                <span className="px-2 py-0.5 rounded bg-white text-slate-700 font-bold border border-slate-300">
+                  Cancel
+                </span>
+                <span className="px-3 py-0.5 rounded bg-blue-900 text-white font-bold shadow-xs flex items-center gap-1">
+                  <span>💾</span>
+                  <span>Save Changes</span>
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-lg text-[9.5px]">
-              <span className="text-slate-300">Senior Engineer @ Tech Co</span>
-              <span className="font-mono font-bold text-emerald-400">$8,250 / mo</span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-lg text-[9.5px]">
-              <span className="text-slate-300">Chase Sapphire Preferred</span>
-              <span className="font-mono font-bold text-amber-400">$900 Bal / $15,000 Limit</span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-lg text-[9.5px]">
-              <span className="text-slate-300">Fidelity 401k Account (#9102)</span>
-              <span className="font-mono font-bold text-blue-400">$94,600 (Asset)</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-[8.5px] text-slate-400 pt-1">
-            <span>Period Switcher: <strong>March 2026 (Active)</strong></span>
-            <span className="text-blue-400">+ Add New Record</span>
-          </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'reports':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2.5">
-          <div className="flex items-center justify-between text-[10px] pb-1.5 border-b border-slate-800">
-            <span className="font-bold text-amber-400 uppercase">Financial Planning Report (9 Topics)</span>
-            <span className="px-2 py-0.5 rounded bg-indigo-600 text-white font-bold text-[8.5px]">Export PDF</span>
+        <AppViewportChrome activeView="Reports">
+          {/* AUTHENTIC REPORTS BANNER */}
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-2.5 rounded-xl shadow-md space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[7px] border border-amber-400/30">
+                <span>🛡️ FIDUCIARY ADVISORY REPORT</span>
+                <span>• Period: March 2026</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-indigo-500 text-white font-black text-[7.5px] shadow-xs">
+                Export to PDF
+              </span>
+            </div>
+
+            <div>
+              <h4 className="font-black text-[10px] text-white tracking-tight">
+                Comprehensive Financial Planning Report
+              </h4>
+              <p className="text-[7.5px] text-slate-300 leading-snug max-w-lg mt-0.5">
+                Generate an institutional-grade, multi-topic financial advisory report highlighting balance sheet health, Monte Carlo retirement probabilities, and wealth roadmap.
+              </p>
+            </div>
+
+            {/* 9 Table of Contents Chips */}
+            <div className="grid grid-cols-3 gap-1 text-[7px]">
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                1. Executive Summary
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                2. Balance Sheet &amp; Net Worth
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                3. Cash Flow &amp; Surplus
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-emerald-300">
+                4. Monte Carlo (89.2% Prob)
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                5. Portfolio &amp; Risk
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                6. Insurance &amp; Liability
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                7. Tax &amp; Estate Checklist
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                8. Action Plan &amp; Steps
+              </div>
+              <div className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700 font-medium text-slate-200">
+                9. Disclosures &amp; Appendix
+              </div>
+            </div>
+
+            <div className="pt-1 flex items-center justify-between">
+              <span className="text-[7.5px] text-slate-300">Simulation: <strong className="text-emerald-300">89.2% Monte Carlo Sustainability</strong></span>
+              <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black rounded-lg text-[8px] shadow-sm">
+                📊 Generate Financial Planning Report &rarr;
+              </span>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-1.5 text-[8.5px]">
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">1. Exec Summary</span>
+
+          {/* PERIOD OVER PERIOD DELTA AUDIT */}
+          <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between text-[7.5px]">
+            <div>
+              <span className="text-slate-500">Period Comparison:</span>
+              <strong className="text-slate-800 ml-1">February 2026 vs. March 2026</strong>
             </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">2. Balance Sheet</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">3. Cash Flow</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">4. Monte Carlo</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">5. Portfolio Risk</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">6. Insurance</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">7. Tax &amp; Estate</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">8. Action Plan</span>
-            </div>
-            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
-              <span className="font-bold text-blue-300">9. Disclosures</span>
+            <div className="flex items-center gap-3 font-mono">
+              <span>Net Worth: <strong className="text-emerald-700">+${(8450).toLocaleString()} (+6.4%)</strong></span>
+              <span>Debt Reduction: <strong className="text-blue-900">-$650.00</strong></span>
+              <span>Liquid HYSA: <strong className="text-emerald-700">+$2,200.00</strong></span>
             </div>
           </div>
-          <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50 flex justify-between items-center text-[9px]">
-            <span>Monte Carlo Probability: <strong className="text-emerald-400">89.2% Sustainable</strong></span>
-            <span>Period Comparison: <strong className="text-blue-300">+$24,300 YoY</strong></span>
-          </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'four_steps':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="text-[10px] font-bold text-slate-300 flex justify-between">
-            <span>4 Steps to Financial Freedom Roadmap</span>
-            <span className="text-amber-400">Milestone Progress: 3 of 4 Active</span>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL 4 STEPS TO FINANCIAL FREEDOM COMPONENT */}
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-[9px]">
+                  ✓
+                </span>
+                <div>
+                  <h4 className="font-extrabold text-blue-900 text-[9.5px]">4 Steps to Financial Freedom</h4>
+                  <p className="text-[7px] text-slate-500">Personalized milestone targets derived from your monthly income</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[7.5px]">
+                Monthly Income Baseline: <strong className="text-blue-900">$9,350.00</strong>
+              </span>
+            </div>
+
+            {/* 4 EXACT FORMULA-DRIVEN STEPS */}
+            <div className="grid grid-cols-2 gap-1.5 text-[7.5px]">
+              {/* Step 1 */}
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-900">Step 1: Replace Monthly Income</span>
+                  <span className="font-mono text-slate-400 text-[6.5px]">Income × 300</span>
+                </div>
+                <div className="text-[9.5px] font-black text-slate-900 font-mono">$2,805,000.00 <span className="text-[7px] font-normal text-slate-500">Invested Target</span></div>
+                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-blue-600 h-full rounded-full" style={{ width: '9.2%' }}></div>
+                </div>
+                <div className="flex justify-between text-[6.5px] text-slate-500">
+                  <span>Invested: $257,400</span>
+                  <span className="font-bold text-blue-900">9.2% to Perpetual 4% Rule</span>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="bg-slate-50 p-2 rounded-lg border border-emerald-200 bg-emerald-50/20 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-900">Step 2: Minimum Monthly Investment</span>
+                  <span className="font-mono text-slate-400 text-[6.5px]">Income × 2%</span>
+                </div>
+                <div className="text-[9.5px] font-black text-emerald-700 font-mono">$187.00/mo <span className="text-[7px] font-normal text-slate-500">Minimum Habit</span></div>
+                <div className="w-full bg-emerald-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-emerald-600 h-full rounded-full" style={{ width: '100%' }}></div>
+                </div>
+                <div className="flex justify-between text-[6.5px] text-emerald-800 font-bold">
+                  <span>Currently Investing: $1,250/mo</span>
+                  <span>ACHIEVED ✓</span>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-900">Step 3: High Yield Savings Reserve</span>
+                  <span className="font-mono text-slate-400 text-[6.5px]">Income × 3</span>
+                </div>
+                <div className="text-[9.5px] font-black text-slate-900 font-mono">$28,050.00 <span className="text-[7px] font-normal text-slate-500">HYSA Cash Buffer</span></div>
+                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: '64.2%' }}></div>
+                </div>
+                <div className="flex justify-between text-[6.5px] text-slate-500">
+                  <span>In Marcus HYSA: $18,000</span>
+                  <span className="font-bold text-amber-700">64.2% (5.8 Mo Runway)</span>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-purple-900">Step 4: Rainy Day Monthly Savings Cap</span>
+                  <span className="font-mono text-slate-400 text-[6.5px]">Income × 50%</span>
+                </div>
+                <div className="text-[9.5px] font-black text-purple-950 font-mono">$4,675.00/mo <span className="text-[7px] font-normal text-slate-500">Max Savings Cap</span></div>
+                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-purple-600 h-full rounded-full" style={{ width: '45%' }}></div>
+                </div>
+                <div className="flex justify-between text-[6.5px] text-slate-500">
+                  <span>Prevents Cash Drag</span>
+                  <span className="font-bold text-purple-900">Forces Surplus into Step 1</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1.5 text-[9px]">
-            <div className="bg-slate-800/90 p-2 rounded-xl border border-emerald-500/40 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-emerald-400">Step 1: Emergency Fund (3-6 Mo)</span>
-                <div className="text-[8px] text-slate-400">$18,000 in Marcus HYSA (5.8 Mo Runway)</div>
-              </div>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-black text-[8px]">ACHIEVED</span>
-            </div>
-            <div className="bg-slate-800/90 p-2 rounded-xl border border-blue-500/40 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-blue-300">Step 2: Eliminate High-Interest Debt</span>
-                <div className="text-[8px] text-slate-400">Credit Card Utilization: 2.6% ($1,400 balance)</div>
-              </div>
-              <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-black text-[8px]">OPTIMAL</span>
-            </div>
-            <div className="bg-slate-800/90 p-2 rounded-xl border border-purple-500/40 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-purple-300">Step 3: Wealth Accumulation &amp; Investing</span>
-                <div className="text-[8px] text-slate-400">$257,400 in 401k, Real Estate &amp; Crypto</div>
-              </div>
-              <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-black text-[8px]">ACTIVE</span>
-            </div>
-          </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'credit_scores':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="font-bold text-slate-300">Multi-Bureau Credit Scores &amp; Velocity</span>
-            <span className="text-emerald-400 font-mono text-[9px]">+45 pts past 4 months</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-slate-800/90 p-2 rounded-xl border border-blue-500/30">
-              <div className="text-[8px] text-slate-400">Experian FICO 8</div>
-              <div className="text-base font-black text-blue-400">730</div>
-              <div className="text-[7.5px] text-emerald-400">&uarr; +15 pts / mo</div>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL CREDIT SCORES & VELOCITY SCREEN */}
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-blue-900 text-[9.5px]">Credit Scores Over Time &amp; Velocity</span>
+                <span className="px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[7px]">
+                  +45 pts Multi-Bureau Surge
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[7.5px]">
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded">Net Worth</span>
+                <span className="px-2 py-0.5 bg-blue-900 text-white font-bold rounded">Credit Scores Over Time</span>
+              </div>
             </div>
-            <div className="bg-slate-800/90 p-2 rounded-xl border border-rose-500/30">
-              <div className="text-[8px] text-slate-400">Equifax FICO 8</div>
-              <div className="text-base font-black text-rose-400">716</div>
-              <div className="text-[7.5px] text-emerald-400">&uarr; +12 pts / mo</div>
+
+            {/* 6 Bureau Scores Grid */}
+            <div className="grid grid-cols-6 gap-1 text-center">
+              <div className="bg-blue-50/80 p-1 rounded-lg border border-blue-100">
+                <div className="text-[6.5px] text-slate-500 font-medium">Experian</div>
+                <div className="text-[11px] font-black text-blue-900">730</div>
+                <div className="text-[6px] text-emerald-600 font-bold">▲ +15 MoM</div>
+              </div>
+              <div className="bg-rose-50/80 p-1 rounded-lg border border-rose-100">
+                <div className="text-[6.5px] text-slate-500 font-medium">Equifax</div>
+                <div className="text-[11px] font-black text-rose-800">716</div>
+                <div className="text-[6px] text-emerald-600 font-bold">▲ +12 MoM</div>
+              </div>
+              <div className="bg-emerald-50/80 p-1 rounded-lg border border-emerald-100">
+                <div className="text-[6.5px] text-slate-500 font-medium">TransUnion</div>
+                <div className="text-[11px] font-black text-emerald-800">732</div>
+                <div className="text-[6px] text-emerald-600 font-bold">▲ +14 MoM</div>
+              </div>
+              <div className="bg-purple-50/80 p-1 rounded-lg border border-purple-100">
+                <div className="text-[6.5px] text-slate-500 font-medium">Auto FICO 8</div>
+                <div className="text-[11px] font-black text-purple-900">728</div>
+                <div className="text-[6px] text-slate-400">Prime Tier</div>
+              </div>
+              <div className="bg-indigo-50/80 p-1 rounded-lg border border-indigo-100">
+                <div className="text-[6.5px] text-slate-500 font-medium">Card FICO 8</div>
+                <div className="text-[11px] font-black text-indigo-900">736</div>
+                <div className="text-[6px] text-slate-400">Prime Tier</div>
+              </div>
+              <div className="bg-amber-50/80 p-1 rounded-lg border border-amber-200">
+                <div className="text-[6.5px] text-slate-500 font-medium">Mr. Cooper FICO 4</div>
+                <div className="text-[11px] font-black text-amber-900">740</div>
+                <div className="text-[6px] text-amber-700 font-bold">Mortgage Tier</div>
+              </div>
             </div>
-            <div className="bg-slate-800/90 p-2 rounded-xl border border-emerald-500/30">
-              <div className="text-[8px] text-slate-400">TransUnion FICO 8</div>
-              <div className="text-base font-black text-emerald-400">732</div>
-              <div className="text-[7.5px] text-emerald-400">&uarr; +14 pts / mo</div>
+
+            {/* Historical Score Trajectory Table */}
+            <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1 text-[7.5px]">
+              <div className="flex items-center justify-between text-slate-600 font-bold border-b border-slate-200 pb-0.5">
+                <span>Reporting Month</span>
+                <span>Experian FICO</span>
+                <span>Equifax FICO</span>
+                <span>TransUnion FICO</span>
+                <span>Revolving Utilization</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 font-mono">
+                <span>Dec 2025</span>
+                <span>685</span>
+                <span>680</span>
+                <span>690</span>
+                <span className="text-rose-600 font-bold">18.4%</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 font-mono">
+                <span>Jan 2026</span>
+                <span>700</span>
+                <span>692</span>
+                <span>704</span>
+                <span className="text-amber-600 font-bold">9.5%</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 font-mono">
+                <span>Feb 2026</span>
+                <span>715</span>
+                <span>704</span>
+                <span>718</span>
+                <span className="text-emerald-600 font-bold">4.2%</span>
+              </div>
+              <div className="flex items-center justify-between text-blue-900 font-mono font-bold bg-white p-1 rounded shadow-2xs">
+                <span>Mar 2026 (Active)</span>
+                <span className="text-blue-600">730 (▲ +15)</span>
+                <span className="text-rose-600">716 (▲ +12)</span>
+                <span className="text-emerald-600">732 (▲ +14)</span>
+                <span className="text-emerald-600">2.64% (Optimal)</span>
+              </div>
             </div>
           </div>
-          <div className="flex justify-between items-center text-[8.5px] text-slate-400 px-1">
-            <span>Mr. Cooper Mortgage FICO 4: <strong className="text-amber-400">740</strong></span>
-            <span>Auto FICO 8: <strong className="text-purple-400">728</strong></span>
-          </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'cards_vs_loans':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex justify-between text-[10px] pb-1 border-b border-slate-800">
-            <span className="font-bold text-amber-400">Credit Cards vs. Installment Loans</span>
-            <span className="text-[9px] text-slate-400">Revolving vs. Fixed Debt</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-[9px]">
-            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-blue-500/40">
-              <div className="text-[8px] font-bold text-blue-300 uppercase">Revolving Cards (30% Score Impact)</div>
-              <div className="text-sm font-black text-white mt-1">$1,400 <span className="text-[8px] text-slate-400 font-normal">/ $53k Limit</span></div>
-              <div className="text-[8px] text-emerald-400 font-bold mt-1">2.6% Utilization (Elite)</div>
-              <div className="text-[7.5px] text-slate-400 mt-0.5">Chase ($900), Amex ($300), Apple ($200)</div>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL CREDIT CARDS VS LOANS SECTION */}
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+              <div className="flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded bg-blue-900 text-white font-bold text-[8px] shadow-xs">
+                  Credit Cards (3)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold text-[8px]">
+                  Loans (2)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="px-2 py-0.5 rounded bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-[7.5px] shadow-xs">
+                  RUN SIMULATION ✨
+                </span>
+                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[7.5px] border border-slate-200">
+                  Next Steps Sync
+                </span>
+              </div>
             </div>
-            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-purple-500/40">
-              <div className="text-[8px] font-bold text-purple-300 uppercase">Term Loans (Low Impact)</div>
-              <div className="text-sm font-black text-white mt-1">$382,650 <span className="text-[8px] text-slate-400 font-normal">Collateralized</span></div>
-              <div className="text-[8px] text-blue-300 font-bold mt-1">Fixed 3.5% Interest Rate</div>
-              <div className="text-[7.5px] text-slate-400 mt-0.5">Mortgage ($342k), BMW i4 ($40k)</div>
+
+            {/* Total Utilization Banner */}
+            <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-lg flex items-center justify-between text-[8px]">
+              <div>
+                <span className="font-bold text-slate-700">Total Revolving Utilization:</span>
+                <span className="text-emerald-800 font-black ml-1 text-[10px]">2.64%</span>
+                <span className="text-slate-500 ml-1">($1,400.00 Balance / $53,000.00 Total Limit)</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-black text-[7px] tracking-wider">
+                ELITE TIER (&lt;10%)
+              </span>
+            </div>
+
+            {/* Active Credit Cards List */}
+            <div className="space-y-1 text-[7.5px]">
+              <div className="bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-blue-100 text-blue-900 font-mono font-bold text-[7px]">#4819</span>
+                  <span className="font-bold text-slate-800">Chase Sapphire Preferred</span>
+                  <span className="text-slate-400">| 21.4% APR</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono">
+                  <span>Bal: <strong className="text-blue-900">$900.00</strong></span>
+                  <span>Limit: $15,000</span>
+                  <span className="text-emerald-600 font-bold">(6.0% util)</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-blue-100 text-blue-900 font-mono font-bold text-[7px]">#1024</span>
+                  <span className="font-bold text-slate-800">Amex Platinum Card</span>
+                  <span className="text-slate-400">| 19.9% APR</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono">
+                  <span>Bal: <strong className="text-blue-900">$300.00</strong></span>
+                  <span>Limit: $30,000</span>
+                  <span className="text-emerald-600 font-bold">(1.0% util)</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-blue-100 text-blue-900 font-mono font-bold text-[7px]">#8831</span>
+                  <span className="font-bold text-slate-800">Apple Card Master</span>
+                  <span className="text-slate-400">| 24.2% APR</span>
+                </div>
+                <div className="flex items-center gap-2 font-mono">
+                  <span>Bal: <strong className="text-blue-900">$200.00</strong></span>
+                  <span>Limit: $8,000</span>
+                  <span className="text-emerald-600 font-bold">(2.5% util)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Simulation Callout */}
+            <div className="bg-indigo-50 border border-indigo-200 p-1.5 rounded-lg flex items-center justify-between text-[7px] text-indigo-950">
+              <span>💡 <strong>Payoff Simulation:</strong> Paying down $900 Chase drops utilization to 0.94% for an estimated +12 to +15 pt score jump.</span>
+              <span className="font-bold text-indigo-600">Simulate Now &rarr;</span>
             </div>
           </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'assets':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex justify-between text-[10px] pb-1 border-b border-slate-800">
-            <span className="font-bold text-emerald-400">Total Asset Holdings: {formatCurrency(metrics?.totalAssets || 257400)}</span>
-            <span className="text-[9px] text-blue-400">Next Steps Sync Ready</span>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL ASSETS CARD */}
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+              <div>
+                <h4 className="font-extrabold text-blue-900 text-[9.5px]">Total Asset Holdings</h4>
+                <p className="text-[7px] text-slate-500">Liquid Reserves, 401k, Real Estate Equity &amp; Crypto</p>
+              </div>
+              <div className="text-right">
+                <div className="text-[11px] font-black text-emerald-700 font-mono">
+                  {formatCurrency(metrics?.totalAssets || 257400)}
+                </div>
+                <span className="text-[7px] text-emerald-800 font-bold">▲ +$2,200 This Month</span>
+              </div>
+            </div>
+
+            {/* Asset Accounts List with 4-Char Match Keys */}
+            <div className="space-y-1.5 text-[7.5px]">
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-mono font-bold text-[7px]">KEY #7724</span>
+                  <div>
+                    <div className="font-bold text-slate-900">Home Equity (Primary Residence)</div>
+                    <div className="text-[6.5px] text-slate-400">Real Estate • Collateralized Asset</div>
+                  </div>
+                </div>
+                <div className="text-right font-mono">
+                  <div className="font-black text-slate-900 text-[9px]">$126,500.00</div>
+                  <div className="text-[6.5px] text-slate-500">49.1% of Portfolio</div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-mono font-bold text-[7px]">KEY #9102</span>
+                  <div>
+                    <div className="font-bold text-slate-900">Fidelity 401(k) Retirement</div>
+                    <div className="text-[6.5px] text-slate-400">Tax-Advantaged Compound Growth</div>
+                  </div>
+                </div>
+                <div className="text-right font-mono">
+                  <div className="font-black text-blue-900 text-[9px]">$94,600.00</div>
+                  <div className="text-[6.5px] text-slate-500">36.8% of Portfolio</div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-2 rounded-lg border border-emerald-200 bg-emerald-50/20 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-bold text-[7px]">KEY #4821</span>
+                  <div>
+                    <div className="font-bold text-emerald-950">Marcus High-Yield Savings (HYSA)</div>
+                    <div className="text-[6.5px] text-emerald-700 font-bold">Liquid Cash Reserve • 4.75% APY</div>
+                  </div>
+                </div>
+                <div className="text-right font-mono">
+                  <div className="font-black text-emerald-700 text-[9px]">$18,000.00</div>
+                  <div className="text-[6.5px] text-emerald-800 font-bold">5.8 Mo Living Runway</div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-mono font-bold text-[7px]">KEY #3318</span>
+                  <div>
+                    <div className="font-bold text-slate-900">Coinbase Bitcoin (BTC)</div>
+                    <div className="text-[6.5px] text-slate-400">Alternative Digital Asset</div>
+                  </div>
+                </div>
+                <div className="text-right font-mono">
+                  <div className="font-black text-purple-900 text-[9px]">$18,300.00</div>
+                  <div className="text-[6.5px] text-slate-500">7.1% of Portfolio</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[7px] text-slate-500 pt-0.5">
+              <span>All 4 accounts formatted for 1-click Next Steps App auto-reconciliation</span>
+              <span className="text-blue-900 font-bold">Ready to Sync &rarr;</span>
+            </div>
           </div>
-          <div className="space-y-1 text-[8.5px]">
-            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
-              <span>Marcus Savings (Liquid HYSA) <span className="text-amber-400 font-mono">#4821</span></span>
-              <span className="font-bold text-emerald-400">$18,000</span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
-              <span>Fidelity 401k (Retirement) <span className="text-amber-400 font-mono">#9102</span></span>
-              <span className="font-bold text-blue-400">$94,600</span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
-              <span>Coinbase Bitcoin (Crypto) <span className="text-amber-400 font-mono">#3318</span></span>
-              <span className="font-bold text-purple-400">$18,300</span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
-              <span>Home Equity (Real Estate) <span className="text-amber-400 font-mono">#7724</span></span>
-              <span className="font-bold text-amber-400">$126,500</span>
-            </div>
-          </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'ai_advisor':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex items-center justify-between text-[10px] pb-1 border-b border-slate-800">
-            <span className="font-bold text-blue-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              AI Financial Advisor (Active)
-            </span>
-            <span className="text-[8.5px] text-slate-400">Fiduciary Intelligence</span>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL AI ADVISOR CONSOLE VIEWPORT */}
+          <div className="bg-white rounded-xl border-2 border-indigo-900 shadow-xl overflow-hidden space-y-2 p-2.5">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 text-[8.5px]">
+              <div className="flex items-center gap-1.5 font-black text-blue-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>AI ADVISOR ✨ • Fiduciary Intelligence</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 font-bold text-[7px]">
+                Balance-Sheet Aware
+              </span>
+            </div>
+
+            {/* Live Financial Vital Chips */}
+            <div className="grid grid-cols-4 gap-1 text-center text-[7px]">
+              <div className="bg-slate-50 p-1 rounded border border-slate-200">
+                <span className="text-slate-400 block">Monthly Income</span>
+                <strong className="text-slate-900 font-mono">$9,350/mo</strong>
+              </div>
+              <div className="bg-slate-50 p-1 rounded border border-slate-200">
+                <span className="text-slate-400 block">Monthly Bills</span>
+                <strong className="text-slate-900 font-mono">$3,095/mo</strong>
+              </div>
+              <div className="bg-emerald-50 p-1 rounded border border-emerald-200">
+                <span className="text-emerald-700 block">Cash Surplus</span>
+                <strong className="text-emerald-800 font-mono">+$6,255/mo</strong>
+              </div>
+              <div className="bg-blue-50 p-1 rounded border border-blue-200">
+                <span className="text-blue-700 block">Liquid Runway</span>
+                <strong className="text-blue-900 font-mono">5.8 Months</strong>
+              </div>
+            </div>
+
+            {/* Real User & Advisor Exchange */}
+            <div className="space-y-1.5 text-[8px]">
+              <div className="bg-slate-100 p-2 rounded-lg text-slate-800 flex items-start gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-blue-900 text-white text-[7px] font-bold flex items-center justify-center shrink-0">U</span>
+                <div>
+                  <span className="font-bold text-blue-900">You:</span>
+                  <p className="mt-0.5 text-slate-700">"How should I allocate my $6,255 monthly cash flow surplus to reach Step 1 ($2.8M) faster?"</p>
+                </div>
+              </div>
+
+              <div className="bg-indigo-50/70 p-2 rounded-lg border border-indigo-200 text-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-[7px] text-indigo-900 font-bold">
+                  <span>🤖 WMCW Fiduciary Advisor</span>
+                  <span className="text-slate-400 font-mono">1.2s</span>
+                </div>
+                <p className="text-[7.5px] leading-relaxed text-indigo-950">
+                  "1) Your Marcus HYSA ($18k) covers <strong>5.8 months of expenses</strong>—Step 3 is secure. 2) Eliminate the <strong>$900 Chase balance</strong> to drop card utilization below 1% for a <strong>+12 to +15 pt FICO boost</strong>. 3) Funnel <strong>$4,500/mo</strong> into low-cost index ETFs (VTI/VOO), putting you on track to reach your <strong>$2.805M Step 1 target in 18.2 years</strong>."
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="bg-slate-800/80 p-2 rounded-xl text-[9px] text-slate-200 border border-slate-700/60">
-            <strong className="text-blue-300">You:</strong> "How should I allocate my $6,255 monthly cash surplus?"
-          </div>
-          <div className="bg-indigo-950/40 p-2 rounded-xl text-[8.5px] text-indigo-100 border border-indigo-500/30 leading-relaxed">
-            <strong className="text-amber-400">AI Advisor:</strong> "Your Marcus HYSA ($18k) already covers 5.8 months of living expenses. Your credit utilization is an optimal 2.6%. I recommend: 1) Maximize tax-deferred 401k contributions, 2) Funnel $2,500/mo into low-cost index ETFs to accelerate Step 3."
-          </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'profile_settings':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex justify-between items-center text-[10px] pb-1 border-b border-slate-800">
-            <span className="font-bold text-purple-300">User Profile &amp; Market Tickers</span>
-            <span className="px-2 py-0.5 rounded bg-purple-600 text-white font-bold text-[8.5px]">Business Mode</span>
-          </div>
-          <div className="bg-slate-800/90 p-2 rounded-xl flex items-center justify-between text-[9px]">
-            <div>
-              <span className="text-slate-400 text-[8px]">Active Entity:</span>
-              <div className="font-bold text-white">NAPM Consulting LLC</div>
+        <AppViewportChrome activeView="Dashboard">
+          {/* USER PROFILE & ACCOUNT SETTINGS MODAL */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-2.5 space-y-2">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">⚙️</span>
+                <div>
+                  <h4 className="font-extrabold text-blue-900 text-[9.5px]">User Profile, Account Type &amp; Tickers</h4>
+                  <p className="text-[7px] text-slate-500">Tailor entity ledger rules and stream live market data</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-bold text-[7.5px] border border-purple-200">
+                Business Mode Enabled
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[8px]">
-              Active Corporate Ledger
-            </span>
-          </div>
-          <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
-            <div className="text-[8px] text-slate-400 mb-1">Live Stock &amp; Crypto Ticker Ribbon:</div>
-            <div className="flex gap-1.5 flex-wrap text-[8.5px] font-mono">
-              <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">SPY $568.20 (+0.8%)</span>
-              <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">QQQ $489.10 (+1.2%)</span>
-              <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">BTC $64,200 (+2.5%)</span>
+
+            {/* Mode Switcher */}
+            <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1.5 text-[8px]">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-800">Accounting Entity Type:</span>
+                <div className="flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 font-medium">Personal</span>
+                  <span className="px-2 py-0.5 rounded bg-purple-900 text-white font-bold shadow-xs">Business / LLC</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-[7.5px] text-slate-600 bg-white p-1.5 rounded border border-slate-200">
+                <span>Active Entity: <strong className="text-purple-950">Apex Holdings LLC</strong></span>
+                <span className="font-mono text-slate-400">EIN: 84-xxxxxxx</span>
+              </div>
+            </div>
+
+            {/* Stock Tickers Config */}
+            <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1 text-[7.5px]">
+              <div className="flex items-center justify-between text-slate-700 font-bold">
+                <span>Live Streaming Market Symbols:</span>
+                <span className="text-blue-900 text-[7px]">+ Add Symbol</span>
+              </div>
+              <div className="flex flex-wrap gap-1 font-mono text-[7px]">
+                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-bold text-slate-800">AAPL</span>
+                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-bold text-slate-800">NVDA</span>
+                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-bold text-slate-800">TSLA</span>
+                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-bold text-emerald-700">BTC</span>
+                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-bold text-emerald-700">ETH</span>
+                <span className="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-bold text-slate-800">MSFT</span>
+              </div>
             </div>
           </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'sync_next_steps':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px]">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="font-bold text-white">1-Click Sync to Next Steps App</span>
-            </div>
-            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[8.5px] border border-emerald-500/30">
-              Auto-Diff Ready (8 Accounts)
-            </span>
-          </div>
-
-          <div className="bg-slate-800/80 p-2 rounded-xl border border-indigo-500/30 flex items-center justify-between text-[9px]">
-            <div>
-              <span className="text-slate-400 text-[8px]">Account Match Key Standard:</span>
-              <div className="font-bold text-indigo-300">4-Character Alphanumeric ID (e.g. 4YBN, 4821)</div>
-            </div>
-            <span className="text-[8px] bg-slate-900 px-2 py-1 rounded text-amber-400 font-mono">
-              Prevents Duplicate Records
-            </span>
-          </div>
-
-          <div className="space-y-1 text-[8.5px]">
-            <div className="flex items-center justify-between bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700/60">
-              <div className="flex items-center gap-2">
-                <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono text-[8px]">#4819</span>
-                <span className="text-slate-200">Chase Sapphire Preferred (Card)</span>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL 1-CLICK NEXT STEPS SYNC MODAL */}
+          <div className="bg-white rounded-xl border-2 border-indigo-900 shadow-xl overflow-hidden">
+            {/* Gradient Header */}
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white px-3 py-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-[9px]">
+                <span>🔄</span>
+                <span>1-Click Sync to Next Steps App</span>
               </div>
-              <span className="font-mono text-slate-300">$900.00 <span className="text-emerald-400 font-bold">(4.5% util)</span></span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700/60">
-              <div className="flex items-center gap-2">
-                <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono text-[8px]">#9012</span>
-                <span className="text-slate-200">BMW i4 M50 Auto Loan</span>
-              </div>
-              <span className="font-mono text-slate-300">$40,650.00 <span className="text-purple-400 font-bold">(3.9% APR)</span></span>
-            </div>
-            <div className="flex items-center justify-between bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700/60">
-              <div className="flex items-center gap-2">
-                <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[8px]">#4821</span>
-                <span className="text-slate-200">Marcus High-Yield Savings (Asset)</span>
-              </div>
-              <span className="font-mono font-bold text-emerald-400">$18,000.00 (4.75% APY)</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[8.5px]">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-lg shadow flex items-center gap-1">
-                <span>📋 Copy Sync Payload</span>
-              </span>
-              <span className="px-2 py-1 bg-slate-800 text-slate-300 font-bold rounded-lg border border-slate-700">
-                ⬇ Download .JSON
+              <span className="px-1.5 py-0.5 rounded bg-emerald-400 text-slate-950 font-black text-[7px]">
+                v2.0 Payload
               </span>
             </div>
-            <span className="text-[8px] text-slate-400">Net Worth Synced: +{formatCurrency((metrics?.totalAssets || 257400) - (metrics?.totalDebt || 116850))}</span>
+
+            {/* Summary Bar */}
+            <div className="bg-slate-100 px-3 py-1 border-b border-slate-200 flex items-center justify-between text-[7.5px] text-slate-700">
+              <div>
+                <span>Snapshot: <strong>March 2026</strong></span>
+                <span className="mx-1.5">•</span>
+                <span>Accounts: <strong>8 total</strong> (3 Cards, 2 Loans, 3 Assets)</span>
+              </div>
+              <span className="text-emerald-700 font-bold font-mono">Net Worth: +{formatCurrency(metrics?.totalAssets - metrics?.totalDebt)}</span>
+            </div>
+
+            {/* Match Key Explanation */}
+            <div className="px-3 py-1 bg-indigo-50/60 border-b border-indigo-100 flex items-center justify-between text-[7px] text-indigo-950">
+              <span>🔑 <strong>4-Char Match Keys:</strong> Use exact account keys (e.g. #4819, #9012) to update balances without duplicates.</span>
+              <span className="font-bold text-indigo-600">Auto-Diff Ready</span>
+            </div>
+
+            {/* Reconcile Accounts Table */}
+            <div className="p-2 space-y-1 text-[7.5px]">
+              <div className="flex items-center justify-between bg-slate-50 px-2 py-1 rounded border border-slate-200 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-blue-100 text-blue-900 font-bold text-[7px]">#4819</span>
+                  <span className="text-slate-800 font-sans font-bold">Chase Sapphire Preferred</span>
+                </div>
+                <span>$900.00 <span className="text-emerald-600">(Card)</span></span>
+              </div>
+              <div className="flex items-center justify-between bg-slate-50 px-2 py-1 rounded border border-slate-200 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-purple-100 text-purple-900 font-bold text-[7px]">#9012</span>
+                  <span className="text-slate-800 font-sans font-bold">BMW i4 Auto Loan</span>
+                </div>
+                <span>$40,050.00 <span className="text-purple-600">(Loan)</span></span>
+              </div>
+              <div className="flex items-center justify-between bg-slate-50 px-2 py-1 rounded border border-slate-200 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1 py-0.2 rounded bg-emerald-100 text-emerald-900 font-bold text-[7px]">#4821</span>
+                  <span className="text-slate-800 font-sans font-bold">Marcus High-Yield Savings</span>
+                </div>
+                <span>$18,000.00 <span className="text-emerald-600 font-bold">(Asset)</span></span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="px-3 py-1.5 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-[8px]">
+              <span className="text-slate-500 text-[7px]">Ready to paste into Next Steps App</span>
+              <div className="flex items-center gap-1.5">
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-black shadow-xs flex items-center gap-1 cursor-pointer">
+                  <span>📋</span>
+                  <span>Copy Sync Payload</span>
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 font-bold cursor-pointer">
+                  ⬇ Download .JSON
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        </AppViewportChrome>
       );
 
     case 'chat_with_us':
       return (
-        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px]">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 block"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute inset-0 opacity-75"></span>
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL CHAT WITH US DRAWER & FLOATING ACTION BUTTON */}
+          <div className="relative space-y-2">
+            {/* Live Chat Window */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+              <div className="bg-blue-950 text-white px-3 py-1.5 flex items-center justify-between text-[8.5px]">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Chat With Us • 24/7 Fiduciary Advisor &amp; Support</span>
+                </div>
+                <span className="text-slate-400 text-[9px]">✕</span>
               </div>
-              <span className="font-bold text-white">Chat With Us • 24/7 Fiduciary Advisor &amp; Support</span>
-            </div>
-            <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-black text-[8.5px] shadow">
-              Chat With Us 💬
-            </span>
-          </div>
 
-          <div className="bg-slate-800/80 p-2 rounded-xl text-[9px] text-slate-200 border border-slate-700/60 flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[8px] font-bold flex items-center justify-center shrink-0 mt-0.5">U</span>
-            <div>
-              <div className="text-[8px] text-blue-300 font-semibold">You asked:</div>
-              <div>"Which credit card should I pay down first to boost my FICO 8 score to 750?"</div>
-            </div>
-          </div>
+              {/* Chat Stream */}
+              <div className="p-2 space-y-1.5 text-[8px]">
+                <div className="bg-slate-100 p-1.5 rounded-lg text-slate-800 flex items-start gap-1.5">
+                  <span className="w-3.5 h-3.5 rounded-full bg-blue-900 text-white text-[7px] font-bold flex items-center justify-center shrink-0">U</span>
+                  <div>
+                    <span className="font-bold text-blue-900 text-[7px]">You asked:</span>
+                    <p className="text-slate-700 text-[7.5px]">"Which credit card should I pay down first to boost my FICO 8 score to 750?"</p>
+                  </div>
+                </div>
 
-          <div className="bg-indigo-950/40 p-2.5 rounded-xl text-[8.5px] text-indigo-100 border border-indigo-500/30 space-y-1.5 leading-relaxed">
-            <div className="flex items-center justify-between text-[8px] text-amber-400 font-bold">
-              <span>🤖 WMCW Fiduciary AI Advisor (Balance-Sheet Aware)</span>
-              <span className="text-slate-400 font-mono">1.4s response</span>
-            </div>
-            <p>
-              "Your overall card utilization is already low at <strong>2.6%</strong> ($1,400 across $53,000 limits). However, your <strong>Chase Sapphire (#4819)</strong> carries $900 of that debt. Paying down $650 on Chase will lower individual card utilization below 2%, unlocking an estimated <strong>+12 to +15 point FICO boost</strong> before your next statement closes."
-            </p>
-          </div>
+                <div className="bg-blue-50/70 p-2 rounded-lg border border-blue-200 space-y-1">
+                  <div className="flex items-center justify-between text-[7px] text-blue-900 font-bold">
+                    <span>🤖 WMCW Fiduciary AI Advisor</span>
+                    <span className="text-slate-400 font-mono">1.1s</span>
+                  </div>
+                  <p className="text-[7.5px] leading-relaxed text-slate-800">
+                    "Your overall card utilization is already low at <strong>2.64%</strong> ($1,400 across $53,000 limits). However, your <strong>Chase Sapphire (#4819)</strong> carries $900 of that debt. Paying down $650 on Chase will drop that card's utilization from 6% to 1.6%, unlocking an estimated <strong>+12 to +15 pt FICO score jump</strong> before your next statement closes."
+                  </p>
+                </div>
+              </div>
 
-          <div className="bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-700/50 flex items-center justify-between text-[8px] text-slate-300">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 text-amber-300 font-bold">★ Bookmark Strategy</span>
-              <span className="flex items-center gap-1 text-blue-300">🔍 Search Past Chats</span>
+              {/* Direct Support Footer */}
+              <div className="px-3 py-1 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[7px] text-slate-500">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-700 font-bold">★ Bookmark Strategy</span>
+                  <span>🔍 Search Past Chats</span>
+                </div>
+                <span>Direct Support: <strong className="text-blue-900 font-mono">dlaniger.napm.consulting@gmail.com</strong></span>
+              </div>
             </div>
-            <div className="text-slate-400 flex items-center gap-1">
-              <span>Direct Support:</span>
-              <span className="text-white font-mono">dlaniger.napm.consulting@gmail.com</span>
+
+            {/* The Authentic Floating Action Button */}
+            <div className="flex justify-end pt-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-900 text-white font-black text-[8.5px] shadow-lg border-2 border-white">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>Chat With Us 💬</span>
+              </div>
             </div>
           </div>
-        </div>
+        </AppViewportChrome>
       );
 
     default:
       return null;
   }
 };
+
