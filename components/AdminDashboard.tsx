@@ -19,6 +19,14 @@ import {
   PREVIEW_APP_DOMAIN,
   APP_ADMIN_EMAIL 
 } from '../utils/incidentReporter';
+import { AdminAdKit } from './AdminAdKit';
+
+const MegaphoneIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 11 18-5v12L3 14v-3z"></path>
+    <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
+  </svg>
+);
 
 const Shield = ({ className = "w-5 h-5" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -136,7 +144,7 @@ interface UserData {
 
 export const AdminDashboard: React.FC = () => {
   const { user, isSuperUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'alerts' | 'users'>('alerts');
+  const [activeTab, setActiveTab] = useState<'alerts' | 'users' | 'ad_kit'>('alerts');
   
   // Users state
   const [users, setUsers] = useState<UserData[]>([]);
@@ -200,7 +208,7 @@ export const AdminDashboard: React.FC = () => {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }, 500);
-    } else if (targetTab === 'alerts' || targetTab === 'users') {
+    } else if (targetTab === 'alerts' || targetTab === 'users' || targetTab === 'ad_kit') {
       setActiveTab(targetTab);
     }
   }, []);
@@ -565,6 +573,21 @@ export const AdminDashboard: React.FC = () => {
             <span>Users & Accounts</span>
             <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full font-semibold">
               {users.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ad_kit')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === 'ad_kit'
+                ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/50 dark:border-gray-700'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <MegaphoneIcon className="w-4 h-4 text-amber-500" />
+            <span>Marketing &amp; How-To Ads</span>
+            <span className="text-[10px] bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-black">
+              10 Ads
             </span>
           </button>
         </div>
@@ -1329,6 +1352,13 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* =========================================================================================
+          TAB 3: MARKETING ADVERTISEMENT & HOW-TO IMAGES
+         ========================================================================================= */}
+      {activeTab === 'ad_kit' && (
+        <AdminAdKit />
       )}
 
       {/* System Health Check & Email Pipeline Diagnostics Modal */}

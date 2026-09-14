@@ -1,0 +1,1108 @@
+import React, { useState, useRef, useMemo } from 'react';
+import html2canvas from 'html2canvas';
+import { getDummyData, formatCurrency, calculateNetWorth, calculateDTI, calculateUtilization, calculateMonthlyIncome, calculateTotal, calculateTotalBalance, calculateTotalLimit } from '../utils/helpers';
+
+export type AdTopicId = 
+  | 'landing_page'
+  | 'wmcw_dashboard'
+  | 'edit_data'
+  | 'reports'
+  | 'four_steps'
+  | 'credit_scores'
+  | 'cards_vs_loans'
+  | 'assets'
+  | 'ai_advisor'
+  | 'profile_settings';
+
+interface AdTopicConfig {
+  id: AdTopicId;
+  label: string;
+  category: string;
+  badge: string;
+  headline: string;
+  subheadline: string;
+  targetAudience: string;
+  howToSteps: { number: number; title: string; description: string }[];
+  caption: string;
+}
+
+export const AdminAdKit: React.FC = () => {
+  const [selectedTopicId, setSelectedTopicId] = useState<AdTopicId>('landing_page');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingTopicId, setGeneratingTopicId] = useState<string | null>(null);
+  const [copiedCaption, setCopiedCaption] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<'square' | 'landscape'>('square');
+
+  // Pre-load exact Guest Mode dummy data
+  const guestData = useMemo(() => getDummyData(), []);
+  const months = useMemo(() => Object.keys(guestData).sort().reverse(), [guestData]);
+  const currentMonth = months[0] || '2026-03';
+  const currentData = guestData[currentMonth];
+
+  // Calculated metrics from Guest Mode
+  const metrics = useMemo(() => {
+    if (!currentData) return null;
+    const monthlyIncome = calculateMonthlyIncome(currentData.income?.jobs || []);
+    const monthlyBills = calculateTotal(currentData.monthlyBills || []);
+    const totalAssets = calculateTotal(currentData.assets || []);
+    const cardBalance = calculateTotalBalance(currentData.creditCards || []);
+    const cardLimit = calculateTotalLimit(currentData.creditCards || []);
+    const loanBalance = calculateTotalBalance(currentData.loans || []);
+    const totalDebt = cardBalance + loanBalance;
+    const netWorth = totalAssets - totalDebt;
+    const utilization = calculateUtilization(cardBalance, cardLimit);
+    const dti = calculateDTI(monthlyBills, monthlyIncome);
+    const surplus = monthlyIncome - monthlyBills;
+    const emergencyRunwayMonths = monthlyBills > 0 ? (totalAssets * 0.15) / monthlyBills : 5.8;
+
+    return {
+      monthlyIncome,
+      monthlyBills,
+      totalAssets,
+      cardBalance,
+      cardLimit,
+      loanBalance,
+      totalDebt,
+      netWorth,
+      utilization,
+      dti,
+      surplus,
+      emergencyRunwayMonths,
+      scores: currentData.creditScores
+    };
+  }, [currentData]);
+
+  // Topic Configurations
+  const topics: AdTopicConfig[] = useMemo(() => [
+    {
+      id: 'landing_page',
+      label: 'Landing Page',
+      category: 'Instant Onboarding',
+      badge: 'ZERO SIGNUP FRICTION',
+      headline: 'Discover What Your Credit Is Truly Worth in 30 Seconds',
+      subheadline: 'Test-drive our comprehensive wealth & multi-bureau credit platform in instant Guest Mode.',
+      targetAudience: 'Consumers & Business Owners looking for holistic credit and wealth tracking',
+      howToSteps: [
+        { number: 1, title: 'Click "Try Guest Mode"', description: 'Instantly access the full application pre-populated with 4 months of realistic sample data.' },
+        { number: 2, title: 'Inspect the Unified View', description: 'See how your credit scores directly correlate with credit utilization, cash flow, and net worth.' },
+        { number: 3, title: 'Switch Between Modes', description: 'Seamlessly toggle between Personal finances and Business entity accounting in one click.' }
+      ],
+      caption: `💡 Stop guessing where your finances stand! Most credit score apps only show you a single score without context.
+
+What's My Credit Worth connects your 3-bureau credit scores, credit cards, loans, and assets into one unified wealth command center.
+
+👉 HOW TO GET STARTED IN 30 SECONDS:
+1️⃣ Visit whatsmycreditworth.com and click "Try Guest Mode"
+2️⃣ Explore 4 months of pre-loaded sample data—no credit card or signup required
+3️⃣ See how lowering credit utilization from 30% to 2.6% propels your net worth forward
+
+🚀 Test-drive the platform free today!
+#PersonalFinance #CreditScore #FinancialFreedom #NetWorth #WealthBuilding #WhatsMyCreditWorth #FICO`
+    },
+    {
+      id: 'wmcw_dashboard',
+      label: 'WMCW Dashboard',
+      category: 'Executive Command Center',
+      badge: 'ALL-IN-ONE METRICS',
+      headline: 'Your Complete Wealth & Credit Command Center',
+      subheadline: 'Track Net Worth, Credit Utilization (<10%), and Debt-to-Income on a single executive screen.',
+      targetAudience: 'Everyday investors, budgeters, and home buyers preparing for mortgage approval',
+      howToSteps: [
+        { number: 1, title: 'Monitor Core Vital Gauges', description: 'Review your Net Worth, revolving Credit Utilization, and Debt-to-Income (DTI) ratio at a glance.' },
+        { number: 2, title: 'Track Monthly Free Cash Flow', description: 'See exactly how much surplus cash remains after all living expenses and debt payments.' },
+        { number: 3, title: 'Navigate Historical Periods', description: 'Select past reporting months from the header to evaluate multi-month financial momentum.' }
+      ],
+      caption: `📊 Stop logging into 5 different banking and credit apps just to see where your money stands!
+
+The WMCW Dashboard unites your credit cards, term loans, liquid assets, income, and credit scores into a single executive command center.
+
+👉 HOW TO MASTER YOUR DASHBOARD:
+1️⃣ Check your Credit Utilization gauge—aim to keep it strictly under 10% (Guest Mode shows an optimal 2.6%)
+2️⃣ Track your Debt-to-Income (DTI) ratio to stay primed for top-tier mortgage and auto financing
+3️⃣ Allocate your monthly surplus ($6,255 in Guest Mode) into high-yield savings and low-cost index funds
+
+✨ Experience the live dashboard in Guest Mode at whatsmycreditworth.com!
+#Dashboard #WealthTracking #CreditUtilization #Budgeting #FinancialGoals #FinancialIndependence #SmartMoney`
+    },
+    {
+      id: 'edit_data',
+      label: 'Edit Current and Past Months Data',
+      category: 'Flexible Financial Ledger',
+      badge: 'HISTORICAL EDITING & AUTO-SAVE',
+      headline: 'Effortless Ledger Control: Edit Current & Past Months',
+      subheadline: 'Update income streams, card limits, balances, loans, and assets with instant cloud synchronization.',
+      targetAudience: 'Users who want total control over past and present financial records',
+      howToSteps: [
+        { number: 1, title: 'Open the Data Editor', description: 'Click "Edit Data" on any dashboard to access the organized multi-tab financial editor.' },
+        { number: 2, title: 'Update Values in Seconds', description: 'Modify your salary, credit card balances, loan amortization, or asset balances with real-time auto-saving.' },
+        { number: 3, title: 'Backfill Historical Months', description: 'Select any prior month from the dropdown to correct past entries and update trajectory charts.' }
+      ],
+      caption: `✏️ Received a raise, paid down a credit card, or bought new assets? Updating your financial records should take seconds, not hours.
+
+With WMCW, you can edit current and past months' data with instantaneous auto-saving and zero friction.
+
+👉 HOW TO UPDATE YOUR FINANCIAL DATA:
+1️⃣ Click "Edit Data" from your dashboard to open the streamlined ledger
+2️⃣ Update your credit card balances, add new savings/investment accounts, or adjust salaries
+3️⃣ Jump back to past months to backfill historical numbers and watch your net worth charts adjust in real-time
+
+💡 Test out the flexible data editor risk-free in Guest Mode!
+#FinanceApp #DataManagement #BudgetingTools #FinancialTracking #Productivity #MoneyManagement`
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      category: 'Institutional Planning',
+      badge: '9-TOPIC COMPREHENSIVE PLAN',
+      headline: 'Generate Institutional Financial Planning Reports in Seconds',
+      subheadline: 'Access a 9-topic fiduciary-grade audit with Monte Carlo simulations and multi-period comparisons.',
+      targetAudience: 'High earners, retirees, and families wanting professional financial roadmap reports',
+      howToSteps: [
+        { number: 1, title: 'Navigate to Reports', description: 'Click "Reports" in the top navigation bar to open the reporting suite.' },
+        { number: 2, title: 'Click "Generate Financial Plan"', description: 'Instantly produce a 9-topic comprehensive audit covering cash flow, estate, insurance, and retirement.' },
+        { number: 3, title: 'Review & Export to PDF', description: 'Audit period-over-period net worth changes and download an official publication-ready PDF.' }
+      ],
+      caption: `📑 Traditional financial planners charge upwards of $2,500 to draft a comprehensive financial roadmap.
+
+What's My Credit Worth generates an institutional 9-topic Financial Planning Report in seconds—complete with Monte Carlo retirement projections, estate document checklists, and period comparisons!
+
+👉 HOW TO GENERATE YOUR REPORT:
+1️⃣ Open the Reports tab in WMCW
+2️⃣ Click "Generate Financial Planning Report" to audit your assets, debt architecture, and cash flow
+3️⃣ Download an executive multi-page PDF formatted with letterhead and compliance disclosures
+
+📲 Generate a sample report using Guest Mode data right now at whatsmycreditworth.com!
+#FinancialPlanning #WealthManagement #EstatePlanning #MonteCarlo #RetirementPlan #PersonalFinance #Fiduciary`
+    },
+    {
+      id: 'four_steps',
+      label: '4 Steps to Fiancial Freedom',
+      category: 'Milestone Roadmap',
+      badge: 'PROVEN WEALTH SEQUENCE',
+      headline: 'The Proven 4 Steps to Financial Freedom',
+      subheadline: 'Follow our structured milestone framework from emergency liquid reserves to generational wealth.',
+      targetAudience: 'Anyone striving for financial independence, FIRE, or stress-free money management',
+      howToSteps: [
+        { number: 1, title: 'Step 1: Emergency Fund', description: 'Build 3 to 6 months of living expenses in an FDIC-insured High-Yield Savings Account.' },
+        { number: 2, title: 'Step 2: Eliminate High-Interest Debt', description: 'Crush revolving credit card balances and maintain overall utilization strictly under 10%.' },
+        { number: 3, title: 'Steps 3 & 4: Invest & Protect', description: 'Compound monthly surplus into tax-advantaged accounts and safeguard assets with estate planning.' }
+      ],
+      caption: `🛣️ Achieving financial independence doesn't require luck—it requires following an exact, battle-tested sequence.
+
+The WMCW 4 Steps to Financial Freedom guides you step-by-step from liquid emergency cash to true generational wealth.
+
+👉 THE 4 PROVEN STEPS:
+1️⃣ Step 1: Build a 3-6 month liquid emergency buffer (Guest Mode: 5.8 months secured!)
+2️⃣ Step 2: Eliminate high-interest revolving credit card debt (Keep utilization <10%)
+3️⃣ Step 3: Compound monthly cash flow surplus into diversified index funds & retirement accounts
+4️⃣ Step 4: Protect your legacy with estate planning, life insurance, and umbrella liability
+
+🏁 See where you stand on the 4-step roadmap in Guest Mode today!
+#FinancialFreedom #DebtFreeJourney #EmergencyFund #Investing #FIRECommunity #WealthBuilding`
+    },
+    {
+      id: 'credit_scores',
+      label: 'Credit Scores Over Time',
+      category: 'Score Trajectory & Velocity',
+      badge: 'MULTI-BUREAU TRACKING',
+      headline: 'Track 8+ Credit Scores Across All Bureaus Over Time',
+      subheadline: 'Monitor Experian, Equifax, TransUnion, Mortgage FICO 4, and Auto FICO trajectory with precision.',
+      targetAudience: 'Borrowers preparing for mortgage or vehicle financing, and credit builders',
+      howToSteps: [
+        { number: 1, title: 'Record Multi-Bureau Scores', description: 'Log your Experian, Equifax, and TransUnion FICO and Vantage scores each month.' },
+        { number: 2, title: 'Monitor Specialized FICO Scores', description: 'Track Auto FICO and Mortgage FICO versions used by institutional lenders.' },
+        { number: 3, title: 'Observe Score Velocity', description: 'Watch your scores climb as you lower revolving card balances and optimize payment history.' }
+      ],
+      caption: `📈 Did you know mortgage and auto lenders look at completely different FICO score versions than your free banking app?
+
+WMCW tracks your credit scores across Experian, Equifax, TransUnion, Mortgage FICO, and Auto FICO over time so you're never caught off-guard.
+
+👉 HOW TO TRACK CREDIT VELOCITY:
+1️⃣ Log your monthly scores from your bank or bureau statements
+2️⃣ View the interactive Credit Scores Over Time chart to monitor historical score trends
+3️⃣ Watch how lowering credit card balances triggers instantaneous score jumps
+
+🚀 Check out the 4-month credit score trajectory in Guest Mode!
+#CreditScore #FICO #CreditRepair #CreditVelocity #FinancialLiteracy #MortgageReady #CreditTips`
+    },
+    {
+      id: 'cards_vs_loans',
+      label: 'Credit Card vs Loans Section',
+      category: 'Strategic Debt Architecture',
+      badge: 'REVOLVING VS INSTALLMENT',
+      headline: 'Credit Cards vs. Loans: Master Your Debt Architecture',
+      subheadline: 'Understand why $10k in credit card debt hurts your FICO score 10x more than a $300k mortgage.',
+      targetAudience: 'Individuals carrying consumer balances or refinancing home and auto loans',
+      howToSteps: [
+        { number: 1, title: 'Analyze Credit Card Limits & Balances', description: 'Ensure your revolving utilization stays below 10% to secure elite FICO credit tier status.' },
+        { number: 2, title: 'Separate Installment Debt', description: 'Distinguish low-rate asset-backed mortgage debt from high-interest revolving balances.' },
+        { number: 3, title: 'Target High-Impact Payoffs', description: 'Simulate the exact score impact of paying down specific credit lines first.' }
+      ],
+      caption: `💳 All debt is NOT created equal!
+
+Carrying $10,000 across maxed-out credit cards can destroy your credit score, while carrying a $350,000 mortgage barely affects it. Why? Utilization!
+
+👉 HOW TO OPTIMIZE YOUR DEBT ARCHITECTURE:
+1️⃣ Keep revolving credit card utilization below 10% (Guest Mode shows an optimal 2.6% across 3 cards)
+2️⃣ Separate fixed installment loans (mortgage, auto) from high-interest revolving debt
+3️⃣ Prioritize high-utilization cards first to trigger the largest FICO score boosts
+
+🔍 Explore the Credit Card vs. Loans breakdown live in Guest Mode!
+#DebtFree #CreditCards #Mortgage #CreditUtilization #SmartMoney #DebtPayoff #PersonalFinance`
+    },
+    {
+      id: 'assets',
+      label: 'Assets',
+      category: 'Portfolio & Next Steps Sync',
+      badge: 'HOLISTIC WEALTH LEDGER',
+      headline: 'Track Liquid Cash, 401k, Crypto & Real Estate Equity',
+      subheadline: 'Organize your entire asset portfolio with alphanumeric account IDs and Next Steps App synchronization.',
+      targetAudience: 'Investors, savers, and professionals managing diversified assets',
+      howToSteps: [
+        { number: 1, title: 'Log Diverse Asset Classes', description: 'Add High-Yield Savings, 401k/IRA retirement accounts, cryptocurrency, and real estate equity.' },
+        { number: 2, title: 'Tag Last-4 Digits (Alphanumeric)', description: 'Include account identifiers (e.g. 4YBN or 4821) to match seamlessly with Next Steps accounts.' },
+        { number: 3, title: 'Watch Liquid Runway Expand', description: 'Evaluate your emergency runway in months and watch compound interest grow your net worth.' }
+      ],
+      caption: `💰 Net worth is your TRUE financial scorecard—not just your monthly salary.
+
+The WMCW Assets module lets you organize all your holdings in one place with account synchronization for seamless planning.
+
+👉 HOW TO TRACK ASSETS LIKE A PRO:
+1️⃣ Log your liquid emergency reserves, retirement funds, real estate equity, and crypto
+2️⃣ Include account last-4 digits (supports alphanumeric IDs like 4YBN) to sync with Next Steps
+3️⃣ Watch your net worth grow month over month as assets compound
+
+🌟 Inspect the complete asset allocation in Guest Mode at whatsmycreditworth.com!
+#Assets #NetWorth #401k #RealEstate #CryptoPortfolio #WealthBuilding #PersonalFinance`
+    },
+    {
+      id: 'ai_advisor',
+      label: 'AI Advisor',
+      category: 'Fiduciary Intelligence',
+      badge: '24/7 BALANCE-SHEET AWARE',
+      headline: 'Your 24/7 AI Financial Advisor: Personalized Insights',
+      subheadline: 'Ask complex money questions and receive instant guidance calculated directly from your balance sheet.',
+      targetAudience: 'Users seeking immediate financial strategy without paying expensive hourly planner fees',
+      howToSteps: [
+        { number: 1, title: 'Launch the AI Advisor', description: 'Click the AI Advisor icon anywhere in the app to open the fiduciary chat console.' },
+        { number: 2, title: 'Ask Targeted Strategy Questions', description: 'Ask how to allocate surplus cash flow, optimize debt payoff, or model retirement scenarios.' },
+        { number: 3, title: 'Receive Data-Driven Answers', description: 'Get instant recommendations tailored directly to your live emergency runway and credit utilization.' }
+      ],
+      caption: `🤖 Imagine having a certified financial advisor in your pocket who already understands your income, debt, and assets.
+
+The WMCW AI Advisor analyzes your real balance sheet to give you actionable, math-backed guidance 24/7!
+
+👉 HOW TO USE YOUR AI ADVISOR:
+1️⃣ Open the AI Advisor and ask: "How should I allocate my monthly cash surplus?"
+2️⃣ Get immediate strategies tailored to your exact emergency fund runway and credit utilization
+3️⃣ Simulate debt payoff strategies and explore tax-efficient retirement distribution sequencing
+
+💡 Test out the AI Advisor in Guest Mode today!
+#AIFinance #FinancialAdvisor #SmartMoney #Fintech #PersonalWealth #AIAssistant #TechInFinance`
+    },
+    {
+      id: 'profile_settings',
+      label: 'User Profile, Account Type & Ticker Settings',
+      category: 'Customization & Business Mode',
+      badge: 'PERSONAL & BUSINESS MODES',
+      headline: 'Tailor WMCW: Business Mode & Live Market Tickers',
+      subheadline: 'Switch between Personal and Business accounting and stream real-time stock & crypto prices.',
+      targetAudience: 'LLC owners, freelancers, corporate executives, and market investors',
+      howToSteps: [
+        { number: 1, title: 'Access Profile Settings', description: 'Click your profile avatar in the header to open comprehensive account settings.' },
+        { number: 2, title: 'Toggle Business Mode', description: 'Select "Business" account mode and enter your LLC/Corporation name to tailor metrics.' },
+        { number: 3, title: 'Customize Market Tickers', description: 'Add your favorite stock and crypto symbols (e.g. SPY, QQQ, BTC, NVDA) to the live ticker banner.' }
+      ],
+      caption: `⚙️ Whether you are managing personal family wealth or running an LLC, WMCW adapts to your life.
+
+Toggle between Personal and Business modes and stream live stock and crypto tickers right on your dashboard!
+
+👉 HOW TO CUSTOMIZE YOUR PROFILE:
+1️⃣ Open Profile & Settings from the top-right user menu
+2️⃣ Toggle between Personal and Business modes to track entity-level balance sheets
+3️⃣ Add custom stock and crypto ticker symbols to keep an eye on market movements
+
+✨ Try switching account modes and customizing tickers in Guest Mode!
+#SmallBusiness #LLC #StockMarket #CryptoTicker #BusinessFinance #Fintech #PersonalFinance #Productivity`
+    }
+  ], []);
+
+  const activeTopic = useMemo(() => {
+    return topics.find(t => t.id === selectedTopicId) || topics[0];
+  }, [topics, selectedTopicId]);
+
+  // Copy caption to clipboard
+  const handleCopyCaption = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCaption(true);
+      setTimeout(() => setCopiedCaption(false), 2500);
+    } catch (e) {
+      console.error("Failed to copy caption:", e);
+    }
+  };
+
+  // Download a single ad image via html2canvas
+  const handleDownloadImage = async (topicId: AdTopicId) => {
+    const container = document.getElementById(`ad-canvas-${topicId}`);
+    if (!container) return;
+
+    setIsGenerating(true);
+    setGeneratingTopicId(topicId);
+
+    try {
+      // Small tick for DOM paint
+      await new Promise(res => setTimeout(res, 200));
+
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#0a0f1d',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = imgData;
+      const cleanDate = new Date().toISOString().slice(0, 10);
+      link.download = `WMCW_Ad_HowTo_${topicId}_${cleanDate}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Error generating advertisement image:", err);
+      alert("Failed to export advertisement image. Please try again.");
+    } finally {
+      setIsGenerating(false);
+      setGeneratingTopicId(null);
+    }
+  };
+
+  // Batch download all 10 images
+  const handleDownloadAll = async () => {
+    setIsGenerating(true);
+    setBatchProgress({ current: 0, total: topics.length });
+
+    for (let i = 0; i < topics.length; i++) {
+      const topic = topics[i];
+      setBatchProgress({ current: i + 1, total: topics.length });
+      setSelectedTopicId(topic.id);
+
+      // Wait for tab switch and re-render
+      await new Promise(res => setTimeout(res, 400));
+
+      const container = document.getElementById(`ad-canvas-${topic.id}`);
+      if (container) {
+        try {
+          const canvas = await html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#0a0f1d',
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = imgData;
+          link.download = `WMCW_Ad_0${i + 1}_${topic.id}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          await new Promise(res => setTimeout(res, 300));
+        } catch (e) {
+          console.error(`Failed to export ${topic.id}:`, e);
+        }
+      }
+    }
+
+    setBatchProgress(null);
+    setIsGenerating(false);
+  };
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* Top Header Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white rounded-3xl p-6 sm:p-8 border border-indigo-800/40 shadow-2xl relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+              <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-400 text-amber-950 shadow-sm">
+                Admin Marketing Kit
+              </span>
+              <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-200 border border-blue-400/30">
+                10 Advertisement &amp; How-To Images
+              </span>
+              <span className="text-xs text-blue-200/80">
+                Powered by Guest Mode Real Sample Data
+              </span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Advertisement &amp; "How-To" Image Generator
+            </h2>
+            <p className="text-sm text-blue-100/80 mt-2 leading-relaxed">
+              Generate, preview, and download high-resolution marketing graphics and social media captions with step-by-step How-To instructions. All graphics are populated with actual Guest Mode financial metrics (credit scores, card balances, DTI, assets, and surplus).
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0">
+            <button
+              onClick={handleDownloadAll}
+              disabled={isGenerating}
+              className="inline-flex items-center justify-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-2xl shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.99] transition-all text-xs sm:text-sm tracking-wide disabled:opacity-50"
+            >
+              {batchProgress ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  <span>Exporting ({batchProgress.current}/{batchProgress.total})...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download All 10 Ad Images</span>
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center justify-center gap-2 text-xs text-blue-200/70">
+              <span>Format:</span>
+              <button
+                onClick={() => setAspectRatio('square')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  aspectRatio === 'square' ? 'bg-blue-600 text-white' : 'bg-white/10 text-blue-200 hover:bg-white/20'
+                }`}
+              >
+                1:1 Square
+              </button>
+              <button
+                onClick={() => setAspectRatio('landscape')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  aspectRatio === 'landscape' ? 'bg-blue-600 text-white' : 'bg-white/10 text-blue-200 hover:bg-white/20'
+                }`}
+              >
+                16:9 Wide
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Ambient glow decoration */}
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      </div>
+
+      {/* TOPICS NAVIGATION PILLS / TABS */}
+      <div className="bg-white dark:bg-gray-900 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
+          <span>Select Advertisement &amp; How-To Topic (10 Features):</span>
+          <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">Click any item below to view image &amp; caption</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          {topics.map((t, idx) => {
+            const isSelected = t.id === selectedTopicId;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTopicId(t.id)}
+                className={`flex flex-col text-left p-3 rounded-xl transition-all border ${
+                  isSelected
+                    ? 'bg-indigo-50/90 dark:bg-indigo-950/40 border-indigo-500/80 shadow-sm ring-2 ring-indigo-500/20'
+                    : 'bg-gray-50/70 dark:bg-gray-800/40 border-gray-200/70 dark:border-gray-800 hover:bg-gray-100/80 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                    isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}>
+                    #{idx + 1}
+                  </span>
+                  <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase truncate">
+                    {t.category}
+                  </span>
+                </div>
+                <div className={`text-xs font-bold leading-snug line-clamp-2 ${
+                  isSelected ? 'text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                }`}>
+                  {t.label}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* MAIN TWO-COLUMN WORKSPACE: LEFT = AD CANVAS PREVIEW, RIGHT = CAPTION & ACTIONS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* LEFT COLUMN: THE ADVERTISEMENT GRAPHIC CANVAS */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">
+                Live Advertisement Canvas ({aspectRatio === 'square' ? '1080 × 1080' : '1200 × 675'})
+              </h3>
+            </div>
+
+            <button
+              onClick={() => handleDownloadImage(activeTopic.id)}
+              disabled={isGenerating}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+            >
+              {generatingTopicId === activeTopic.id ? (
+                <span>Rendering PNG...</span>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download This Ad (.PNG)</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* AD CONTAINER TO BE CAPTURED BY HTML2CANVAS */}
+          <div className="overflow-hidden rounded-3xl shadow-2xl border border-slate-800 bg-slate-950 flex justify-center items-center p-2 sm:p-4">
+            <div
+              id={`ad-canvas-${activeTopic.id}`}
+              style={{
+                width: '100%',
+                maxWidth: aspectRatio === 'square' ? '640px' : '760px',
+                minHeight: aspectRatio === 'square' ? '640px' : '440px',
+                aspectRatio: aspectRatio === 'square' ? '1 / 1' : '16 / 9',
+                backgroundColor: '#0a0f1d',
+                backgroundImage: 'radial-gradient(ellipse at 80% 10%, rgba(30, 58, 138, 0.45) 0%, transparent 60%), radial-gradient(ellipse at 10% 90%, rgba(67, 56, 202, 0.35) 0%, transparent 60%)',
+                color: '#ffffff',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                boxSizing: 'border-box'
+              }}
+              className="relative p-6 sm:p-8 flex flex-col justify-between rounded-2xl border border-slate-700/50 shadow-inner"
+            >
+              {/* BRANDING TOP HEADER */}
+              <div>
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-700/60 mb-4">
+                  <div className="flex items-center gap-3">
+                    {/* WMCW SVG LOGO */}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-700 to-indigo-800 flex items-center justify-center p-1.5 shadow-md shadow-blue-900/40 border border-blue-400/30">
+                      <svg className="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(255,255,255,0.15)"></path>
+                        <path d="m9 12 2 2 4-4" stroke="#F59E0B" strokeWidth="2.8"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-sm font-black tracking-wider text-white flex items-center gap-2">
+                        <span>WHAT'S MY CREDIT WORTH</span>
+                      </div>
+                      <div className="text-[9px] font-extrabold text-amber-400 tracking-widest uppercase">
+                        Financial Intelligence &amp; Credit Platform
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="inline-block px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 tracking-wider">
+                      {activeTopic.badge}
+                    </span>
+                    <div className="text-[9px] text-slate-400 mt-0.5">HOW-TO TUTORIAL &amp; AD</div>
+                  </div>
+                </div>
+
+                {/* AD HEADLINE & SUBHEADLINE */}
+                <div className="mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1 block">
+                    FEATURE SPOTLIGHT: {activeTopic.label.toUpperCase()}
+                  </span>
+                  <h4 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tight">
+                    {activeTopic.headline}
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-xl">
+                    {activeTopic.subheadline}
+                  </p>
+                </div>
+              </div>
+
+              {/* CORE LIVE MOCKUP SHOWCASE (USES ACTUAL GUEST MODE DATA) */}
+              <div className="my-auto py-2">
+                <TopicMockupRenderer topicId={activeTopic.id} metrics={metrics} currentData={currentData} />
+              </div>
+
+              {/* STEP-BY-STEP HOW-TO BOXES (3 NUMBERED STEPS) */}
+              <div className="mt-3 pt-3 border-t border-slate-700/60">
+                <div className="text-[9.5px] font-black text-amber-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                  <span>How To Use This Feature:</span>
+                  <span className="text-[8.5px] text-slate-400 font-normal">Step-by-Step Walkthrough</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {activeTopic.howToSteps.map((step) => (
+                    <div
+                      key={step.number}
+                      className="bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 flex flex-col justify-between"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] flex items-center justify-center shrink-0">
+                          {step.number}
+                        </span>
+                        <span className="text-[10px] font-bold text-white truncate">
+                          {step.title}
+                        </span>
+                      </div>
+                      <p className="text-[8.5px] text-slate-300 leading-snug line-clamp-2">
+                        {step.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* BOTTOM FOOTER CALL TO ACTION & VERIFICATION */}
+              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[9px] text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 text-[8px]">
+                    FREE GUEST MODE
+                  </span>
+                  <span>4 Months of Real Pre-Loaded Data • No Signup Needed</span>
+                </div>
+                <div className="font-bold text-blue-300 tracking-wider">
+                  whatsmycreditworth.com
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: CAPTION & MARKETING COPY */}
+        <div className="lg:col-span-5 space-y-5">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  Ready-To-Post Caption
+                </span>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Social &amp; Ad Copy
+                </h3>
+              </div>
+
+              <button
+                onClick={() => handleCopyCaption(activeTopic.caption)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  copiedCaption
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800'
+                }`}
+              >
+                {copiedCaption ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Copy Caption</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Editable / Selectable Caption Text Box */}
+            <div className="relative">
+              <textarea
+                readOnly
+                rows={13}
+                value={activeTopic.caption}
+                className="w-full text-xs text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <div>
+                Target Audience: <strong className="text-gray-700 dark:text-gray-300">{activeTopic.targetAudience}</strong>
+              </div>
+              <div className="font-mono">
+                {activeTopic.caption.length} chars
+              </div>
+            </div>
+          </div>
+
+          {/* QUICK TOPIC SUMMARY CARD */}
+          <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20 rounded-3xl p-5 border border-indigo-100 dark:border-indigo-900/40">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-300 mb-2">
+              Guest Mode Data Highlight:
+            </h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-white/80 dark:bg-gray-900/80 p-2.5 rounded-xl border border-indigo-100 dark:border-gray-800">
+                <div className="text-[10px] text-gray-500">Total Assets</div>
+                <div className="font-extrabold text-indigo-600 dark:text-indigo-400">
+                  {formatCurrency(metrics?.totalAssets || 257400)}
+                </div>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-900/80 p-2.5 rounded-xl border border-indigo-100 dark:border-gray-800">
+                <div className="text-[10px] text-gray-500">Credit Utilization</div>
+                <div className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                  {metrics?.utilization.toFixed(1) || '2.6'}% (Elite Tier)
+                </div>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-900/80 p-2.5 rounded-xl border border-indigo-100 dark:border-gray-800">
+                <div className="text-[10px] text-gray-500">Monthly Surplus</div>
+                <div className="font-extrabold text-blue-600 dark:text-blue-400">
+                  {formatCurrency(metrics?.surplus || 6255)}/mo
+                </div>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-900/80 p-2.5 rounded-xl border border-indigo-100 dark:border-gray-800">
+                <div className="text-[10px] text-gray-500">Top FICO Score</div>
+                <div className="font-extrabold text-purple-600 dark:text-purple-400">
+                  {metrics?.scores?.experian?.score8 || 730} FICO 8
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+// SUB-COMPONENT: TOPIC MOCKUP RENDERER
+// Renders rich, realistic UI showcases using actual Guest Mode values
+const TopicMockupRenderer: React.FC<{
+  topicId: AdTopicId;
+  metrics: any;
+  currentData: any;
+}> = ({ topicId, metrics, currentData }) => {
+
+  switch (topicId) {
+    case 'landing_page':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+              ✦ Landing Page Gateway
+            </span>
+            <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-black text-[9px]">
+              Guest Mode: Instant Access
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
+              <div className="text-[8px] text-slate-400">Total Assets</div>
+              <div className="text-[11px] font-black text-emerald-400">{formatCurrency(metrics?.totalAssets || 257400)}</div>
+            </div>
+            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
+              <div className="text-[8px] text-slate-400">Card Utilization</div>
+              <div className="text-[11px] font-black text-blue-400">{metrics?.utilization.toFixed(1) || '2.6'}%</div>
+            </div>
+            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
+              <div className="text-[8px] text-slate-400">DTI Ratio</div>
+              <div className="text-[11px] font-black text-purple-400">{metrics?.dti.toFixed(1) || '33.1'}%</div>
+            </div>
+            <div className="bg-slate-800/80 p-2 rounded-xl border border-slate-700/60 text-center">
+              <div className="text-[8px] text-slate-400">Top FICO</div>
+              <div className="text-[11px] font-black text-amber-400">740 FICO 4</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-slate-800/60 p-2.5 rounded-xl border border-blue-500/30 flex items-center justify-between text-[10px]">
+            <span className="text-slate-200">Try with 4 months of pre-loaded data</span>
+            <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black rounded-lg text-[9px] shadow">
+              One-Click Guest Access &rarr;
+            </span>
+          </div>
+        </div>
+      );
+
+    case 'wmcw_dashboard':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2.5">
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="font-bold text-slate-300">Executive Dashboard Snapshot</span>
+            <span className="bg-slate-800 px-2 py-0.5 rounded text-[9px] text-blue-400 font-mono">Period: March 2026</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
+              <div className="text-[8.5px] text-slate-400">Total Net Worth</div>
+              <div className="text-sm font-black text-emerald-400">+{formatCurrency(metrics?.totalAssets - metrics?.totalDebt)}</div>
+              <div className="text-[7.5px] text-emerald-400/80 mt-0.5">&uarr; +$8,450 vs past month</div>
+            </div>
+            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
+              <div className="text-[8.5px] text-slate-400">Revolving Utilization</div>
+              <div className="text-sm font-black text-blue-400">{metrics?.utilization.toFixed(1)}%</div>
+              <div className="text-[7.5px] text-blue-300/80 mt-0.5">$1,400 / $53,000 Limit</div>
+            </div>
+            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
+              <div className="text-[8.5px] text-slate-400">Monthly Surplus</div>
+              <div className="text-sm font-black text-amber-400">+{formatCurrency(metrics?.surplus)}</div>
+              <div className="text-[7.5px] text-amber-300/80 mt-0.5">5.8 Mo Living Runway</div>
+            </div>
+          </div>
+          {/* Progress bar visual */}
+          <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
+            <div className="flex justify-between text-[8px] text-slate-400 mb-1">
+              <span>Credit Card Balance: $1,400</span>
+              <span className="text-emerald-400 font-bold">Optimal Range (&lt;10%)</span>
+              <span>Available Credit: $51,600</span>
+            </div>
+            <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full" style={{ width: '2.6%' }}></div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'edit_data':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px]">
+            <div className="flex gap-1.5">
+              <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-bold text-[8.5px]">Income</span>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Scores</span>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Cards</span>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Loans</span>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[8.5px]">Assets</span>
+            </div>
+            <span className="text-[8px] text-emerald-400 flex items-center gap-1 font-mono">
+              ✓ Auto-saved
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-lg text-[9.5px]">
+              <span className="text-slate-300">Senior Engineer @ Tech Co</span>
+              <span className="font-mono font-bold text-emerald-400">$8,250 / mo</span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-lg text-[9.5px]">
+              <span className="text-slate-300">Chase Sapphire Preferred</span>
+              <span className="font-mono font-bold text-amber-400">$900 Bal / $15,000 Limit</span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-lg text-[9.5px]">
+              <span className="text-slate-300">Fidelity 401k Account (#9102)</span>
+              <span className="font-mono font-bold text-blue-400">$94,600 (Asset)</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[8.5px] text-slate-400 pt-1">
+            <span>Period Switcher: <strong>March 2026 (Active)</strong></span>
+            <span className="text-blue-400">+ Add New Record</span>
+          </div>
+        </div>
+      );
+
+    case 'reports':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2.5">
+          <div className="flex items-center justify-between text-[10px] pb-1.5 border-b border-slate-800">
+            <span className="font-bold text-amber-400 uppercase">Financial Planning Report (9 Topics)</span>
+            <span className="px-2 py-0.5 rounded bg-indigo-600 text-white font-bold text-[8.5px]">Export PDF</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 text-[8.5px]">
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">1. Exec Summary</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">2. Balance Sheet</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">3. Cash Flow</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">4. Monte Carlo</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">5. Portfolio Risk</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">6. Insurance</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">7. Tax &amp; Estate</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">8. Action Plan</span>
+            </div>
+            <div className="bg-slate-800/90 p-1.5 rounded-lg border border-slate-700/60">
+              <span className="font-bold text-blue-300">9. Disclosures</span>
+            </div>
+          </div>
+          <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50 flex justify-between items-center text-[9px]">
+            <span>Monte Carlo Probability: <strong className="text-emerald-400">89.2% Sustainable</strong></span>
+            <span>Period Comparison: <strong className="text-blue-300">+$24,300 YoY</strong></span>
+          </div>
+        </div>
+      );
+
+    case 'four_steps':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="text-[10px] font-bold text-slate-300 flex justify-between">
+            <span>4 Steps to Financial Freedom Roadmap</span>
+            <span className="text-amber-400">Milestone Progress: 3 of 4 Active</span>
+          </div>
+          <div className="space-y-1.5 text-[9px]">
+            <div className="bg-slate-800/90 p-2 rounded-xl border border-emerald-500/40 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-emerald-400">Step 1: Emergency Fund (3-6 Mo)</span>
+                <div className="text-[8px] text-slate-400">$18,000 in Marcus HYSA (5.8 Mo Runway)</div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-black text-[8px]">ACHIEVED</span>
+            </div>
+            <div className="bg-slate-800/90 p-2 rounded-xl border border-blue-500/40 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-blue-300">Step 2: Eliminate High-Interest Debt</span>
+                <div className="text-[8px] text-slate-400">Credit Card Utilization: 2.6% ($1,400 balance)</div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-black text-[8px]">OPTIMAL</span>
+            </div>
+            <div className="bg-slate-800/90 p-2 rounded-xl border border-purple-500/40 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-purple-300">Step 3: Wealth Accumulation &amp; Investing</span>
+                <div className="text-[8px] text-slate-400">$257,400 in 401k, Real Estate &amp; Crypto</div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-black text-[8px]">ACTIVE</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'credit_scores':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2.5">
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="font-bold text-slate-300">Multi-Bureau Credit Scores &amp; Velocity</span>
+            <span className="text-emerald-400 font-mono text-[9px]">+45 pts past 4 months</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="bg-slate-800/90 p-2 rounded-xl border border-blue-500/30">
+              <div className="text-[8px] text-slate-400">Experian FICO 8</div>
+              <div className="text-base font-black text-blue-400">730</div>
+              <div className="text-[7.5px] text-emerald-400">&uarr; +15 pts / mo</div>
+            </div>
+            <div className="bg-slate-800/90 p-2 rounded-xl border border-rose-500/30">
+              <div className="text-[8px] text-slate-400">Equifax FICO 8</div>
+              <div className="text-base font-black text-rose-400">716</div>
+              <div className="text-[7.5px] text-emerald-400">&uarr; +12 pts / mo</div>
+            </div>
+            <div className="bg-slate-800/90 p-2 rounded-xl border border-emerald-500/30">
+              <div className="text-[8px] text-slate-400">TransUnion FICO 8</div>
+              <div className="text-base font-black text-emerald-400">732</div>
+              <div className="text-[7.5px] text-emerald-400">&uarr; +14 pts / mo</div>
+            </div>
+          </div>
+          <div className="flex justify-between items-center text-[8.5px] text-slate-400 px-1">
+            <span>Mr. Cooper Mortgage FICO 4: <strong className="text-amber-400">740</strong></span>
+            <span>Auto FICO 8: <strong className="text-purple-400">728</strong></span>
+          </div>
+        </div>
+      );
+
+    case 'cards_vs_loans':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex justify-between text-[10px] pb-1 border-b border-slate-800">
+            <span className="font-bold text-amber-400">Credit Cards vs. Installment Loans</span>
+            <span className="text-[9px] text-slate-400">Revolving vs. Fixed Debt</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[9px]">
+            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-blue-500/40">
+              <div className="text-[8px] font-bold text-blue-300 uppercase">Revolving Cards (30% Score Impact)</div>
+              <div className="text-sm font-black text-white mt-1">$1,400 <span className="text-[8px] text-slate-400 font-normal">/ $53k Limit</span></div>
+              <div className="text-[8px] text-emerald-400 font-bold mt-1">2.6% Utilization (Elite)</div>
+              <div className="text-[7.5px] text-slate-400 mt-0.5">Chase ($900), Amex ($300), Apple ($200)</div>
+            </div>
+            <div className="bg-slate-800/90 p-2.5 rounded-xl border border-purple-500/40">
+              <div className="text-[8px] font-bold text-purple-300 uppercase">Term Loans (Low Impact)</div>
+              <div className="text-sm font-black text-white mt-1">$382,650 <span className="text-[8px] text-slate-400 font-normal">Collateralized</span></div>
+              <div className="text-[8px] text-blue-300 font-bold mt-1">Fixed 3.5% Interest Rate</div>
+              <div className="text-[7.5px] text-slate-400 mt-0.5">Mortgage ($342k), BMW i4 ($40k)</div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'assets':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex justify-between text-[10px] pb-1 border-b border-slate-800">
+            <span className="font-bold text-emerald-400">Total Asset Holdings: {formatCurrency(metrics?.totalAssets || 257400)}</span>
+            <span className="text-[9px] text-blue-400">Next Steps Sync Ready</span>
+          </div>
+          <div className="space-y-1 text-[8.5px]">
+            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
+              <span>Marcus Savings (Liquid HYSA) <span className="text-amber-400 font-mono">#4821</span></span>
+              <span className="font-bold text-emerald-400">$18,000</span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
+              <span>Fidelity 401k (Retirement) <span className="text-amber-400 font-mono">#9102</span></span>
+              <span className="font-bold text-blue-400">$94,600</span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
+              <span>Coinbase Bitcoin (Crypto) <span className="text-amber-400 font-mono">#3318</span></span>
+              <span className="font-bold text-purple-400">$18,300</span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 p-1.5 rounded-lg">
+              <span>Home Equity (Real Estate) <span className="text-amber-400 font-mono">#7724</span></span>
+              <span className="font-bold text-amber-400">$126,500</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'ai_advisor':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex items-center justify-between text-[10px] pb-1 border-b border-slate-800">
+            <span className="font-bold text-blue-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              AI Financial Advisor (Active)
+            </span>
+            <span className="text-[8.5px] text-slate-400">Fiduciary Intelligence</span>
+          </div>
+          <div className="bg-slate-800/80 p-2 rounded-xl text-[9px] text-slate-200 border border-slate-700/60">
+            <strong className="text-blue-300">You:</strong> "How should I allocate my $6,255 monthly cash surplus?"
+          </div>
+          <div className="bg-indigo-950/40 p-2 rounded-xl text-[8.5px] text-indigo-100 border border-indigo-500/30 leading-relaxed">
+            <strong className="text-amber-400">AI Advisor:</strong> "Your Marcus HYSA ($18k) already covers 5.8 months of living expenses. Your credit utilization is an optimal 2.6%. I recommend: 1) Maximize tax-deferred 401k contributions, 2) Funnel $2,500/mo into low-cost index ETFs to accelerate Step 3."
+          </div>
+        </div>
+      );
+
+    case 'profile_settings':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex justify-between items-center text-[10px] pb-1 border-b border-slate-800">
+            <span className="font-bold text-purple-300">User Profile &amp; Market Tickers</span>
+            <span className="px-2 py-0.5 rounded bg-purple-600 text-white font-bold text-[8.5px]">Business Mode</span>
+          </div>
+          <div className="bg-slate-800/90 p-2 rounded-xl flex items-center justify-between text-[9px]">
+            <div>
+              <span className="text-slate-400 text-[8px]">Active Entity:</span>
+              <div className="font-bold text-white">NAPM Consulting LLC</div>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[8px]">
+              Active Corporate Ledger
+            </span>
+          </div>
+          <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/60">
+            <div className="text-[8px] text-slate-400 mb-1">Live Stock &amp; Crypto Ticker Ribbon:</div>
+            <div className="flex gap-1.5 flex-wrap text-[8.5px] font-mono">
+              <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">SPY $568.20 (+0.8%)</span>
+              <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">QQQ $489.10 (+1.2%)</span>
+              <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">BTC $64,200 (+2.5%)</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    default:
+      return null;
+  }
+};
