@@ -8,6 +8,7 @@ import NetWorthChart from './charts/NetWorthChart';
 import CreditScoreChart from './charts/CreditScoreChart';
 import SimulationModal from './SimulationModal';
 import MembershipModal from './MembershipModal';
+import CalculationImageModal, { CalculationMetricType } from './CalculationImageModal';
 import { SimulationIcon, GoldAsterisk } from './ui/Icons';
 import { useAuth } from '../contexts/AuthContext';
 import FinancialFreedomSteps from './FinancialFreedomSteps';
@@ -17,6 +18,7 @@ interface DashboardProps {
   allData: FinancialData;
   monthYear: string;
   onNextStepsSync?: () => void;
+  onEdit?: () => void;
 }
 
 const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
@@ -25,11 +27,12 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
   return <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5"><div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${utilization}%` }}></div></div>;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextStepsSync }) => {
+const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextStepsSync, onEdit }) => {
   const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
   const [liabilityView, setLiabilityView] = useState<'cards' | 'loans'>('cards');
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
+  const [selectedCalcMetric, setSelectedCalcMetric] = useState<CalculationMetricType | null>(null);
   const { isPremium } = useAuth();
 
   if (!data) return <div className="text-center py-10"><h2 className="text-xl font-semibold">No data available.</h2></div>;
@@ -67,11 +70,40 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextS
   return (
     <div className="space-y-6 animate-fade-in">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            <Metric label="Net Worth" value={formatCurrency(netWorth)} change={netWorth > 0 ? 'positive' : 'negative'} />
-            <Metric label="Total Assets" value={formatCurrency(totalAssets)} />
-            <Metric label="Total Debt" value={formatCurrency(totalDebt)} change="negative" />
-            <Metric label="Monthly Income" value={formatCurrency(totalIncome)} change="positive" />
-            <Metric label="DTI Ratio" value={`${dti.toFixed(2)}%`} change={dti <= 36 ? 'positive' : dti > 43 ? 'negative' : undefined} />
+            <Metric 
+              label="Net Worth" 
+              value={formatCurrency(netWorth)} 
+              change={netWorth > 0 ? 'positive' : 'negative'} 
+              onClick={() => setSelectedCalcMetric('NET WORTH')}
+              clickHint="Click to view Net Worth calculation image & user inputs"
+            />
+            <Metric 
+              label="Total Assets" 
+              value={formatCurrency(totalAssets)} 
+              onClick={() => setSelectedCalcMetric('TOTAL ASSETS')}
+              clickHint="Click to view Total Assets calculation image & user inputs"
+            />
+            <Metric 
+              label="Total Debt" 
+              value={formatCurrency(totalDebt)} 
+              change="negative" 
+              onClick={() => setSelectedCalcMetric('TOTAL DEBT')}
+              clickHint="Click to view Total Debt calculation image & user inputs"
+            />
+            <Metric 
+              label="Monthly Income" 
+              value={formatCurrency(totalIncome)} 
+              change="positive" 
+              onClick={() => setSelectedCalcMetric('MONTHLY INCOME')}
+              clickHint="Click to view Monthly Income calculation image & user inputs"
+            />
+            <Metric 
+              label="DTI Ratio" 
+              value={`${dti.toFixed(2)}%`} 
+              change={dti <= 36 ? 'positive' : dti > 43 ? 'negative' : undefined} 
+              onClick={() => setSelectedCalcMetric('DTI RATIO')}
+              clickHint="Click to view DTI Ratio calculation image & user inputs"
+            />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -214,6 +246,16 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextS
         
         <SimulationModal isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)} data={data} monthYear={monthYear} />
         <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />
+        {selectedCalcMetric && (
+          <CalculationImageModal
+            isOpen={Boolean(selectedCalcMetric)}
+            onClose={() => setSelectedCalcMetric(null)}
+            initialMetric={selectedCalcMetric}
+            data={data}
+            monthYear={monthYear}
+            onOpenEditor={onEdit}
+          />
+        )}
     </div>
   );
 };

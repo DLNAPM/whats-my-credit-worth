@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { MonthlyData } from '../types';
 import {
   calculateNetWorth,
@@ -15,6 +15,7 @@ import {
 } from '../utils/helpers';
 import Card from './ui/Card';
 import Metric from './ui/Metric';
+import CalculationImageModal, { CalculationMetricType } from './CalculationImageModal';
 
 interface SnapshotProps {
   snapshotData: {
@@ -37,6 +38,7 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
 
 const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
   const { monthYear, data } = snapshotData;
+  const [selectedCalcMetric, setSelectedCalcMetric] = useState<CalculationMetricType | null>(null);
 
   const netWorth = calculateNetWorth(data);
   const totalIncome = calculateMonthlyIncome(data.income.jobs);
@@ -69,11 +71,40 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
             </header>
             <main className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                    <Metric label="Net Worth" value={formatCurrency(netWorth)} change={netWorth > 0 ? 'positive' : 'negative'} />
-                    <Metric label="Total Assets" value={formatCurrency(totalAssets)} />
-                    <Metric label="Total Debt" value={formatCurrency(totalDebt)} change="negative" />
-                    <Metric label="Monthly Income" value={formatCurrency(totalIncome)} change="positive" />
-                    <Metric label="DTI Ratio" value={`${dti.toFixed(2)}%`} change={dtiStatus} />
+                    <Metric 
+                      label="Net Worth" 
+                      value={formatCurrency(netWorth)} 
+                      change={netWorth > 0 ? 'positive' : 'negative'} 
+                      onClick={() => setSelectedCalcMetric('NET WORTH')}
+                      clickHint="Click to view Net Worth calculation image & user inputs"
+                    />
+                    <Metric 
+                      label="Total Assets" 
+                      value={formatCurrency(totalAssets)} 
+                      onClick={() => setSelectedCalcMetric('TOTAL ASSETS')}
+                      clickHint="Click to view Total Assets calculation image & user inputs"
+                    />
+                    <Metric 
+                      label="Total Debt" 
+                      value={formatCurrency(totalDebt)} 
+                      change="negative" 
+                      onClick={() => setSelectedCalcMetric('TOTAL DEBT')}
+                      clickHint="Click to view Total Debt calculation image & user inputs"
+                    />
+                    <Metric 
+                      label="Monthly Income" 
+                      value={formatCurrency(totalIncome)} 
+                      change="positive" 
+                      onClick={() => setSelectedCalcMetric('MONTHLY INCOME')}
+                      clickHint="Click to view Monthly Income calculation image & user inputs"
+                    />
+                    <Metric 
+                      label="DTI Ratio" 
+                      value={`${dti.toFixed(2)}%`} 
+                      change={dtiStatus} 
+                      onClick={() => setSelectedCalcMetric('DTI RATIO')}
+                      clickHint="Click to view DTI Ratio calculation image & user inputs"
+                    />
                 </div>
                 
                 <Card title="Credit Scores">
@@ -190,6 +221,15 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                 </p>
             </footer>
         </div>
+        {selectedCalcMetric && (
+          <CalculationImageModal
+            isOpen={Boolean(selectedCalcMetric)}
+            onClose={() => setSelectedCalcMetric(null)}
+            initialMetric={selectedCalcMetric}
+            data={data}
+            monthYear={monthYear}
+          />
+        )}
     </div>
   );
 };

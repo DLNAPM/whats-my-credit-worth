@@ -214,6 +214,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
               allData={financialData}
               monthYear={currentMonthYear}
               onNextStepsSync={() => setIsNextStepsSyncOpen(true)}
+              onEdit={() => setIsEditorOpen(true)}
             />
           )}
           {view === 'reports' && (
