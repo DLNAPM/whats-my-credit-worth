@@ -587,7 +587,7 @@ export const AdminDashboard: React.FC = () => {
             <MegaphoneIcon className="w-4 h-4 text-amber-500" />
             <span>Marketing &amp; How-To Ads</span>
             <span className="text-[10px] bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-black">
-              10 Ads
+              12 Ads
             </span>
           </button>
         </div>

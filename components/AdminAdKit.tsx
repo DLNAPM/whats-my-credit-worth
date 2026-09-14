@@ -12,7 +12,9 @@ export type AdTopicId =
   | 'cards_vs_loans'
   | 'assets'
   | 'ai_advisor'
-  | 'profile_settings';
+  | 'profile_settings'
+  | 'sync_next_steps'
+  | 'chat_with_us';
 
 interface AdTopicConfig {
   id: AdTopicId;
@@ -325,6 +327,56 @@ Toggle between Personal and Business modes and stream live stock and crypto tick
 
 ✨ Try switching account modes and customizing tickers in Guest Mode!
 #SmallBusiness #LLC #StockMarket #CryptoTicker #BusinessFinance #Fintech #PersonalFinance #Productivity`
+    },
+    {
+      id: 'sync_next_steps',
+      label: 'Syncing with App Next Steps',
+      category: 'Inter-App Ecosystem & 1-Click Sync',
+      badge: '1-CLICK SEAMLESS SYNC',
+      headline: '1-Click Financial Sync: Bridge WMCW to Next Steps App',
+      subheadline: 'Transfer, match, and auto-diff credit cards, loans, and assets using 4-character match keys without duplicate entries.',
+      targetAudience: 'Users and financial planners managing unified debts and assets across WMCW and Next Steps',
+      howToSteps: [
+        { number: 1, title: 'Open 1-Click Sync', description: 'Click "Sync Next Steps" in the top navigation bar or Dashboard to open the synchronization console.' },
+        { number: 2, title: 'Verify 4-Char Match Keys', description: 'Check the last 4 alphanumeric digits (e.g. 4YBN or 4821) on your cards, loans, and assets for duplicate-free matching.' },
+        { number: 3, title: 'Copy Payload or Download JSON', description: 'Click "Copy Sync Payload" or "Download JSON", open your Next Steps app, and paste to reconcile your balance sheet.' }
+      ],
+      caption: `🔄 Managing personal finances across multiple apps shouldn't mean re-typing the same balances over and over!
+
+With What's My Credit Worth (WMCW), our 1-Click Sync to Next Steps lets you seamlessly transfer, match, and auto-diff all your credit cards, installment loans, and asset portfolios into the Next Steps app.
+
+👉 HOW TO SYNC WITH NEXT STEPS IN 3 EASY STEPS:
+1️⃣ Click "Sync Next Steps" in your WMCW header to open the unified export console
+2️⃣ Verify your 4-character account matching keys (e.g. #4819, #1024, #4821)—supporting alphanumeric IDs like #4YBN so accounts reconcile without creating duplicates
+3️⃣ Click "Copy Sync Payload" (or "Download JSON"), open your Next Steps workspace, and paste to update your net worth and debt payoff schedule instantly
+
+✨ Try the 1-Click Next Steps Sync live with realistic sample data in Guest Mode at whatsmycreditworth.com!
+#NextStepsApp #WhatsMyCreditWorth #PersonalFinance #Fintech #DebtFreeJourney #NetWorthSync #FinancialAutomation #Productivity`
+    },
+    {
+      id: 'chat_with_us',
+      label: 'Chat With Us & Live Advisory Desk',
+      category: 'Fiduciary AI & Dedicated Support',
+      badge: '24/7 AI & SUPPORT DESK',
+      headline: 'Chat With Us: 24/7 Balance-Sheet Aware Advisory & Support',
+      subheadline: 'Tap the floating "Chat With Us" button for instant fiduciary AI calculations or direct support dispatch.',
+      targetAudience: 'Users seeking instant answers to debt payoff, score velocity questions, and dedicated app support',
+      howToSteps: [
+        { number: 1, title: 'Tap "Chat With Us"', description: 'Click the pulsing "Chat With Us" floating action button in the bottom right corner of any screen.' },
+        { number: 2, title: 'Ask Questions or Request Help', description: 'Get live guidance on credit card paydown, living runway, surplus allocation, or request technical support.' },
+        { number: 3, title: 'Save Insights & Dispatch Tickets', description: 'Bookmark critical financial recommendations, search past chat history, or dispatch an email ticket to support.' }
+      ],
+      caption: `💬 Got questions about paying down high-interest credit cards, building your emergency runway, or navigating the platform? We're always here for you!
+
+The "Chat With Us" console in What's My Credit Worth gives you 24/7 access to both an AI Financial Advisor that understands your live balance sheet, and direct support dispatch.
+
+👉 HOW TO USE "CHAT WITH US":
+1️⃣ Look for the floating "Chat With Us" prompt at the bottom-right of your screen
+2️⃣ Ask any personal finance question—from "Which card should I pay off first to boost my FICO 8 score?" to "How much of my $6,255 surplus should go to my 401k?"
+3️⃣ Receive immediate, math-backed answers based on your actual data, save key strategies, or dispatch a direct message to our support desk
+
+🚀 Test out "Chat With Us" right now in Guest Mode—no login required!
+#ChatWithUs #FintechSupport #AIFinance #FinancialAdvisor #CreditTips #FICOImprovement #CustomerSupport #WhatsMyCreditWorth`
     }
   ], []);
 
@@ -431,7 +483,7 @@ Toggle between Personal and Business modes and stream live stock and crypto tick
                 Admin Marketing Kit
               </span>
               <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-200 border border-blue-400/30">
-                10 Advertisement &amp; How-To Images
+                12 Advertisement &amp; How-To Images
               </span>
               <span className="text-xs text-blue-200/80">
                 Powered by Guest Mode Real Sample Data
@@ -465,7 +517,7 @@ Toggle between Personal and Business modes and stream live stock and crypto tick
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <span>Download All 10 Ad Images</span>
+                  <span>Download All 12 Ad Images</span>
                 </>
               )}
             </button>
@@ -499,11 +551,11 @@ Toggle between Personal and Business modes and stream live stock and crypto tick
       {/* TOPICS NAVIGATION PILLS / TABS */}
       <div className="bg-white dark:bg-gray-900 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
-          <span>Select Advertisement &amp; How-To Topic (10 Features):</span>
+          <span>Select Advertisement &amp; How-To Topic (12 Features):</span>
           <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">Click any item below to view image &amp; caption</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
           {topics.map((t, idx) => {
             const isSelected = t.id === selectedTopicId;
             return (
@@ -1097,6 +1149,114 @@ const TopicMockupRenderer: React.FC<{
               <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">SPY $568.20 (+0.8%)</span>
               <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">QQQ $489.10 (+1.2%)</span>
               <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700 text-emerald-400">BTC $64,200 (+2.5%)</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'sync_next_steps':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px]">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="font-bold text-white">1-Click Sync to Next Steps App</span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[8.5px] border border-emerald-500/30">
+              Auto-Diff Ready (8 Accounts)
+            </span>
+          </div>
+
+          <div className="bg-slate-800/80 p-2 rounded-xl border border-indigo-500/30 flex items-center justify-between text-[9px]">
+            <div>
+              <span className="text-slate-400 text-[8px]">Account Match Key Standard:</span>
+              <div className="font-bold text-indigo-300">4-Character Alphanumeric ID (e.g. 4YBN, 4821)</div>
+            </div>
+            <span className="text-[8px] bg-slate-900 px-2 py-1 rounded text-amber-400 font-mono">
+              Prevents Duplicate Records
+            </span>
+          </div>
+
+          <div className="space-y-1 text-[8.5px]">
+            <div className="flex items-center justify-between bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700/60">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono text-[8px]">#4819</span>
+                <span className="text-slate-200">Chase Sapphire Preferred (Card)</span>
+              </div>
+              <span className="font-mono text-slate-300">$900.00 <span className="text-emerald-400 font-bold">(4.5% util)</span></span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700/60">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono text-[8px]">#9012</span>
+                <span className="text-slate-200">BMW i4 M50 Auto Loan</span>
+              </div>
+              <span className="font-mono text-slate-300">$40,650.00 <span className="text-purple-400 font-bold">(3.9% APR)</span></span>
+            </div>
+            <div className="flex items-center justify-between bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700/60">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[8px]">#4821</span>
+                <span className="text-slate-200">Marcus High-Yield Savings (Asset)</span>
+              </div>
+              <span className="font-mono font-bold text-emerald-400">$18,000.00 (4.75% APY)</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[8.5px]">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-lg shadow flex items-center gap-1">
+                <span>📋 Copy Sync Payload</span>
+              </span>
+              <span className="px-2 py-1 bg-slate-800 text-slate-300 font-bold rounded-lg border border-slate-700">
+                ⬇ Download .JSON
+              </span>
+            </div>
+            <span className="text-[8px] text-slate-400">Net Worth Synced: +{formatCurrency((metrics?.totalAssets || 257400) - (metrics?.totalDebt || 116850))}</span>
+          </div>
+        </div>
+      );
+
+    case 'chat_with_us':
+      return (
+        <div className="bg-slate-900/95 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px]">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 block"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute inset-0 opacity-75"></span>
+              </div>
+              <span className="font-bold text-white">Chat With Us • 24/7 Fiduciary Advisor &amp; Support</span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-black text-[8.5px] shadow">
+              Chat With Us 💬
+            </span>
+          </div>
+
+          <div className="bg-slate-800/80 p-2 rounded-xl text-[9px] text-slate-200 border border-slate-700/60 flex items-start gap-2">
+            <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[8px] font-bold flex items-center justify-center shrink-0 mt-0.5">U</span>
+            <div>
+              <div className="text-[8px] text-blue-300 font-semibold">You asked:</div>
+              <div>"Which credit card should I pay down first to boost my FICO 8 score to 750?"</div>
+            </div>
+          </div>
+
+          <div className="bg-indigo-950/40 p-2.5 rounded-xl text-[8.5px] text-indigo-100 border border-indigo-500/30 space-y-1.5 leading-relaxed">
+            <div className="flex items-center justify-between text-[8px] text-amber-400 font-bold">
+              <span>🤖 WMCW Fiduciary AI Advisor (Balance-Sheet Aware)</span>
+              <span className="text-slate-400 font-mono">1.4s response</span>
+            </div>
+            <p>
+              "Your overall card utilization is already low at <strong>2.6%</strong> ($1,400 across $53,000 limits). However, your <strong>Chase Sapphire (#4819)</strong> carries $900 of that debt. Paying down $650 on Chase will lower individual card utilization below 2%, unlocking an estimated <strong>+12 to +15 point FICO boost</strong> before your next statement closes."
+            </p>
+          </div>
+
+          <div className="bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-700/50 flex items-center justify-between text-[8px] text-slate-300">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 text-amber-300 font-bold">★ Bookmark Strategy</span>
+              <span className="flex items-center gap-1 text-blue-300">🔍 Search Past Chats</span>
+            </div>
+            <div className="text-slate-400 flex items-center gap-1">
+              <span>Direct Support:</span>
+              <span className="text-white font-mono">dlaniger.napm.consulting@gmail.com</span>
             </div>
           </div>
         </div>
