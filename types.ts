@@ -16,6 +16,7 @@ export interface NamedAmount {
   id: string;
   name: string;
   amount: number;
+  url?: string;
 }
 
 export interface CreditCard {

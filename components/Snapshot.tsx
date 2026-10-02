@@ -11,7 +11,9 @@ import {
   getUtilizationColor,
   calculateMonthlyIncome,
   calculateDTI,
-  formatMonthYear
+  formatMonthYear,
+  formatExternalUrl,
+  getDisplayUrl
 } from '../utils/helpers';
 import Card from './ui/Card';
 import Metric from './ui/Metric';
@@ -128,11 +130,28 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                             const utilization = calculateUtilization(card.balance, card.limit);
                             return (
                                 <div key={card.id}>
-                                    <div className="flex justify-between items-center mb-1 text-sm">
-                                        <span className="font-semibold">{card.name}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-gray-500 dark:text-gray-400">{formatCurrency(card.balance)} / {formatCurrency(card.limit)}</span>
-                                            <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
+                                    <div className="flex justify-between items-start mb-1 text-sm gap-2">
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="font-semibold truncate">{card.name}</span>
+                                            {card.url && card.url.trim() && (
+                                                <a
+                                                    href={formatExternalUrl(card.url)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-normal mt-0.5 truncate max-w-[200px]"
+                                                    title={`Open ${card.name} portal`}
+                                                >
+                                                    <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                    </svg>
+                                                    <span className="truncate">{getDisplayUrl(card.url)}</span>
+                                                    <span className="text-[9px] text-blue-500/70">↗</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">{formatCurrency(card.balance)} / {formatCurrency(card.limit)}</span>
+                                            <span className={`font-bold text-xs sm:text-sm ${getUtilizationColor(utilization)}`}>{utilization.toFixed(1)}%</span>
                                         </div>
                                     </div>
                                     <ProgressBar value={utilization} />
@@ -147,11 +166,28 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                                 const utilization = calculateUtilization(loan.balance, loan.limit);
                                 return (
                                     <div key={loan.id}>
-                                        <div className="flex justify-between items-center mb-1 text-sm">
-                                            <span className="font-semibold">{loan.name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-gray-500 dark:text-gray-400">{formatCurrency(loan.balance)} / {formatCurrency(loan.limit)}</span>
-                                                <span className={`font-bold ${getUtilizationColor(utilization)}`}>{utilization.toFixed(2)}%</span>
+                                        <div className="flex justify-between items-start mb-1 text-sm gap-2">
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="font-semibold truncate">{loan.name}</span>
+                                                {loan.url && loan.url.trim() && (
+                                                    <a
+                                                        href={formatExternalUrl(loan.url)}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-normal mt-0.5 truncate max-w-[200px]"
+                                                        title={`Open ${loan.name} portal`}
+                                                    >
+                                                        <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                        <span className="truncate">{getDisplayUrl(loan.url)}</span>
+                                                        <span className="text-[9px] text-blue-500/70">↗</span>
+                                                    </a>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">{formatCurrency(loan.balance)} / {formatCurrency(loan.limit)}</span>
+                                                <span className={`font-bold text-xs sm:text-sm ${getUtilizationColor(utilization)}`}>{utilization.toFixed(1)}%</span>
                                             </div>
                                         </div>
                                         <ProgressBar value={utilization} />
@@ -164,11 +200,28 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
 
                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <Card title="Assets">
-                        <ul className="space-y-2 text-sm">
+                        <ul className="space-y-2.5 text-sm">
                             {data.assets.map(asset => (
-                                <li key={asset.id} className="flex justify-between">
-                                    <span>{asset.name}</span>
-                                    <span className="font-semibold">{formatCurrency(asset.value)}</span>
+                                <li key={asset.id} className="flex justify-between items-start gap-2">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="truncate">{asset.name}</span>
+                                        {asset.url && asset.url.trim() && (
+                                            <a
+                                                href={formatExternalUrl(asset.url)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-normal mt-0.5 truncate max-w-[180px]"
+                                                title={`Open ${asset.name} portal`}
+                                            >
+                                                <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                                <span className="truncate">{getDisplayUrl(asset.url)}</span>
+                                                <span className="text-[9px] text-blue-500/70">↗</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                    <span className="font-semibold shrink-0">{formatCurrency(asset.value)}</span>
                                 </li>
                             ))}
                             <li className="flex justify-between border-t pt-2 mt-2 font-bold text-base">
@@ -200,11 +253,28 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                         </div>
                     </Card>
                     <Card title="Monthly Bills">
-                        <ul className="space-y-2 text-sm">
+                        <ul className="space-y-2.5 text-sm">
                             {data.monthlyBills.map(bill => (
-                                <li key={bill.id} className="flex justify-between">
-                                    <span>{bill.name}</span>
-                                    <span className="font-semibold">{formatCurrency(bill.amount)}</span>
+                                <li key={bill.id} className="flex justify-between items-start gap-2">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="truncate">{bill.name}</span>
+                                        {bill.url && bill.url.trim() && (
+                                            <a
+                                                href={formatExternalUrl(bill.url)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-normal mt-0.5 truncate max-w-[180px]"
+                                                title={`Open ${bill.name} portal`}
+                                            >
+                                                <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                                <span className="truncate">{getDisplayUrl(bill.url)}</span>
+                                                <span className="text-[9px] text-blue-500/70">↗</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                    <span className="font-semibold shrink-0">{formatCurrency(bill.amount)}</span>
                                 </li>
                             ))}
                             <li className="flex justify-between border-t pt-2 mt-2 font-bold text-base">

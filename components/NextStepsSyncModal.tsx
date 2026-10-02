@@ -3,7 +3,7 @@ import type { MonthlyData, AccountType, NextStepsAccount, NextStepsSyncPayload, 
 import { buildNextStepsSyncPayload, copyNextStepsPayloadToClipboard, downloadNextStepsPayloadFile, inferAssetDetails } from '../utils/nextStepsSync';
 import { useFinancialData } from '../hooks/useFinancialData';
 import Button from './ui/Button';
-import { formatMonthYear } from '../utils/helpers';
+import { formatMonthYear, formatExternalUrl, getDisplayUrl } from '../utils/helpers';
 
 interface NextStepsSyncModalProps {
   isOpen: boolean;
@@ -607,8 +607,25 @@ export const NextStepsSyncModal: React.FC<NextStepsSyncModalProps> = ({
                         const isAsset = account.category === 'asset' || account.accountType === 'asset';
                         return (
                           <tr key={idx} className="hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition-colors">
-                            <td className="p-3 font-semibold text-gray-900 dark:text-white max-w-[160px] truncate">
-                              {account.name}
+                            <td className="p-3 max-w-[200px]">
+                              <div className="font-semibold text-gray-900 dark:text-white truncate">
+                                {account.name}
+                              </div>
+                              {account.url && account.url.trim() && (
+                                <a
+                                  href={formatExternalUrl(account.url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-normal mt-0.5 truncate max-w-full"
+                                  title={`Open ${account.name} website`}
+                                >
+                                  <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                  <span className="truncate">{getDisplayUrl(account.url)}</span>
+                                  <span className="text-[9px] text-blue-500/70">↗</span>
+                                </a>
+                              )}
                             </td>
                             <td className="p-3 text-gray-600 dark:text-gray-300">
                               {account.lenderName}

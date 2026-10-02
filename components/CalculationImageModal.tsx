@@ -7,7 +7,9 @@ import {
   calculateMonthlyIncome, 
   calculateDTI, 
   formatCurrency, 
-  formatMonthYear 
+  formatMonthYear,
+  formatExternalUrl,
+  getDisplayUrl
 } from '../utils/helpers';
 
 export type CalculationMetricType = 'NET WORTH' | 'TOTAL ASSETS' | 'TOTAL DEBT' | 'MONTHLY INCOME' | 'DTI RATIO';
@@ -850,11 +852,25 @@ const CalculationImageModal: React.FC<CalculationImageModalProps> = ({
                       <span className="font-bold text-sky-400">Total Assets (A)</span>
                       <span className="font-bold text-white">{formatCurrency(calculateTotal(data.assets))}</span>
                     </div>
-                    <ul className="space-y-1 text-gray-400">
+                    <ul className="space-y-1.5 text-gray-400">
                       {(data.assets || []).map(a => (
-                        <li key={a.id} className="flex justify-between items-center">
-                          <span>{a.name}</span>
-                          <span className="font-mono text-sky-300 bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-800/50">
+                        <li key={a.id} className="flex justify-between items-start gap-2">
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">{a.name}</span>
+                            {a.url && a.url.trim() && (
+                              <a
+                                href={formatExternalUrl(a.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-sky-400 hover:underline font-normal truncate max-w-[170px]"
+                                title={`Open ${a.name} website`}
+                              >
+                                <span className="truncate">{getDisplayUrl(a.url)}</span>
+                                <span className="text-[8px]">↗</span>
+                              </a>
+                            )}
+                          </div>
+                          <span className="font-mono text-sky-300 bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-800/50 shrink-0">
                             {formatCurrency(a.value)}
                           </span>
                         </li>
@@ -867,19 +883,47 @@ const CalculationImageModal: React.FC<CalculationImageModalProps> = ({
                       <span className="font-bold text-rose-400">Total Debt (B)</span>
                       <span className="font-bold text-white">{formatCurrency(calculateTotalBalance(data.creditCards) + calculateTotalBalance(data.loans))}</span>
                     </div>
-                    <ul className="space-y-1 text-gray-400">
+                    <ul className="space-y-1.5 text-gray-400">
                       {(data.creditCards || []).map(c => (
-                        <li key={c.id} className="flex justify-between items-center">
-                          <span>{c.name} (Card)</span>
-                          <span className="font-mono text-rose-300 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800/50">
+                        <li key={c.id} className="flex justify-between items-start gap-2">
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">{c.name} (Card)</span>
+                            {c.url && c.url.trim() && (
+                              <a
+                                href={formatExternalUrl(c.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-rose-400 hover:underline font-normal truncate max-w-[170px]"
+                                title={`Open ${c.name} website`}
+                              >
+                                <span className="truncate">{getDisplayUrl(c.url)}</span>
+                                <span className="text-[8px]">↗</span>
+                              </a>
+                            )}
+                          </div>
+                          <span className="font-mono text-rose-300 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800/50 shrink-0">
                             {formatCurrency(c.balance)}
                           </span>
                         </li>
                       ))}
                       {(data.loans || []).map(l => (
-                        <li key={l.id} className="flex justify-between items-center">
-                          <span>{l.name} (Loan)</span>
-                          <span className="font-mono text-rose-300 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800/50">
+                        <li key={l.id} className="flex justify-between items-start gap-2">
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">{l.name} (Loan)</span>
+                            {l.url && l.url.trim() && (
+                              <a
+                                href={formatExternalUrl(l.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-rose-400 hover:underline font-normal truncate max-w-[170px]"
+                                title={`Open ${l.name} website`}
+                              >
+                                <span className="truncate">{getDisplayUrl(l.url)}</span>
+                                <span className="text-[8px]">↗</span>
+                              </a>
+                            )}
+                          </div>
+                          <span className="font-mono text-rose-300 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800/50 shrink-0">
                             {formatCurrency(l.balance)}
                           </span>
                         </li>
@@ -911,7 +955,21 @@ const CalculationImageModal: React.FC<CalculationImageModalProps> = ({
                         const pct = total > 0 ? ((a.value / total) * 100).toFixed(1) : '0';
                         return (
                           <tr key={a.id} className="hover:bg-gray-800/50">
-                            <td className="py-2 font-medium text-white">{a.name}</td>
+                            <td className="py-2 font-medium text-white">
+                              <div>{a.name}</div>
+                              {a.url && a.url.trim() && (
+                                <a
+                                  href={formatExternalUrl(a.url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] text-sky-400 hover:underline font-normal mt-0.5 truncate max-w-[200px]"
+                                  title={`Open ${a.name} website`}
+                                >
+                                  <span className="truncate">{getDisplayUrl(a.url)}</span>
+                                  <span className="text-[8px]">↗</span>
+                                </a>
+                              )}
+                            </td>
                             <td className="py-2 text-gray-400">{a.category || a.institution || 'Asset'}</td>
                             <td className="py-2 text-right">
                               <span className="font-mono text-sky-400 font-bold bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/50">
@@ -946,7 +1004,21 @@ const CalculationImageModal: React.FC<CalculationImageModalProps> = ({
                     <tbody className="divide-y divide-gray-800">
                       {(data.creditCards || []).map(c => (
                         <tr key={c.id} className="hover:bg-gray-800/50">
-                          <td className="py-2 font-medium text-white">{c.name}</td>
+                          <td className="py-2 font-medium text-white">
+                            <div>{c.name}</div>
+                            {c.url && c.url.trim() && (
+                              <a
+                                href={formatExternalUrl(c.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-rose-400 hover:underline font-normal mt-0.5 truncate max-w-[200px]"
+                                title={`Open ${c.name} website`}
+                              >
+                                <span className="truncate">{getDisplayUrl(c.url)}</span>
+                                <span className="text-[8px]">↗</span>
+                              </a>
+                            )}
+                          </td>
                           <td className="py-2 text-gray-400">Credit Card (Revolving)</td>
                           <td className="py-2 text-right">
                             <span className="font-mono text-rose-400 font-bold bg-rose-950/60 px-2 py-0.5 rounded border border-rose-800/50">
@@ -958,7 +1030,21 @@ const CalculationImageModal: React.FC<CalculationImageModalProps> = ({
                       ))}
                       {(data.loans || []).map(l => (
                         <tr key={l.id} className="hover:bg-gray-800/50">
-                          <td className="py-2 font-medium text-white">{l.name}</td>
+                          <td className="py-2 font-medium text-white">
+                            <div>{l.name}</div>
+                            {l.url && l.url.trim() && (
+                              <a
+                                href={formatExternalUrl(l.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-purple-400 hover:underline font-normal mt-0.5 truncate max-w-[200px]"
+                                title={`Open ${l.name} website`}
+                              >
+                                <span className="truncate">{getDisplayUrl(l.url)}</span>
+                                <span className="text-[8px]">↗</span>
+                              </a>
+                            )}
+                          </td>
                           <td className="py-2 text-gray-400">Installment Loan</td>
                           <td className="py-2 text-right">
                             <span className="font-mono text-purple-400 font-bold bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/50">
@@ -1029,11 +1115,25 @@ const CalculationImageModal: React.FC<CalculationImageModalProps> = ({
                       <span className="font-bold text-amber-400">Monthly Bills (Numerator)</span>
                       <span className="font-bold text-white">{formatCurrency(calculateTotal(data.monthlyBills))}</span>
                     </div>
-                    <ul className="space-y-1 text-gray-400">
+                    <ul className="space-y-1.5 text-gray-400">
                       {(data.monthlyBills || []).map(b => (
-                        <li key={b.id} className="flex justify-between items-center">
-                          <span>{b.name}</span>
-                          <span className="font-mono text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/50">
+                        <li key={b.id} className="flex justify-between items-start gap-2">
+                          <div className="flex flex-col min-w-0">
+                            <span className="truncate">{b.name}</span>
+                            {b.url && b.url.trim() && (
+                              <a
+                                href={formatExternalUrl(b.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-amber-400 hover:underline font-normal truncate max-w-[170px]"
+                                title={`Open ${b.name} payment portal`}
+                              >
+                                <span className="truncate">{getDisplayUrl(b.url)}</span>
+                                <span className="text-[8px]">↗</span>
+                              </a>
+                            )}
+                          </div>
+                          <span className="font-mono text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/50 shrink-0">
                             {formatCurrency(b.amount)}
                           </span>
                         </li>

@@ -61,25 +61,25 @@ export const getDummyData = (): FinancialData => {
       autoFico8: 695 + (offset * 11)
     },
     creditCards: [
-      { id: generateId(), name: 'Chase Sapphire Pref', balance: Math.max(0, 4200 - (offset * 1100)), limit: 15000 },
-      { id: generateId(), name: 'Amex Platinum', balance: Math.max(0, 1500 - (offset * 400)), limit: 30000 },
-      { id: generateId(), name: 'Apple Card', balance: 200, limit: 8000 }
+      { id: generateId(), name: 'Chase Sapphire Pref', balance: Math.max(0, 4200 - (offset * 1100)), limit: 15000, url: 'https://www.chase.com' },
+      { id: generateId(), name: 'Amex Platinum', balance: Math.max(0, 1500 - (offset * 400)), limit: 30000, url: 'https://www.americanexpress.com' },
+      { id: generateId(), name: 'Apple Card', balance: 200, limit: 8000, url: 'https://card.apple.com' }
     ],
     loans: [
-      { id: generateId(), name: 'Mortgage (Fixed 3.5%)', balance: 345000 - (offset * 800), limit: 420000 },
-      { id: generateId(), name: 'BMW i4 Lease/Loan', balance: 42000 - (offset * 650), limit: 65000 }
+      { id: generateId(), name: 'Mortgage (Fixed 3.5%)', balance: 345000 - (offset * 800), limit: 420000, url: 'https://www.mrcooper.com' },
+      { id: generateId(), name: 'BMW i4 Lease/Loan', balance: 42000 - (offset * 650), limit: 65000, url: 'https://www.bmwusa.com/financial-services.html' }
     ],
     assets: [
-      { id: generateId(), name: 'Marcus Savings', value: 12000 + (offset * 2000), accountNumber: '4821', last4: '4821', institution: 'Marcus', category: 'Savings / HYSA' },
-      { id: generateId(), name: 'Fidelity 401k', value: 85000 + (offset * 3200), accountNumber: '9102', last4: '9102', institution: 'Fidelity', category: 'Retirement (401k/IRA)' },
-      { id: generateId(), name: 'Coinbase (BTC)', value: 15000 + (offset * 1100), accountNumber: '3318', last4: '3318', institution: 'Coinbase', category: 'Cryptocurrency' },
-      { id: generateId(), name: 'Home Equity', value: 125000 + (offset * 500), accountNumber: '7724', last4: '7724', institution: 'Property', category: 'Real Estate Equity' }
+      { id: generateId(), name: 'Marcus Savings', value: 12000 + (offset * 2000), accountNumber: '4821', last4: '4821', institution: 'Marcus', category: 'Savings / HYSA', url: 'https://www.marcus.com' },
+      { id: generateId(), name: 'Fidelity 401k', value: 85000 + (offset * 3200), accountNumber: '9102', last4: '9102', institution: 'Fidelity', category: 'Retirement (401k/IRA)', url: 'https://www.fidelity.com' },
+      { id: generateId(), name: 'Coinbase (BTC)', value: 15000 + (offset * 1100), accountNumber: '3318', last4: '3318', institution: 'Coinbase', category: 'Cryptocurrency', url: 'https://www.coinbase.com' },
+      { id: generateId(), name: 'Home Equity', value: 125000 + (offset * 500), accountNumber: '7724', last4: '7724', institution: 'Property', category: 'Real Estate Equity', url: 'https://www.zillow.com' }
     ],
     monthlyBills: [
-      { id: generateId(), name: 'Mortgage Payment', amount: 2450 },
-      { id: generateId(), name: 'Utilities', amount: 310 },
-      { id: generateId(), name: 'Car Insurance', amount: 210 },
-      { id: generateId(), name: 'Subscriptions', amount: 125 }
+      { id: generateId(), name: 'Mortgage Payment', amount: 2450, url: 'https://www.mrcooper.com' },
+      { id: generateId(), name: 'Utilities', amount: 310, url: 'https://www.pge.com' },
+      { id: generateId(), name: 'Car Insurance', amount: 210, url: 'https://www.geico.com' },
+      { id: generateId(), name: 'Subscriptions', amount: 125, url: 'https://www.netflix.com' }
     ]
   });
 
@@ -208,4 +208,29 @@ export const getUtilizationColor = (utilization: number): string => {
   if (utilization > 70) return 'text-red-500';
   if (utilization > 30) return 'text-yellow-500';
   return 'text-green-500';
+};
+
+/**
+ * Normalizes user-entered website links to absolute HTTPS/HTTP URLs.
+ * Handles cases where user enters "chase.com" or "www.fidelity.com" without scheme.
+ */
+export const formatExternalUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
+/**
+ * Returns a clean, user-friendly display string for URLs (e.g. "chase.com" instead of "https://www.chase.com/portal").
+ */
+export const getDisplayUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  return trimmed
+    .replace(/^https?:\/\/(www\.)?/i, '')
+    .replace(/\/$/, '');
 };

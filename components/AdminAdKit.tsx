@@ -5,6 +5,7 @@ import { getDummyData, formatCurrency, calculateNetWorth, calculateDTI, calculat
 export type AdTopicId = 
   | 'landing_page'
   | 'wmcw_dashboard'
+  | 'calculation_breakdowns'
   | 'edit_data'
   | 'reports'
   | 'four_steps'
@@ -111,7 +112,7 @@ What's My Credit Worth connects your 3-bureau credit scores, credit cards, loans
       subheadline: 'Track Net Worth, Credit Utilization (<10%), and Debt-to-Income on a single executive screen.',
       targetAudience: 'Everyday investors, budgeters, and home buyers preparing for mortgage approval',
       howToSteps: [
-        { number: 1, title: 'Monitor 5 Vital Gauges', description: 'Review Net Worth, Total Assets, Total Debt, Monthly Income, and DTI Ratio on high-contrast cards.' },
+        { number: 1, title: 'Monitor 5 Vital Gauges', description: 'Review Net Worth, Total Assets, Total Debt, Monthly Income, and DTI Ratio with interactive "Calc" buttons.' },
         { number: 2, title: 'Switch Interactive Charts', description: 'Toggle between Net Worth Over Time and Multi-Bureau Credit Scores to track financial momentum.' },
         { number: 3, title: 'Optimize Credit Utilization', description: 'Monitor revolving credit utilization to keep it strictly under 10% (Guest Mode: an optimal 2.6%).' }
       ],
@@ -121,11 +122,38 @@ The WMCW Dashboard unites your credit cards, term loans, liquid assets, income, 
 
 👉 HOW TO MASTER YOUR DASHBOARD:
 1️⃣ Check your Credit Utilization gauge—aim to keep it strictly under 10% (Guest Mode shows an optimal 2.6%)
-2️⃣ Track your Debt-to-Income (DTI) ratio to stay primed for top-tier mortgage and auto financing
-3️⃣ Allocate your monthly surplus ($6,255 in Guest Mode) into high-yield savings and low-cost index funds
+2️⃣ Click on any of the 5 top metric cards (Net Worth, Assets, Debt, Income, DTI) to inspect exact mathematical calculation details and user inputs
+3️⃣ Track your Debt-to-Income (DTI) ratio to stay primed for top-tier mortgage and auto financing
+4️⃣ Allocate your monthly surplus ($6,255 in Guest Mode) into high-yield savings and low-cost index funds
 
 ✨ Experience the live dashboard in Guest Mode at whatsmycreditworth.com!
 #Dashboard #WealthTracking #CreditUtilization #Budgeting #FinancialGoals #FinancialIndependence #SmartMoney`
+    },
+    {
+      id: 'calculation_breakdowns',
+      label: 'Calculation Details & Math Audit',
+      category: 'Formula Engine & Provenance',
+      badge: '100% PROVENANCE AUDIT',
+      headline: 'Inspect the Math: Click Any Metric for Visual Calculation Details',
+      subheadline: 'Click Net Worth, Assets, Debt, Income, or DTI to view the exact formula and highlighted user-entered numbers.',
+      targetAudience: 'Mortgage borrowers, underwriters, CPAs, financial planners, and analytical wealth builders',
+      howToSteps: [
+        { number: 1, title: 'Click Any Metric Card', description: 'Click Net Worth, Total Assets, Total Debt, Monthly Income, or DTI Ratio (tagged with the "Calc" pill).' },
+        { number: 2, title: 'Inspect Highlighted Inputs', description: 'View live formulas highlighting your exact user-entered numbers and accounts in gold and cyan tags.' },
+        { number: 3, title: 'Export Audit Graphics', description: 'Download high-resolution PNG or SVG formula audit images, or copy math text to clipboard with 1 click.' }
+      ],
+      caption: `🔍 Wondering exactly how your Net Worth, Total Debt, or DTI Ratio is calculated? Never rely on black-box financial apps again.
+
+What's My Credit Worth features an interactive Calculation Audit Engine: click any of your 5 core metric cards to view a visual mathematical breakdown that highlights the exact numbers and accounts you entered!
+
+👉 HOW TO INSPECT YOUR CALCULATIONS:
+1️⃣ Click on Net Worth, Total Assets, Total Debt, Monthly Income, or DTI Ratio in your WMCW dashboard
+2️⃣ View the formula diagram highlighting your entered account values in cyan and gold
+3️⃣ Review the itemized provenance table linking directly back to your Data Editor records
+4️⃣ Download high-res PNG or SVG audit graphics to share with your CPA or mortgage underwriter
+
+💡 Full financial transparency at your fingertips. Test it out in Guest Mode at whatsmycreditworth.com!
+#FinancialAudit #NetWorth #DTIRatio #TransparentFinance #PersonalFinance #Fintech #WhatsMyCreditWorth #Accounting`
     },
     {
       id: 'edit_data',
@@ -483,7 +511,7 @@ The "Chat With Us" console in What's My Credit Worth gives you 24/7 access to bo
                 Admin Marketing Kit
               </span>
               <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-200 border border-blue-400/30">
-                12 Advertisement &amp; How-To Images
+                {topics.length} Advertisement &amp; How-To Images
               </span>
               <span className="text-xs text-blue-200/80">
                 Powered by Guest Mode Real Sample Data
@@ -517,7 +545,7 @@ The "Chat With Us" console in What's My Credit Worth gives you 24/7 access to bo
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <span>Download All 12 Ad Images</span>
+                  <span>Download All {topics.length} Ad Images</span>
                 </>
               )}
             </button>
@@ -551,7 +579,7 @@ The "Chat With Us" console in What's My Credit Worth gives you 24/7 access to bo
       {/* TOPICS NAVIGATION PILLS / TABS */}
       <div className="bg-white dark:bg-gray-900 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2 flex items-center justify-between">
-          <span>Select Advertisement &amp; How-To Topic (12 Features):</span>
+          <span>Select Advertisement &amp; How-To Topic ({topics.length} Features):</span>
           <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">Click any item below to view image &amp; caption</span>
         </div>
 
@@ -1014,33 +1042,57 @@ const TopicMockupRenderer: React.FC<{
     case 'wmcw_dashboard':
       return (
         <AppViewportChrome activeView="Dashboard">
-          {/* 5 TOP VITAL METRIC CARDS */}
+          {/* 5 TOP VITAL METRIC CARDS WITH CALC BUTTONS */}
           <div className="grid grid-cols-5 gap-1.5 text-center">
             <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
-              <div className="text-[7px] font-bold text-slate-500 uppercase">Net Worth</div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[6.5px] font-bold text-slate-500 uppercase">Net Worth</span>
+                <span className="text-[6px] font-black text-blue-900 bg-blue-100 px-1 py-0.2 rounded flex items-center gap-0.5">Calc 🔍</span>
+              </div>
               <div className="text-[10px] font-black text-emerald-600">+{formatCurrency(metrics?.totalAssets - metrics?.totalDebt)}</div>
               <div className="text-[6.5px] text-emerald-700 font-semibold mt-0.5">▲ +$8,450 MoM</div>
             </div>
             <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
-              <div className="text-[7px] font-bold text-slate-500 uppercase">Total Assets</div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[6.5px] font-bold text-slate-500 uppercase">Total Assets</span>
+                <span className="text-[6px] font-black text-blue-900 bg-blue-100 px-1 py-0.2 rounded flex items-center gap-0.5">Calc 🔍</span>
+              </div>
               <div className="text-[10px] font-black text-blue-900">{formatCurrency(metrics?.totalAssets || 257400)}</div>
               <div className="text-[6.5px] text-slate-500 mt-0.5">4 Accounts</div>
             </div>
             <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
-              <div className="text-[7px] font-bold text-slate-500 uppercase">Total Debt</div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[6.5px] font-bold text-slate-500 uppercase">Total Debt</span>
+                <span className="text-[6px] font-black text-rose-900 bg-rose-100 px-1 py-0.2 rounded flex items-center gap-0.5">Calc 🔍</span>
+              </div>
               <div className="text-[10px] font-black text-rose-600">-{formatCurrency(metrics?.totalDebt || 116850)}</div>
               <div className="text-[6.5px] text-slate-500 mt-0.5">$1.4k Cards / $115k Loans</div>
             </div>
             <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
-              <div className="text-[7px] font-bold text-slate-500 uppercase">Monthly Income</div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[6.5px] font-bold text-slate-500 uppercase">Monthly Income</span>
+                <span className="text-[6px] font-black text-emerald-900 bg-emerald-100 px-1 py-0.2 rounded flex items-center gap-0.5">Calc 🔍</span>
+              </div>
               <div className="text-[10px] font-black text-emerald-600">+{formatCurrency(metrics?.monthlyIncome || 9350)}</div>
               <div className="text-[6.5px] text-slate-500 mt-0.5">2 Sources</div>
             </div>
             <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-xs">
-              <div className="text-[7px] font-bold text-slate-500 uppercase">DTI Ratio</div>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[6.5px] font-bold text-slate-500 uppercase">DTI Ratio</span>
+                <span className="text-[6px] font-black text-emerald-900 bg-emerald-100 px-1 py-0.2 rounded flex items-center gap-0.5">Calc 🔍</span>
+              </div>
               <div className="text-[10px] font-black text-emerald-600">{metrics?.dti.toFixed(1) || '33.1'}%</div>
               <div className="text-[6.5px] text-emerald-700 font-bold mt-0.5">Optimal (≤36%)</div>
             </div>
+          </div>
+
+          {/* Interactive Calculation Notice Pill */}
+          <div className="bg-blue-50/80 border border-blue-200/80 px-2 py-0.5 rounded-lg flex items-center justify-between text-[7px] text-blue-900">
+            <span className="flex items-center gap-1">
+              <span className="font-bold">💡 Interactive Feature:</span>
+              <span>Click any of the 5 cards above to view formula details &amp; highlighted user-entered inputs</span>
+            </span>
+            <span className="font-bold text-blue-700">∑ Math Engine</span>
           </div>
 
           {/* DASHBOARD CORE: CHART & CREDIT SCORES */}
@@ -1127,6 +1179,129 @@ const TopicMockupRenderer: React.FC<{
                 <span className="text-blue-900 font-black ml-1">$18,000.00</span>
               </div>
               <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[7px]">5.8 Mo Runway</span>
+            </div>
+          </div>
+        </AppViewportChrome>
+      );
+
+    case 'calculation_breakdowns':
+      return (
+        <AppViewportChrome activeView="Dashboard">
+          {/* THE ACTUAL CALCULATION FORMULA & PROVENANCE AUDIT MODAL OVERLAY */}
+          <div className="bg-slate-900 text-white rounded-xl border-2 border-blue-500 shadow-2xl overflow-hidden p-2.5 space-y-2">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-700 text-[8.5px]">
+              <div className="flex items-center gap-1.5 font-black">
+                <span className="w-5 h-5 rounded-lg bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold text-[9px] border border-blue-500/40">∑</span>
+                <span className="text-white">Calculation Formula &amp; Input Breakdown</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[6.5px] border border-emerald-500/40">
+                  LIVE AUDIT
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[7px]">
+                <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700">
+                  Download .PNG
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold">
+                  Edit Inputs
+                </span>
+                <span className="text-slate-400 text-[9px] ml-1">✕</span>
+              </div>
+            </div>
+
+            {/* Metric Switcher Tab Bar */}
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[7px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-blue-600 text-white shadow-xs">NET WORTH</span>
+              <span className="px-2 py-0.5 rounded text-slate-400 hover:text-white">TOTAL ASSETS</span>
+              <span className="px-2 py-0.5 rounded text-slate-400 hover:text-white">TOTAL DEBT</span>
+              <span className="px-2 py-0.5 rounded text-slate-400 hover:text-white">MONTHLY INCOME</span>
+              <span className="px-2 py-0.5 rounded text-slate-400 hover:text-white">DTI RATIO</span>
+            </div>
+
+            {/* Formula Equation Flow Ribbon */}
+            <div className="bg-slate-950/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between text-[7.5px]">
+              <div className="bg-slate-900 px-2 py-1 rounded border border-sky-500/50 text-center">
+                <span className="text-[6.5px] text-sky-400 block font-bold">TOTAL ASSETS (A)</span>
+                <span className="text-[9.5px] font-black text-white font-mono">$257,400.00</span>
+                <span className="text-[6px] text-slate-400 block">4 Accounts</span>
+              </div>
+
+              <span className="text-base font-black text-slate-400">−</span>
+
+              <div className="bg-slate-900 px-2 py-1 rounded border border-rose-500/50 text-center">
+                <span className="text-[6.5px] text-rose-400 block font-bold">TOTAL DEBT (B)</span>
+                <span className="text-[9.5px] font-black text-white font-mono">$116,850.00</span>
+                <span className="text-[6px] text-slate-400 block">5 Accounts</span>
+              </div>
+
+              <span className="text-base font-black text-slate-400">=</span>
+
+              <div className="bg-emerald-950/60 px-2.5 py-1 rounded border border-emerald-500 text-center shadow-xs">
+                <span className="text-[6.5px] text-emerald-400 block font-bold">NET WORTH (A − B)</span>
+                <span className="text-[10.5px] font-black text-emerald-300 font-mono">+$140,550.00</span>
+                <span className="text-[6px] text-emerald-400 block font-bold">✓ Verified</span>
+              </div>
+            </div>
+
+            {/* Highlighted User Inputs Columns */}
+            <div className="grid grid-cols-2 gap-2 text-[7px]">
+              {/* Assets Entered */}
+              <div className="bg-slate-950 p-2 rounded-lg border border-sky-900/60 space-y-1">
+                <div className="flex items-center justify-between text-sky-400 font-bold border-b border-slate-800 pb-0.5">
+                  <span>★ USER-ENTERED ASSETS</span>
+                  <span className="text-sky-300">Cyan Highlight</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Home Equity (#7724)</span>
+                    <span className="font-mono text-sky-300 bg-sky-950/80 px-1 rounded border border-sky-500/40 font-bold">+$126,500</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Fidelity 401(k) (#9102)</span>
+                    <span className="font-mono text-sky-300 bg-sky-950/80 px-1 rounded border border-sky-500/40 font-bold">+$94,600</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Marcus HYSA (#4821)</span>
+                    <span className="font-mono text-sky-300 bg-sky-950/80 px-1 rounded border border-sky-500/40 font-bold">+$18,000</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Coinbase BTC (#3318)</span>
+                    <span className="font-mono text-sky-300 bg-sky-950/80 px-1 rounded border border-sky-500/40 font-bold">+$18,300</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Debts Entered */}
+              <div className="bg-slate-950 p-2 rounded-lg border border-rose-900/60 space-y-1">
+                <div className="flex items-center justify-between text-rose-400 font-bold border-b border-slate-800 pb-0.5">
+                  <span>★ USER-ENTERED DEBTS</span>
+                  <span className="text-rose-300">Rose Highlight</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Mortgage Balance</span>
+                    <span className="font-mono text-rose-300 bg-rose-950/80 px-1 rounded border border-rose-500/40 font-bold">−$75,000</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">BMW i4 Loan (#9012)</span>
+                    <span className="font-mono text-rose-300 bg-rose-950/80 px-1 rounded border border-rose-500/40 font-bold">−$40,050</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Chase Sapphire (#4819)</span>
+                    <span className="font-mono text-rose-300 bg-rose-950/80 px-1 rounded border border-rose-500/40 font-bold">−$900</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                    <span className="text-slate-300 font-medium">Amex Plat &amp; Apple Card</span>
+                    <span className="font-mono text-rose-300 bg-rose-950/80 px-1 rounded border border-rose-500/40 font-bold">−$500</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-1 flex items-center justify-between text-[6.5px] text-slate-400 border-t border-slate-800">
+              <span>🔒 WhatsMyCreditWorth Mathematical Audit Engine • Direct arithmetic verification</span>
+              <span className="text-blue-400 font-bold">Click any of the 5 metrics on Dashboard to launch</span>
             </div>
           </div>
         </AppViewportChrome>
