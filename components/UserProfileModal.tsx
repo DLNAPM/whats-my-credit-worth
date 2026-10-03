@@ -282,27 +282,37 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
                 🔗
               </div>
               <div>
-                <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                  Linked Gmail Accounts &amp; Merge
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-bold text-sm text-gray-900 dark:text-white">
+                    Linked Gmail Accounts &amp; Merge
+                  </h4>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/40">
+                    ⭐ Premium Feature
+                  </span>
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                     Spouse / Business
                   </span>
-                </h4>
+                </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                  Link your spouse's account or commercial business account to view joint net worth or merge accounts into your finances.
+                  Link your spouse's account or commercial business account to view joint net worth or merge accounts into your finances. Exclusive to Premium Account Holders.
                 </p>
               </div>
             </div>
             {onOpenLinkedAccounts && (
               <Button
                 onClick={() => {
-                  onClose();
-                  onOpenLinkedAccounts();
+                  if (isPremium) {
+                    onClose();
+                    onOpenLinkedAccounts();
+                  } else {
+                    onClose();
+                    if (onOpenMembership) onOpenMembership();
+                  }
                 }}
                 size="small"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shrink-0 self-start sm:self-auto"
               >
-                Manage &amp; Merge ↗
+                {isPremium ? 'Manage & Merge ↗' : 'Unlock with Premium ⭐'}
               </Button>
             )}
           </div>

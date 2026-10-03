@@ -50,6 +50,7 @@ const MembershipModal: React.FC<MembershipModalProps> = ({ isOpen, onClose }) =>
             {[
               { icon: <SimulationIcon />, text: 'Run Simulations & Predict Scores*' },
               { icon: <SparklesIcon />, text: 'AI Deep Dive & Advisor Insights*' },
+              { icon: <span className="text-base">🔗</span>, text: 'Link & Merge Spouse or Business Gmail Accounts*' },
               { icon: <DownloadIcon />, text: 'Export PDF Reports & High-Res Printing*' },
               { icon: <FeatureShieldIcon />, text: 'Publish Private Live Snapshots*' }
             ].map((feature, i) => (

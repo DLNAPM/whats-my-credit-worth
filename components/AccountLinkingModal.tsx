@@ -20,7 +20,9 @@ import {
   getDisplayUrl
 } from '../utils/helpers';
 import Button from './ui/Button';
-import { CloseIcon, CheckIcon, FeatureShieldIcon } from './ui/Icons';
+import { CloseIcon, CheckIcon, FeatureShieldIcon, SparklesIcon, GoldAsterisk } from './ui/Icons';
+import { useAuth } from '../contexts/AuthContext';
+import MembershipModal from './MembershipModal';
 
 interface AccountLinkingModalProps {
   isOpen: boolean;
@@ -32,6 +34,7 @@ interface AccountLinkingModalProps {
   businessName?: string;
   userId?: string;
   userEmail?: string;
+  onOpenMembership?: () => void;
 }
 
 export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
@@ -43,10 +46,21 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
   activeAccountType,
   businessName = '',
   userId,
-  userEmail
+  userEmail,
+  onOpenMembership
 }) => {
+  const { isPremium } = useAuth();
+  const [isMembershipOpen, setIsMembershipOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'connections' | 'merge' | 'consolidated'>('connections');
   const [connections, setConnections] = useState<LinkedAccountConnection[]>(() => loadLinkedAccounts(userId));
+
+  const handleTriggerUpgrade = () => {
+    if (onOpenMembership) {
+      onOpenMembership();
+    } else {
+      setIsMembershipOpen(true);
+    }
+  };
 
   // Form State for Adding New Connection
   const [newEmail, setNewEmail] = useState('');
@@ -126,6 +140,10 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
   // Handlers
   const handleAddConnection = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPremium) {
+      handleTriggerUpgrade();
+      return;
+    }
     setFormError(null);
     const email = newEmail.trim().toLowerCase();
 
@@ -180,6 +198,10 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
   };
 
   const handleResetToPresets = () => {
+    if (!isPremium) {
+      handleTriggerUpgrade();
+      return;
+    }
     localStorage.removeItem(`wmcw_linked_accounts_${userId || 'guest'}`);
     const presets = loadLinkedAccounts(userId);
     setConnections(presets);
@@ -189,6 +211,10 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
   };
 
   const handleExecuteMerge = async () => {
+    if (!isPremium) {
+      handleTriggerUpgrade();
+      return;
+    }
     if (!selectedConnection || !selectedConnection.financialData) {
       alert("Please select a linked account with available data to merge.");
       return;
@@ -245,8 +271,11 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
               🔗
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-lg font-bold text-white">Linked Accounts &amp; Data Merging</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-400 text-gray-900 border border-amber-300 flex items-center gap-1 shadow-sm">
+                  ⭐ Premium Exclusive
+                </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-white/20 text-white border border-white/30">
                   Spouse &amp; Business Gmail Sync
                 </span>
@@ -307,6 +336,35 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
             Reload Samples
           </button>
         </div>
+
+        {/* Premium Upgrade Callout Banner if not premium */}
+        {!isPremium && (
+          <div className="px-6 py-3.5 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-purple-500/15 dark:from-amber-950/50 dark:via-orange-950/40 dark:to-purple-950/50 border-b border-amber-300 dark:border-amber-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shrink-0 mt-0.5">
+                ⭐
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-extrabold text-xs text-amber-950 dark:text-amber-200 uppercase tracking-wider">
+                    Premium Account Holder Exclusive
+                  </h4>
+                </div>
+                <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5 leading-relaxed">
+                  Only <strong>Premium User Account Holders</strong> have the ability to link and merge financial data from other Gmail accounts (such as a Spouse's Account or Business / LLC Account) directly into their Personal or Business account.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleTriggerUpgrade}
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-xs rounded-xl shadow-md transition-all whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5 shrink-0"
+            >
+              <SparklesIcon className="w-3.5 h-3.5 text-white" />
+              <span>Upgrade to Premium ($11.11) ↗</span>
+            </button>
+          </div>
+        )}
 
         {/* Notification Toast */}
         {actionNotice && (
@@ -518,12 +576,23 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
                     <span className="text-[11px] text-gray-500">
                       🔒 End-to-end user encrypted • Links can be unlinked at any time.
                     </span>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
-                    >
-                      <span>Connect Account</span>
-                    </button>
+                    {isPremium ? (
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                      >
+                        <span>Connect Account</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleTriggerUpgrade}
+                        className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                      >
+                        <SparklesIcon className="w-3.5 h-3.5" />
+                        <span>⭐ Unlock with Premium to Connect</span>
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>
@@ -772,6 +841,24 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
                     ✓ {mergeSuccessDetails}
                   </div>
                 )}
+
+                {!isPremium && (
+                  <div className="p-3 bg-amber-500/20 border border-amber-400/40 rounded-xl text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🔒</span>
+                      <span>
+                        <strong>Interactive Preview:</strong> You are viewing projected balances. Only Premium User Account Holders can merge and add data directly into their {targetDestination === 'personal' ? 'Personal' : 'Business'} account.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTriggerUpgrade}
+                      className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg shrink-0 transition-colors self-start sm:self-auto"
+                    >
+                      Unlock with Premium ↗
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -779,23 +866,34 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
                 <Button variant="secondary" onClick={onClose} disabled={isMerging}>
                   Cancel
                 </Button>
-                <button
-                  type="button"
-                  onClick={handleExecuteMerge}
-                  disabled={isMerging || !selectedConnection}
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
-                >
-                  {isMerging ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                      <span>Merging &amp; Updating Cloud...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>⚡ Add to My {targetDestination === 'personal' ? 'Personal' : 'Business'} Account</span>
-                    </>
-                  )}
-                </button>
+                {isPremium ? (
+                  <button
+                    type="button"
+                    onClick={handleExecuteMerge}
+                    disabled={isMerging || !selectedConnection}
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+                  >
+                    {isMerging ? (
+                      <>
+                        <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                        <span>Merging &amp; Updating Cloud...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡ Add to My {targetDestination === 'personal' ? 'Personal' : 'Business'} Account</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleTriggerUpgrade}
+                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <SparklesIcon className="w-4 h-4 text-white" />
+                    <span>⭐ Upgrade to Premium to Merge &amp; Add Data</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -950,18 +1048,34 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
               </div>
 
               {/* Call to action */}
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/60 rounded-2xl border border-blue-200 dark:border-blue-800/60 flex items-center justify-between gap-3 text-xs">
-                <span className="text-blue-900 dark:text-blue-200">
-                  💡 Want to permanently add these accounts to your record? Switch to the <strong>Merge Data Tool</strong>.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('merge')}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition-colors whitespace-nowrap shrink-0"
-                >
-                  Merge into My Account ↗
-                </button>
-              </div>
+              {isPremium ? (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/60 rounded-2xl border border-blue-200 dark:border-blue-800/60 flex items-center justify-between gap-3 text-xs">
+                  <span className="text-blue-900 dark:text-blue-200">
+                    💡 Want to permanently add these accounts to your record? Switch to the <strong>Merge Data Tool</strong>.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('merge')}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition-colors whitespace-nowrap shrink-0"
+                  >
+                    Merge into My Account ↗
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/60 rounded-2xl border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <span className="text-amber-900 dark:text-amber-200">
+                    ⭐ Want to merge these accounts into your personal or business financial record? This is exclusive to <strong>Premium Account Holders</strong>.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleTriggerUpgrade}
+                    className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl shadow transition-colors whitespace-nowrap shrink-0 flex items-center gap-1 self-start sm:self-auto"
+                  >
+                    <SparklesIcon className="w-3.5 h-3.5" />
+                    <span>Unlock with Premium ↗</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -975,6 +1089,11 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
           </Button>
         </div>
       </div>
+
+      <MembershipModal 
+        isOpen={isMembershipOpen} 
+        onClose={() => setIsMembershipOpen(false)} 
+      />
     </div>
   );
 };

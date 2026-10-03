@@ -142,6 +142,9 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextS
                 <span className="text-xs font-bold text-gray-900 dark:text-white">
                   Multi-Account Hub: Spouse &amp; Business Gmail Sync
                 </span>
+                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/40">
+                  ⭐ Premium
+                </span>
                 <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                   {accountType === 'business' ? 'Business Mode' : 'Personal Mode'}
                 </span>
@@ -153,10 +156,17 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextS
           </div>
           {onOpenLinkedAccounts && (
             <button
-              onClick={onOpenLinkedAccounts}
+              onClick={() => {
+                if (isPremium) {
+                  onOpenLinkedAccounts();
+                } else {
+                  setIsMembershipOpen(true);
+                }
+              }}
               className="px-3.5 py-1.5 text-xs font-bold bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-indigo-700 dark:text-indigo-300 rounded-xl border border-indigo-200 dark:border-indigo-800 shadow-sm transition-all whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5 shrink-0"
             >
-              <span>⚡ Link &amp; Merge Accounts ↗</span>
+              <span>⚡ Link &amp; Merge Accounts</span>
+              <GoldAsterisk className="text-amber-500" />
             </button>
           )}
         </div>

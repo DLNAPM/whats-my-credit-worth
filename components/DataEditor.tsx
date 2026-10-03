@@ -845,10 +845,13 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
             )}
             {onOpenLinkedAccounts && (
               <div className="mt-3 p-2.5 rounded-xl bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-100 dark:border-indigo-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm">🔗</span>
                   <span className="text-xs text-gray-700 dark:text-gray-300">
                     Want to import or merge accounts from a <strong>Spouse's Gmail</strong> or <strong>Business Gmail</strong>?
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/40">
+                    ⭐ Premium
                   </span>
                 </div>
                 <button

@@ -384,6 +384,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           businessName={businessName}
           userId={user?.uid}
           userEmail={user?.email || undefined}
+          onOpenMembership={() => setIsChatbotMembershipOpen(true)}
         />
 
         <input
