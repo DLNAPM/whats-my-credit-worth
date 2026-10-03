@@ -19,6 +19,7 @@ interface DashboardProps {
   monthYear: string;
   onNextStepsSync?: () => void;
   onEdit?: () => void;
+  onOpenLinkedAccounts?: () => void;
 }
 
 const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
@@ -27,13 +28,13 @@ const ProgressBar: React.FC<{ value: number }> = ({ value }) => {
   return <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5"><div className={`${colorClass} h-2.5 rounded-full`} style={{ width: `${utilization}%` }}></div></div>;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextStepsSync, onEdit }) => {
+const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextStepsSync, onEdit, onOpenLinkedAccounts }) => {
   const [chartView, setChartView] = useState<'netWorth' | 'creditScores'>('netWorth');
   const [liabilityView, setLiabilityView] = useState<'cards' | 'loans'>('cards');
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
   const [isMembershipOpen, setIsMembershipOpen] = useState(false);
   const [selectedCalcMetric, setSelectedCalcMetric] = useState<CalculationMetricType | null>(null);
-  const { isPremium } = useAuth();
+  const { isPremium, accountType, businessName } = useAuth();
 
   if (!data) return <div className="text-center py-10"><h2 className="text-xl font-semibold">No data available.</h2></div>;
 
@@ -129,6 +130,36 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextS
         </div>
 
         <FinancialFreedomSteps monthlyIncome={totalIncome} />
+
+        {/* Multi-Account Hub: Spouse & Business Linking Quick Bar */}
+        <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-purple-50/80 dark:from-gray-800 dark:to-gray-800/80 p-3.5 rounded-2xl border border-indigo-100 dark:border-gray-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-bold shrink-0">
+              🔗
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-900 dark:text-white">
+                  Multi-Account Hub: Spouse &amp; Business Gmail Sync
+                </span>
+                <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                  {accountType === 'business' ? 'Business Mode' : 'Personal Mode'}
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                Link data from spouse's Gmail or business account, inspect joint household numbers, or merge accounts into your {accountType === 'business' ? (businessName || 'Business') : 'Personal'} Account.
+              </p>
+            </div>
+          </div>
+          {onOpenLinkedAccounts && (
+            <button
+              onClick={onOpenLinkedAccounts}
+              className="px-3.5 py-1.5 text-xs font-bold bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-indigo-700 dark:text-indigo-300 rounded-xl border border-indigo-200 dark:border-indigo-800 shadow-sm transition-all whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5 shrink-0"
+            >
+              <span>⚡ Link &amp; Merge Accounts ↗</span>
+            </button>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card 

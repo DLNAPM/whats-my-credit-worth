@@ -133,6 +133,56 @@ export interface RecommendationItem {
 
 export type AccountType = 'personal' | 'business';
 
+export type LinkedAccountRole = 'spouse' | 'business' | 'partner' | 'secondary';
+export type LinkedAccountStatus = 'active' | 'pending' | 'invited';
+
+export interface LinkedAccountConnection {
+  id: string;
+  targetEmail: string;              // e.g. "spouse@gmail.com" or "business@gmail.com"
+  targetName?: string;              // e.g. "Sarah (Spouse)" or "Apex Holdings LLC"
+  role: LinkedAccountRole;          // 'spouse' | 'business' | 'partner' | 'secondary'
+  status: LinkedAccountStatus;      // 'active' | 'pending' | 'invited'
+  linkedAt: string;
+  notes?: string;
+  allowTwoWaySync?: boolean;
+  lastSyncedAt?: string;
+  financialData?: FinancialData;
+}
+
+export interface MergeOptions {
+  sourceId: string;
+  sourceRole: LinkedAccountRole;
+  sourceEmail: string;
+  targetDestination: 'personal' | 'business'; // add to user's personal or business account
+  selectedMonth: string; // specific month (e.g. '2026-10') or 'all'
+  categories: {
+    creditCards: boolean;
+    loans: boolean;
+    assets: boolean;
+    monthlyBills: boolean;
+    income: boolean;
+  };
+  prefixTag: boolean;
+  customTag?: string;
+  duplicateResolution: 'keep_both' | 'merge_sum' | 'skip';
+}
+
+export interface MergeHistoryLog {
+  id: string;
+  mergedAt: string;
+  sourceEmail: string;
+  sourceRole: LinkedAccountRole;
+  targetDestination: 'personal' | 'business';
+  monthYear: string;
+  summary: {
+    cardsAdded: number;
+    loansAdded: number;
+    assetsAdded: number;
+    billsAdded: number;
+    jobsAdded: number;
+  };
+}
+
 export interface AppUser extends User {
   uid: string;
   email: string | null;

@@ -18,6 +18,7 @@ interface HeaderProps {
   onImportExport: () => void;
   onRecommendations: () => void;
   onNextStepsSync?: () => void;
+  onOpenLinkedAccounts?: () => void;
   view: View;
   setView: (view: View) => void;
   onLogout: () => Promise<void>;
@@ -35,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({
   onImportExport,
   onRecommendations,
   onNextStepsSync,
+  onOpenLinkedAccounts,
   view,
   setView,
   onLogout,
@@ -132,6 +134,19 @@ const Header: React.FC<HeaderProps> = ({
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                     </button>
                 </div>
+            )}
+            {onOpenLinkedAccounts && (
+              <button
+                onClick={onOpenLinkedAccounts}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white shadow hover:shadow-md hover:opacity-95 transition-all"
+                title="Link & Merge data from Spouse or Business Gmail accounts"
+              >
+                <span>🔗</span>
+                <span className="hidden sm:inline">Linked Accounts</span>
+                <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                  Merge
+                </span>
+              </button>
             )}
             <Button onClick={onEdit} variant="primary"><EditIcon /> Edit</Button>
             {onNextStepsSync && (

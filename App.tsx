@@ -28,6 +28,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import StockTickerBanner from './components/StockTickerBanner';
 import UserProfileModal from './components/UserProfileModal';
 import NextStepsSyncModal from './components/NextStepsSyncModal';
+import AccountLinkingModal from './components/AccountLinkingModal';
 import { ShieldAlertIcon } from './components/ui/Icons';
 
 /**
@@ -135,6 +136,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
   const [isDashboardHelpOpen, setIsDashboardHelpOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isChatbotMembershipOpen, setIsChatbotMembershipOpen] = useState(false);
+  const [isAccountLinkingOpen, setIsAccountLinkingOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentMonthData = useMemo(() => getMonthData(currentMonthYear), [getMonthData, currentMonthYear]);
@@ -198,6 +200,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           onImportExport={() => setIsImportExportModalOpen(true)}
           onRecommendations={() => setIsRecommendationsOpen(true)}
           onNextStepsSync={() => setIsNextStepsSyncOpen(true)}
+          onOpenLinkedAccounts={() => setIsAccountLinkingOpen(true)}
           view={view}
           setView={setView}
           onLogout={handleLogout}
@@ -215,6 +218,7 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
               monthYear={currentMonthYear}
               onNextStepsSync={() => setIsNextStepsSyncOpen(true)}
               onEdit={() => setIsEditorOpen(true)}
+              onOpenLinkedAccounts={() => setIsAccountLinkingOpen(true)}
             />
           )}
           {view === 'reports' && (
@@ -266,6 +270,10 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           isOpen={isEditorOpen}
           onClose={() => setIsEditorOpen(false)}
           monthYear={currentMonthYear}
+          onOpenLinkedAccounts={() => {
+            setIsEditorOpen(false);
+            setIsAccountLinkingOpen(true);
+          }}
         />
         
         <UploadHelpModal 
@@ -361,6 +369,21 @@ const MainApp: React.FC<{ view: View; setView: (v: View) => void }> = ({ view, s
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
           onOpenMembership={() => setIsChatbotMembershipOpen(true)}
+          onOpenLinkedAccounts={() => setIsAccountLinkingOpen(true)}
+        />
+
+        <AccountLinkingModal
+          isOpen={isAccountLinkingOpen}
+          onClose={() => setIsAccountLinkingOpen(false)}
+          currentMonthYear={currentMonthYear}
+          financialData={financialData}
+          onUpdateFinancialData={async (updated) => {
+            await saveData(updated);
+          }}
+          activeAccountType={accountType}
+          businessName={businessName}
+          userId={user?.uid}
+          userEmail={user?.email || undefined}
         />
 
         <input

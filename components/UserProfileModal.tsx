@@ -8,13 +8,14 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenMembership?: () => void;
+  onOpenLinkedAccounts?: () => void;
 }
 
 const POPULAR_TICKERS = ['AAPL', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'AMD', 'SPY', 'QQQ', 'BTC', 'ETH'];
 
 const BUSINESS_ENTITY_TYPES = ['LLC', 'S-Corporation', 'C-Corporation', 'Sole Proprietorship', 'Partnership', 'Non-Profit'];
 
-const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, onOpenMembership }) => {
+const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, onOpenMembership, onOpenLinkedAccounts }) => {
   const { 
     user, 
     isPremium, 
@@ -271,6 +272,38 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, on
                   </select>
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Linked Gmail Accounts & Merging (Spouse & Business) */}
+          <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-purple-50/70 dark:from-gray-800/80 dark:to-gray-800/50 p-4 rounded-2xl border border-indigo-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 text-lg shrink-0 mt-0.5">
+                🔗
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                  Linked Gmail Accounts &amp; Merge
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                    Spouse / Business
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                  Link your spouse's account or commercial business account to view joint net worth or merge accounts into your finances.
+                </p>
+              </div>
+            </div>
+            {onOpenLinkedAccounts && (
+              <Button
+                onClick={() => {
+                  onClose();
+                  onOpenLinkedAccounts();
+                }}
+                size="small"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shrink-0 self-start sm:self-auto"
+              >
+                Manage &amp; Merge ↗
+              </Button>
             )}
           </div>
 

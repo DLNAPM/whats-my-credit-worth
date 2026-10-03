@@ -194,6 +194,11 @@ export function useFinancialData() {
     exportTemplateData: () => {}, 
     saveStatus,
     refreshCounter,
-    saveData: () => persistData(dataRef.current)
+    saveData: (customData?: FinancialData) => {
+      const target = customData || dataRef.current;
+      setFinancialData(target);
+      dataRef.current = target;
+      return persistData(target);
+    }
   };
 }
