@@ -1,7 +1,21 @@
 
 import React, { useState } from 'react';
 import type { MonthlyData, FinancialData } from '../types';
-import { calculateNetWorth, calculateTotal, calculateTotalBalance, calculateTotalLimit, calculateUtilization, formatCurrency, getUtilizationColor, calculateMonthlyIncome, calculateDTI, formatExternalUrl, getDisplayUrl } from '../utils/helpers';
+import { 
+  calculateNetWorth, 
+  calculateTotal, 
+  calculateTotalBalance, 
+  calculateTotalLimit, 
+  calculateUtilization, 
+  formatCurrency, 
+  getUtilizationColor, 
+  calculateMonthlyIncome, 
+  calculateDTI, 
+  formatExternalUrl, 
+  getDisplayUrl,
+  calculateTotalCoverage,
+  calculateTotalMonthlyInsuranceCost
+} from '../utils/helpers';
 import Card from './ui/Card';
 import Metric from './ui/Metric';
 import NetWorthChart from './charts/NetWorthChart';
@@ -380,6 +394,192 @@ const Dashboard: React.FC<DashboardProps> = ({ data, allData, monthYear, onNextS
                 </div>
             </Card>
         </div>
+
+        {/* Term Life Insurance & Wealth Protection Ledger */}
+        {(() => {
+          const policies = data.termLifeInsurance || [];
+          const totalCoverage = calculateTotalCoverage(policies);
+          const totalMonthlyCost = calculateTotalMonthlyInsuranceCost(policies);
+          const incomeReplacementNeed = (totalIncome * 12 * 10) + totalDebt;
+          const protectionCoveragePct = incomeReplacementNeed > 0 ? (totalCoverage / incomeReplacementNeed) * 100 : 0;
+
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/80 p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-700/80 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg font-bold shrink-0">
+                    🛡️
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <span>Term Life Insurance &amp; Family Protection Portfolio</span>
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                        {policies.length} {policies.length === 1 ? 'Policy' : 'Policies'}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Death benefit capital, policy duration, beneficiaries, and premium schedules shielding your household &amp; enterprise
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {onEdit && (
+                    <button
+                      onClick={onEdit}
+                      className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                    >
+                      <span>+ Add / Edit Policies</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* High-level Coverage Audit Chips */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200/70 dark:border-gray-700/60">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">Total Death Benefit</span>
+                  <span className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400 block mt-0.5">
+                    {formatCurrency(totalCoverage)}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200/70 dark:border-gray-700/60">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">Monthly Premium Equivalent</span>
+                  <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                    {formatCurrency(totalMonthlyCost)}/mo
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200/70 dark:border-gray-700/60">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">Debt + 10x Income Benchmark</span>
+                  <span className="text-lg font-bold font-mono text-gray-700 dark:text-gray-300 block mt-0.5">
+                    {formatCurrency(incomeReplacementNeed)}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200/70 dark:border-gray-700/60">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">Protection Score</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-lg font-bold font-mono ${protectionCoveragePct >= 100 ? 'text-emerald-600 dark:text-emerald-400' : protectionCoveragePct >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                      {protectionCoveragePct.toFixed(0)}%
+                    </span>
+                    <span className="text-[10px] text-gray-500">of benchmark</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Policy Table / List */}
+              {policies.length === 0 ? (
+                <div className="p-6 text-center rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-dashed border-gray-200 dark:border-gray-700 space-y-2">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    No term life policies entered yet for this month.
+                  </p>
+                  {onEdit && (
+                    <button
+                      onClick={onEdit}
+                      className="px-3.5 py-1.5 bg-brand-primary text-white text-xs font-bold rounded-lg shadow-xs hover:bg-brand-secondary transition-all"
+                    >
+                      Add Your First Term Life Policy
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {policies.map(policy => (
+                    <div
+                      key={policy.id}
+                      className="p-4 rounded-xl bg-gray-50/70 dark:bg-gray-800/60 border border-gray-200/80 dark:border-gray-700/70 hover:border-blue-300 dark:hover:border-blue-800 transition-all space-y-2.5"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-sm text-gray-900 dark:text-white">
+                              {policy.policyName}
+                            </h4>
+                            {policy.isBusiness && (
+                              <span className="px-1.5 py-0.2 text-[9px] font-extrabold uppercase rounded bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300">
+                                🏢 Commercial
+                              </span>
+                            )}
+                            {policy.status && (
+                              <span className={`px-1.5 py-0.2 text-[9px] font-extrabold uppercase rounded ${
+                                policy.status === 'active' ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                              }`}>
+                                {policy.status}
+                              </span>
+                            )}
+                          </div>
+                          {policy.insuranceCompany && (
+                            <span className="text-xs text-gray-500 font-medium block mt-0.5">
+                              Carrier: {policy.insuranceCompany}
+                              {policy.policyNumber && ` • Policy #${policy.policyNumber}`}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-sm font-bold font-mono text-blue-600 dark:text-blue-400 block">
+                            {formatCurrency(policy.coverageAmount)}
+                          </span>
+                          <span className="text-[11px] text-gray-500 font-medium block">
+                            {formatCurrency(policy.premiumAmount)} / {policy.premiumFrequency}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-gray-600 dark:text-gray-400 pt-1 border-t border-gray-200/60 dark:border-gray-700/50">
+                        <div>
+                          <span className="text-gray-400 block text-[10px]">Insured Person:</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">{policy.insuredPerson || 'Primary'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 block text-[10px]">Primary Beneficiary:</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200 truncate block">{policy.beneficiary || 'Spouse / Trust'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 block text-[10px]">Term Expiration:</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {policy.policyEndDate || `${policy.termLengthYears || 20} Years`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {policy.riders && policy.riders.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1 text-[10px]">
+                          {policy.riders.map((r, i) => (
+                            <span key={i} className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium border border-blue-200/60 dark:border-blue-800/40">
+                              ✓ {r}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {policy.url && (
+                        <div className="pt-1 flex items-center justify-between text-[11px]">
+                          <a
+                            href={formatExternalUrl(policy.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          >
+                            <span>Carrier Online Portal</span>
+                            <span className="text-[9px]">↗</span>
+                          </a>
+                          {policy.notes && (
+                            <span className="text-[10px] text-gray-400 truncate max-w-[200px]" title={policy.notes}>
+                              {policy.notes}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
         
         <SimulationModal isOpen={isSimulationOpen} onClose={() => setIsSimulationOpen(false)} data={data} monthYear={monthYear} />
         <MembershipModal isOpen={isMembershipOpen} onClose={() => setIsMembershipOpen(false)} />

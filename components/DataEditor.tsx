@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource } from '../types';
+import type { MonthlyData, NamedAmount, CreditCard, Loan, Asset, IncomeSource, TermLifeInsurance } from '../types';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { formatMonthYear, isValidMonthYear, formatCurrency, formatExternalUrl, getDisplayUrl } from '../utils/helpers';
 import Button from './ui/Button';
@@ -20,7 +20,7 @@ const InputField = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<
     </div>
 ));
 
-type ItemType = 'creditCards' | 'loans' | 'assets' | 'monthlyBills';
+type ItemType = 'creditCards' | 'loans' | 'assets' | 'monthlyBills' | 'termLifeInsurance';
 
 const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onOpenLinkedAccounts }) => {
   const { getMonthData, updateMonthData, financialData, saveData } = useFinancialData();
@@ -54,6 +54,9 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
         deepClonedData.loans.forEach((item: Loan) => item.id = crypto.randomUUID());
         deepClonedData.assets.forEach((item: Asset) => item.id = crypto.randomUUID());
         deepClonedData.monthlyBills.forEach((item: NamedAmount) => item.id = crypto.randomUUID());
+        if (deepClonedData.termLifeInsurance) {
+          deepClonedData.termLifeInsurance.forEach((item: TermLifeInsurance) => item.id = crypto.randomUUID());
+        }
 
         setData(deepClonedData);
         setCopyFromMonth(''); 
@@ -126,7 +129,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
   const handleListChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, list: ItemType) => {
     const { name, value, type } = e.target as any;
     setData(prev => {
-        const items = [...prev[list]];
+        const items = [...((prev[list] as any[]) || [])];
         let formattedValue: any = value;
 
         if (type === 'checkbox') {
@@ -139,7 +142,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
                 last4: formattedValue
             };
             return { ...prev, [list]: items as any };
-        } else if (['name', 'lenderName', 'institution', 'apr', 'apy', 'url', 'notes', 'info', 'category'].includes(name)) {
+        } else if (['name', 'policyName', 'insuranceCompany', 'lenderName', 'institution', 'apr', 'apy', 'url', 'notes', 'info', 'category', 'premiumFrequency', 'insuredPerson', 'beneficiary', 'contingentBeneficiary', 'policyNumber', 'policyStartDate', 'policyEndDate', 'status'].includes(name)) {
             formattedValue = value;
         } else {
             formattedValue = Number(value) || 0;
@@ -154,11 +157,11 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
   };
   
   const handleAddItem = <T,>(list: ItemType, newItem: T) => {
-    setData(prev => ({...prev, [list]: [...prev[list], newItem] as any}));
+    setData(prev => ({...prev, [list]: [...((prev[list] as any[]) || []), newItem] as any}));
   };
 
   const handleRemoveItem = (index: number, list: ItemType) => {
-    setData(prev => ({ ...prev, [list]: prev[list].filter((_, i) => i !== index) as any }));
+    setData(prev => ({ ...prev, [list]: ((prev[list] as any[]) || []).filter((_, i) => i !== index) as any }));
   };
   
   const handleSave = async () => {
@@ -777,6 +780,346 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
     </div>
   );
 
+  const renderTermLifeInsuranceEditor = () => {
+    const policies = data.termLifeInsurance || [];
+    const totalDeathBenefit = policies
+      .filter(p => !p.status || p.status === 'active')
+      .reduce((sum, p) => sum + (Number(p.coverageAmount) || 0), 0);
+    const totalMonthlyPremium = policies
+      .filter(p => !p.status || p.status === 'active')
+      .reduce((sum, p) => {
+        const amt = Number(p.premiumAmount) || 0;
+        switch (p.premiumFrequency) {
+          case 'yearly':
+          case 'annually':
+            return sum + (amt / 12);
+          case 'semi-annually':
+            return sum + (amt / 6);
+          case 'quarterly':
+            return sum + (amt / 3);
+          case 'monthly':
+          default:
+            return sum + amt;
+        }
+      }, 0);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-2 gap-2">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <span>🛡️</span> Term Life Insurance Policies
+            </h3>
+            <p className="text-xs text-gray-500">
+              Track death benefit protection, premium schedules, beneficiaries, and policy terms to ensure complete family &amp; business income continuity.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+            <div className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300">
+              Total Death Benefit: <strong className="font-mono">{formatCurrency(totalDeathBenefit)}</strong>
+            </div>
+            <div className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300">
+              Monthly Premium Equivalent: <strong className="font-mono">{formatCurrency(totalMonthlyPremium)}/mo</strong>
+            </div>
+          </div>
+        </div>
+
+        {policies.length === 0 ? (
+          <div className="p-6 text-center rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-dashed border-gray-200 dark:border-gray-700 space-y-2">
+            <span className="text-3xl block">🛡️</span>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">No Term Life Insurance Policies Added Yet</p>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              Add your term life policies (e.g., 20-Year Level Term, 30-Year Mortgage Protection, Key-Person Insurance) to audit income replacement coverage against your total debt.
+            </p>
+          </div>
+        ) : (
+          policies.map((policy, index) => (
+            <div 
+              key={policy.id} 
+              className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700/80 space-y-3.5 shadow-sm"
+            >
+              {/* Row 1: Policy Name, Carrier, Coverage, Monthly Premium */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                <div className="sm:col-span-4">
+                  <InputField
+                    label="Policy Plan / Name"
+                    name="policyName"
+                    type="text"
+                    value={policy.policyName || ''}
+                    placeholder="e.g. 20-Year Level Term Life"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                  {policy.url && policy.url.trim() && (
+                    <a
+                      href={formatExternalUrl(policy.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline mt-1 font-medium truncate max-w-full"
+                      title={`Open ${policy.policyName} portal`}
+                    >
+                      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      <span className="truncate">{getDisplayUrl(policy.url)}</span>
+                      <span className="text-[9px]">↗</span>
+                    </a>
+                  )}
+                </div>
+
+                <div className="sm:col-span-3">
+                  <InputField
+                    label="Insurance Carrier"
+                    name="insuranceCompany"
+                    type="text"
+                    value={policy.insuranceCompany || ''}
+                    placeholder="e.g. Pacific Life, Prudential, Banner Life"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <InputField
+                    label="Coverage / Death Benefit ($)"
+                    name="coverageAmount"
+                    type="number"
+                    value={policy.coverageAmount || 0}
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <InputField
+                    label="Premium Cost ($)"
+                    name="premiumAmount"
+                    type="number"
+                    value={policy.premiumAmount || 0}
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div className="sm:col-span-1 flex justify-end pb-1">
+                  <Button 
+                    onClick={() => handleRemoveItem(index, 'termLifeInsurance')} 
+                    variant="danger" 
+                    size="small"
+                    title="Delete Policy"
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Row 2: Frequency, Term Length, Term Dates, Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Premium Frequency
+                  </label>
+                  <select
+                    name="premiumFrequency"
+                    value={policy.premiumFrequency || 'monthly'}
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                    className="block w-full px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-semibold focus:outline-none focus:ring-brand-secondary"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="semi-annually">Semi-Annually</option>
+                    <option value="annually">Annually</option>
+                  </select>
+                </div>
+
+                <div>
+                  <InputField
+                    label="Term Length (Years)"
+                    name="termLengthYears"
+                    type="number"
+                    value={policy.termLengthYears || 20}
+                    placeholder="e.g. 10, 15, 20, 30"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div>
+                  <InputField
+                    label="Policy Start Date"
+                    name="policyStartDate"
+                    type="date"
+                    value={policy.policyStartDate || ''}
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div>
+                  <InputField
+                    label="Term Expiration Date"
+                    name="policyEndDate"
+                    type="date"
+                    value={policy.policyEndDate || ''}
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Insured Person, Primary Beneficiary, Contingent Beneficiary, Policy ID */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <InputField
+                    label="Insured Person"
+                    name="insuredPerson"
+                    type="text"
+                    value={policy.insuredPerson || ''}
+                    placeholder="e.g. Self, Spouse, Partner"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div>
+                  <InputField
+                    label="Primary Beneficiary"
+                    name="beneficiary"
+                    type="text"
+                    value={policy.beneficiary || ''}
+                    placeholder="e.g. Spouse / Living Trust (100%)"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div>
+                  <InputField
+                    label="Contingent Beneficiary"
+                    name="contingentBeneficiary"
+                    type="text"
+                    value={policy.contingentBeneficiary || ''}
+                    placeholder="e.g. Children Trust / Heirs"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Coverage Status
+                  </label>
+                  <select
+                    name="status"
+                    value={policy.status || 'active'}
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                    className="block w-full px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-semibold focus:outline-none focus:ring-brand-secondary"
+                  >
+                    <option value="active">Active (In Force)</option>
+                    <option value="pending">Pending Underwriting</option>
+                    <option value="lapsed">Lapsed</option>
+                    <option value="converted">Converted to Permanent</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 4: Policy Number, Last 4, Portal URL, Notes & Flags */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-gray-200/60 dark:border-gray-700/50 text-xs items-center">
+                <div className="sm:col-span-3">
+                  <InputField
+                    label="Policy #"
+                    name="policyNumber"
+                    type="text"
+                    value={policy.policyNumber || ''}
+                    placeholder="e.g. PL-4820199"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <InputField
+                    label="Last 4 Digits"
+                    name="last4"
+                    type="text"
+                    maxLength={4}
+                    value={policy.last4 || ''}
+                    placeholder="0199"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div className="sm:col-span-4">
+                  <InputField
+                    label="Carrier Portal URL"
+                    name="url"
+                    type="text"
+                    value={policy.url || ''}
+                    placeholder="e.g. pacificlife.com"
+                    onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                  />
+                </div>
+
+                <div className="sm:col-span-3 flex flex-col gap-1.5 pt-4">
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] text-gray-600 dark:text-gray-400">
+                    <input
+                      type="checkbox"
+                      name="conversionOption"
+                      checked={!!policy.conversionOption}
+                      onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                      className="rounded text-brand-primary focus:ring-brand-primary"
+                    />
+                    <span>Convertible to Whole Life</span>
+                  </label>
+
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] text-gray-600 dark:text-gray-400">
+                    <input
+                      type="checkbox"
+                      name="isBusiness"
+                      checked={!!policy.isBusiness}
+                      onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                      className="rounded text-brand-primary focus:ring-brand-primary"
+                    />
+                    <span>Business / Key-Person Policy</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Row 5: Notes & Underwriting class */}
+              <div className="pt-1">
+                <InputField
+                  label="Notes / Underwriting Class / Policy Riders"
+                  name="notes"
+                  type="text"
+                  value={policy.notes || ''}
+                  placeholder="e.g. Preferred Plus Non-Smoker, includes Accelerated Death Benefit & Waiver of Premium riders"
+                  onChange={(e) => handleListChange(index, e, 'termLifeInsurance')}
+                />
+              </div>
+            </div>
+          ))
+        )}
+
+        <Button onClick={() => {
+          const newItem: TermLifeInsurance = {
+            id: crypto.randomUUID(),
+            policyName: 'New Term Life Policy',
+            insuranceCompany: '',
+            coverageAmount: 500000,
+            premiumAmount: 45,
+            premiumFrequency: 'monthly',
+            termLengthYears: 20,
+            policyStartDate: new Date().toISOString().split('T')[0],
+            policyEndDate: '',
+            insuredPerson: 'Self',
+            beneficiary: 'Spouse',
+            contingentBeneficiary: '',
+            policyNumber: '',
+            last4: '',
+            status: 'active',
+            isBusiness: false,
+            conversionOption: true,
+            riders: ['Accelerated Death Benefit'],
+            url: '',
+            notes: 'Preferred Plus Non-Tobacco'
+          };
+          handleAddItem<TermLifeInsurance>('termLifeInsurance', newItem);
+        }} size="small">
+          <AddIcon /> Add Term Life Insurance Policy
+        </Button>
+      </div>
+    );
+  };
+
   const renderListEditor = <T extends {id: string, name: string}>(
     title: string, 
     listName: ItemType, 
@@ -951,6 +1294,7 @@ const DataEditor: React.FC<DataEditorProps> = ({ isOpen, onClose, monthYear, onO
             {renderLoanEditor()}
             {renderAssetEditor()}
             {renderMonthlyBillsEditor()}
+            {renderTermLifeInsuranceEditor()}
         </div>
         <div className="p-6 flex justify-end gap-4 sticky bottom-0 bg-white dark:bg-gray-900 border-t">
           <Button onClick={onClose} variant="secondary" disabled={isSaving}>Cancel</Button>

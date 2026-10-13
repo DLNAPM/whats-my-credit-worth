@@ -1,4 +1,4 @@
-import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource, FinancialData } from '../types';
+import type { MonthlyData, CreditCard, Loan, Asset, NamedAmount, IncomeSource, FinancialData, TermLifeInsurance } from '../types';
 
 const generateId = () => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -30,6 +30,7 @@ export const getInitialData = (): MonthlyData => ({
     { id: generateId(), name: 'Savings Account', value: 0 },
   ],
   monthlyBills: [{ id: generateId(), name: 'Rent/Mortgage', amount: 0 }],
+  termLifeInsurance: [],
 });
 
 export const getDummyData = (): FinancialData => {
@@ -80,6 +81,52 @@ export const getDummyData = (): FinancialData => {
       { id: generateId(), name: 'Utilities', amount: 310, url: 'https://www.pge.com' },
       { id: generateId(), name: 'Car Insurance', amount: 210, url: 'https://www.geico.com' },
       { id: generateId(), name: 'Subscriptions', amount: 125, url: 'https://www.netflix.com' }
+    ],
+    termLifeInsurance: [
+      {
+        id: generateId(),
+        policyName: '20-Year Level Term Life',
+        insuranceCompany: 'Pacific Life',
+        coverageAmount: 1000000,
+        premiumAmount: 64,
+        premiumFrequency: 'monthly',
+        termLengthYears: 20,
+        policyStartDate: '2022-04-01',
+        policyEndDate: '2042-04-01',
+        insuredPerson: 'Self (Primary Earner)',
+        beneficiary: 'Spouse (100% Primary)',
+        contingentBeneficiary: 'Children Living Trust',
+        policyNumber: 'PL-4820199',
+        last4: '0199',
+        status: 'active',
+        isBusiness: false,
+        conversionOption: true,
+        riders: ['Accelerated Death Benefit', 'Waiver of Premium'],
+        url: 'https://www.pacificlife.com',
+        notes: 'Underwriting Class: Preferred Plus Non-Tobacco'
+      },
+      {
+        id: generateId(),
+        policyName: '30-Year Family Protection Term',
+        insuranceCompany: 'Banner Life',
+        coverageAmount: 500000,
+        premiumAmount: 38,
+        premiumFrequency: 'monthly',
+        termLengthYears: 30,
+        policyStartDate: '2021-08-15',
+        policyEndDate: '2051-08-15',
+        insuredPerson: 'Spouse',
+        beneficiary: 'Primary Earner (100%)',
+        contingentBeneficiary: 'Living Trust',
+        policyNumber: 'BL-991428',
+        last4: '1428',
+        status: 'active',
+        isBusiness: false,
+        conversionOption: true,
+        riders: ['Terminal Illness Rider'],
+        url: 'https://www.legalandgeneral.com',
+        notes: 'Covers remaining mortgage debt & childcare replacement'
+      }
     ]
   });
 
@@ -89,6 +136,34 @@ export const getDummyData = (): FinancialData => {
       [m2]: createMonthlyData(2),
       [m1]: createMonthlyData(3)  // Most Recent
   };
+};
+
+export const calculateTotalCoverage = (policies: TermLifeInsurance[] = []): number => {
+  if (!policies) return 0;
+  return policies
+    .filter(p => !p.status || p.status === 'active')
+    .reduce((sum, p) => sum + (Number(p.coverageAmount) || 0), 0);
+};
+
+export const calculateTotalMonthlyInsuranceCost = (policies: TermLifeInsurance[] = []): number => {
+  if (!policies) return 0;
+  return policies
+    .filter(p => !p.status || p.status === 'active')
+    .reduce((sum, p) => {
+      const amt = Number(p.premiumAmount) || 0;
+      switch (p.premiumFrequency) {
+        case 'yearly':
+        case 'annually':
+          return sum + (amt / 12);
+        case 'semi-annually':
+          return sum + (amt / 6);
+        case 'quarterly':
+          return sum + (amt / 3);
+        case 'monthly':
+        default:
+          return sum + amt;
+      }
+    }, 0);
 };
 
 export const calculateTotal = (items: (NamedAmount | Asset)[] = []) => {

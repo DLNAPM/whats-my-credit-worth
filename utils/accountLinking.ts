@@ -397,6 +397,23 @@ export function mergeMonthData(
     newMonth.income.jobs = existingJobs;
   }
 
+  // 6. Merge Term Life Insurance Policies
+  let policiesAdded = 0;
+  if (options.categories.insurance && sourceData.termLifeInsurance) {
+    const existingPolicies = newMonth.termLifeInsurance || [];
+    sourceData.termLifeInsurance.forEach(p => {
+      const mergedName = `${tagPrefix}${p.policyName}`;
+      existingPolicies.push({
+        ...p,
+        id: crypto.randomUUID(),
+        policyName: mergedName,
+        isBusiness: isBiz ? true : (p.isBusiness || false)
+      });
+      policiesAdded++;
+    });
+    newMonth.termLifeInsurance = existingPolicies;
+  }
+
   return {
     merged: newMonth,
     summary: {
@@ -404,7 +421,8 @@ export function mergeMonthData(
       loansAdded,
       assetsAdded,
       billsAdded,
-      jobsAdded
+      jobsAdded,
+      policiesAdded
     }
   };
 }
@@ -424,6 +442,7 @@ export function mergeFullFinancialData(
     assetsAdded: number;
     billsAdded: number;
     jobsAdded: number;
+    policiesAdded: number;
     monthsUpdated: number;
   };
 } {
@@ -433,6 +452,7 @@ export function mergeFullFinancialData(
   let totalAssets = 0;
   let totalBills = 0;
   let totalJobs = 0;
+  let totalPolicies = 0;
   let monthsUpdated = 0;
 
   if (options.selectedMonth && options.selectedMonth !== 'all') {
@@ -447,6 +467,7 @@ export function mergeFullFinancialData(
       totalAssets += summary.assetsAdded;
       totalBills += summary.billsAdded;
       totalJobs += summary.jobsAdded;
+      totalPolicies += summary.policiesAdded || 0;
       monthsUpdated = 1;
     }
   } else {
@@ -469,7 +490,8 @@ export function mergeFullFinancialData(
           creditCards: [],
           loans: [],
           assets: [],
-          monthlyBills: []
+          monthlyBills: [],
+          termLifeInsurance: []
         };
 
         const { merged, summary } = mergeMonthData(targetMonth, sourceMonth, options);
@@ -479,6 +501,7 @@ export function mergeFullFinancialData(
         totalAssets += summary.assetsAdded;
         totalBills += summary.billsAdded;
         totalJobs += summary.jobsAdded;
+        totalPolicies += summary.policiesAdded || 0;
         monthsUpdated++;
       }
     });
@@ -492,6 +515,7 @@ export function mergeFullFinancialData(
       assetsAdded: totalAssets,
       billsAdded: totalBills,
       jobsAdded: totalJobs,
+      policiesAdded: totalPolicies,
       monthsUpdated
     }
   };
@@ -548,6 +572,10 @@ export function calculateConsolidatedMonthlyData(
     monthlyBills: [
       ...(primaryData.monthlyBills || []),
       ...(secondaryData.monthlyBills || []).map(b => ({ ...b, id: `cons_${b.id}`, name: `[${labelB}] ${b.name}` }))
+    ],
+    termLifeInsurance: [
+      ...(primaryData.termLifeInsurance || []),
+      ...(secondaryData.termLifeInsurance || []).map(p => ({ ...p, id: `cons_${p.id}`, policyName: `[${labelB}] ${p.policyName}` }))
     ]
   };
 

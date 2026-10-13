@@ -79,6 +79,7 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
   const [includeAssets, setIncludeAssets] = useState(true);
   const [includeBills, setIncludeBills] = useState(true);
   const [includeIncome, setIncludeIncome] = useState(true);
+  const [includeInsurance, setIncludeInsurance] = useState(true);
   const [useTagPrefix, setUseTagPrefix] = useState(true);
   const [customTag, setCustomTag] = useState('');
   const [isMerging, setIsMerging] = useState(false);
@@ -235,7 +236,8 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
           loans: includeLoans,
           assets: includeAssets,
           monthlyBills: includeBills,
-          income: includeIncome
+          income: includeIncome,
+          insurance: includeInsurance
         },
         prefixTag: useTagPrefix,
         customTag: customTag.trim() || undefined,
@@ -249,7 +251,7 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
       const targetLabel = targetDestination === 'personal' ? 'Personal Account' : 'Business Account';
       const roleLabel = selectedConnection.role === 'spouse' ? "Spouse's Account" : "Business Account";
       
-      const successText = `Successfully merged from ${roleLabel} (${selectedConnection.targetEmail}) into your ${targetLabel}! Added: ${summary.cardsAdded} Credit Cards, ${summary.loansAdded} Loans, ${summary.assetsAdded} Assets, ${summary.billsAdded} Monthly Bills, and ${summary.jobsAdded} Income Sources.`;
+      const successText = `Successfully merged from ${roleLabel} (${selectedConnection.targetEmail}) into your ${targetLabel}! Added: ${summary.cardsAdded} Credit Cards, ${summary.loansAdded} Loans, ${summary.assetsAdded} Assets, ${summary.billsAdded} Monthly Bills, ${summary.jobsAdded} Income Sources, and ${summary.policiesAdded || 0} Term Life Insurance Policies.`;
       
       setMergeSuccessDetails(successText);
       setActionNotice(`Merge complete! All accounts added to your ${targetLabel}.`);
@@ -740,6 +742,16 @@ export const AccountLinkingModal: React.FC<AccountLinkingModalProps> = ({
                       className="rounded text-brand-primary"
                     />
                     <span className="text-xs font-bold">💼 Income ({incomingMonthData?.income?.jobs?.length || 0})</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={includeInsurance}
+                      onChange={(e) => setIncludeInsurance(e.target.checked)}
+                      className="rounded text-brand-primary"
+                    />
+                    <span className="text-xs font-bold">🛡️ Term Life ({incomingMonthData?.termLifeInsurance?.length || 0})</span>
                   </label>
                 </div>
 

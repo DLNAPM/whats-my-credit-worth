@@ -1109,6 +1109,31 @@ export const FinancialPlanningReportModal: React.FC<FinancialPlanningReportModal
                         {formatCurrency(Math.max(500000, (metrics.totalIncome * 12 * 10) + metrics.totalDebt))}
                       </span>
                     </div>
+
+                    {/* Active User Policies Audit */}
+                    {(() => {
+                      const userPolicies = activeData.termLifeInsurance || [];
+                      const actualCoverage = userPolicies
+                        .filter(p => !p.status || p.status === 'active')
+                        .reduce((sum, p) => sum + (Number(p.coverageAmount) || 0), 0);
+                      const targetNeed = Math.max(500000, (metrics.totalIncome * 12 * 10) + metrics.totalDebt);
+                      const gap = targetNeed - actualCoverage;
+
+                      return (
+                        <div className="pt-2 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700 space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Current In-Force Term Life Policies ({userPolicies.length}):</span>
+                            <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{formatCurrency(actualCoverage)}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Coverage Position / Surplus / Gap:</span>
+                            <strong className={`font-mono ${gap <= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}`}>
+                              {gap <= 0 ? `Fully Protected (+${formatCurrency(Math.abs(gap))} Surplus)` : `${formatCurrency(gap)} Gap Remaining`}
+                            </strong>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -1138,6 +1163,54 @@ export const FinancialPlanningReportModal: React.FC<FinancialPlanningReportModal
                   </p>
                 </div>
               </div>
+
+              {/* Term Life Policies In-Force Table */}
+              {(activeData.termLifeInsurance || []).length > 0 && (
+                <div className="mt-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/30">
+                  <div className="flex justify-between items-center mb-2.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <span>🛡️</span> In-Force Term Life Insurance Policies
+                    </h4>
+                    <span className="text-[11px] text-gray-400 font-mono">
+                      {activeData.termLifeInsurance?.length} Active Contracts
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-xs divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead>
+                        <tr className="text-left text-gray-500 dark:text-gray-400 font-medium text-[11px]">
+                          <th className="py-1.5 pr-3">Policy / Plan</th>
+                          <th className="py-1.5 px-3">Carrier</th>
+                          <th className="py-1.5 px-3 text-right">Death Benefit</th>
+                          <th className="py-1.5 px-3">Premium / Frequency</th>
+                          <th className="py-1.5 px-3">Insured / Beneficiary</th>
+                          <th className="py-1.5 pl-3">Term Expiration</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {activeData.termLifeInsurance?.map(p => (
+                          <tr key={p.id}>
+                            <td className="py-2 pr-3 font-semibold text-gray-900 dark:text-white">
+                              {p.policyName}
+                              {p.policyNumber && <span className="block text-[10px] text-gray-400 font-mono">#{p.policyNumber}</span>}
+                            </td>
+                            <td className="py-2 px-3 text-gray-700 dark:text-gray-300">{p.insuranceCompany || '—'}</td>
+                            <td className="py-2 px-3 text-right font-mono font-bold text-blue-600 dark:text-blue-400">{formatCurrency(p.coverageAmount)}</td>
+                            <td className="py-2 px-3 text-gray-700 dark:text-gray-300 font-mono">{formatCurrency(p.premiumAmount)} / {p.premiumFrequency}</td>
+                            <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
+                              <span>{p.insuredPerson || 'Self'}</span>
+                              {p.beneficiary && <span className="block text-[10px] text-gray-400">→ {p.beneficiary}</span>}
+                            </td>
+                            <td className="py-2 pl-3 text-gray-600 dark:text-gray-400 font-mono">
+                              {p.policyEndDate || `${p.termLengthYears} Yrs`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* ========================================================================= */}

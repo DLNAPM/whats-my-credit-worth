@@ -284,6 +284,31 @@ const Snapshot: React.FC<SnapshotProps> = ({ snapshotData }) => {
                         </ul>
                     </Card>
                 </div>
+
+                {/* Term Life Insurance Policies in Snapshot */}
+                {(data.termLifeInsurance || []).length > 0 && (
+                  <Card title="Term Life Insurance Protection Portfolio">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        {data.termLifeInsurance?.map(policy => (
+                          <div key={policy.id} className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-1.5">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="font-bold text-gray-900 dark:text-white block">{policy.policyName}</span>
+                                <span className="text-xs text-gray-500">{policy.insuranceCompany || 'Carrier'} {policy.termLengthYears ? `• ${policy.termLengthYears}-Yr Term` : ''}</span>
+                              </div>
+                              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{formatCurrency(policy.coverageAmount)}</span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 flex justify-between pt-1 border-t border-gray-200/60 dark:border-gray-700/60">
+                              <span>Premium: {formatCurrency(policy.premiumAmount)} / {policy.premiumFrequency}</span>
+                              <span>Beneficiary: {policy.beneficiary || 'Spouse'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                )}
             </main>
             <footer className="text-center mt-8 text-sm text-gray-500">
                 <p>

@@ -98,6 +98,29 @@ export interface Asset {
   apy?: string | number;
 }
 
+export interface TermLifeInsurance {
+  id: string;
+  policyName: string; // e.g. "Northwestern Mutual 20-Year Term", "Haven Life Level Term"
+  insuranceCompany: string; // Carrier name e.g. "Prudential", "Pacific Life", "Banner Life", "Lincoln Financial"
+  coverageAmount: number; // Death benefit e.g. 1000000
+  premiumAmount: number; // Periodic payment cost e.g. 65
+  premiumFrequency: 'monthly' | 'quarterly' | 'semi-annually' | 'annually'; // Payment cycle
+  termLengthYears: number; // e.g. 10, 15, 20, 25, 30
+  policyStartDate?: string; // e.g. "2020-05-15"
+  policyEndDate?: string; // Expiration / conversion end date e.g. "2040-05-15"
+  insuredPerson?: string; // "Self", "Spouse", or custom name
+  beneficiary?: string; // Primary beneficiary name e.g. "Jane Doe (Spouse)", "Family Trust"
+  contingentBeneficiary?: string; // Secondary beneficiary e.g. "Children / Minor Trust"
+  policyNumber?: string; // Policy identifier e.g. "TL-9482104"
+  last4?: string; // Quick last 4 identifier e.g. "2104"
+  status?: 'active' | 'pending' | 'lapsed' | 'converted'; // Status of coverage
+  isBusiness?: boolean; // Key-person insurance or business continuation / buy-sell agreement
+  conversionOption?: boolean; // Option to convert to permanent whole/universal life without medical exam
+  riders?: string[]; // e.g. "Waiver of Premium", "Accelerated Death Benefit / Terminal Illness", "Child Rider"
+  url?: string; // Carrier portal or payment login link
+  notes?: string; // Additional policy details, underwriting class (e.g. Preferred Plus)
+}
+
 export interface MonthlyData {
   income: {
     jobs: IncomeSource[];
@@ -118,6 +141,7 @@ export interface MonthlyData {
   loans: Loan[];
   assets: Asset[];
   monthlyBills: NamedAmount[];
+  termLifeInsurance?: TermLifeInsurance[];
 }
 
 export interface FinancialData {
@@ -161,6 +185,7 @@ export interface MergeOptions {
     assets: boolean;
     monthlyBills: boolean;
     income: boolean;
+    insurance?: boolean;
   };
   prefixTag: boolean;
   customTag?: string;
@@ -180,6 +205,7 @@ export interface MergeHistoryLog {
     assetsAdded: number;
     billsAdded: number;
     jobsAdded: number;
+    policiesAdded?: number;
   };
 }
 
